@@ -1,0 +1,77 @@
+name: CANopen reference validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-vcan:
+    name: SocketCAN protocol regression
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create vcan0
+        run: |
+          sudo modprobe vcan
+          sudo ip link add dev vcan0 type vcan || true
+          sudo ip link set vcan0 up
+          ip -details link show vcan0
+      - name: Validate Object Dictionary and host sources
+        run: |
+          python3 scripts/validate_od.py
+          tools/import_objdict.sh Generated --stage
+          PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+            tests/host/can_socket.py \
+            tests/host/test_sdo.py \
+            middleware/canopen/examples/canopen_vcan_device.py
+      - name: Compile and run SocketCAN integration tests
+        env:
+          CAN_PORT_IFACE: vcan0
+        run: make -C tests/host test
+
+  cortex-m7-build:
+    name: STM32F767 cross-build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends cmake gcc-arm-none-eabi libnewlib-arm-none-eabi git
+      - name: Retrieve STM32CubeF7 headers and HAL
+        run: |
+          git clone --depth 1 --recurse-submodules https://github.com/STMicroelectronics/STM32CubeF7.git third_party/STM32CubeF7
+      - name: Configure and build firmware
+        run: |
+          cmake -S . -B build/ci-firmware \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+            -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld"
+          cmake --build build/ci-firmware --parallel 2
+          arm-none-eabi-size build/ci-firmware/stm32f767_canopen_reference
+      - name: Configure and build optional CiA 309 gateway personality
+        run: |
+          cmake -S . -B build/ci-gateway \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+            -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCMAKE_C_FLAGS=-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1
+          cmake --build build/ci-gateway --parallel 2
+          arm-none-eabi-size build/ci-gateway/stm32f767_canopen_reference
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stm32f767-canopen-reference
+          if-no-files-found: error
+          path: |
+            build/ci-firmware/stm32f767_canopen_reference
+            build/ci-firmware/stm32f767_canopen_reference.hex
+            build/ci-firmware/stm32f767_canopen_reference.bin
+            build/ci-firmware/stm32f767_canopen_reference.map
+            build/ci-gateway/stm32f767_canopen_reference
+            build/ci-gateway/stm32f767_canopen_reference.hex
+            build/ci-gateway/stm32f767_canopen_reference.bin
+            build/ci-gateway/stm32f767_canopen_reference.map
