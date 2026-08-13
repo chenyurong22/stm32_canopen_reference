@@ -13,8 +13,9 @@ CUBE_DIR=$2
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 CANOPENSTM32_DIR="$ROOT/third_party/CanOpenSTM32"
 
-if [ ! -d "$CUBE_DIR/.git" ] || [ ! -d "$CANOPENSTM32_DIR/.git" ]; then
-    echo "Manifest generation requires Git checkouts for STM32CubeF7 and CanOpenSTM32." >&2
+if ! git -C "$CUBE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || ! git -C "$CANOPENSTM32_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Manifest generation requires Git worktrees for STM32CubeF7 and CanOpenSTM32." >&2
     exit 66
 fi
 
