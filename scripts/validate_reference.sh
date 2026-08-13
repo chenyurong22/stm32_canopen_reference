@@ -7,6 +7,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 CUBE_DIR=${STM32_CUBE_F7_DIR:-"$ROOT/third_party/STM32CubeF7"}
 LINKER_SCRIPT=${STM32_F7_LINKER_SCRIPT:-"$ROOT/linker/STM32F767_2M_512K_FLASH.ld"}
 BUILD_DIR=${BUILD_DIR:-"$ROOT/build/firmware"}
+CIA402_BUILD_DIR=${CIA402_BUILD_DIR:-"$ROOT/build/firmware-cia402"}
 
 command -v python3 >/dev/null
 command -v gcc >/dev/null
@@ -15,8 +16,9 @@ command -v arm-none-eabi-gcc >/dev/null
 command -v arm-none-eabi-size >/dev/null
 
 python3 "$ROOT/scripts/validate_od.py"
-
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_firmware_configuration.py"
 mkdir -p "$ROOT/build/tests"
+
 gcc -std=c11 -Wall -Wextra -Werror \
     -DCANOPEN_REFERENCE_ENABLE_CIA401=1 \
     -DCANOPEN_REFERENCE_ENABLE_CIA402=1 \
@@ -36,4 +38,16 @@ cmake --build "$BUILD_DIR" --parallel 2
 arm-none-eabi-size "$BUILD_DIR/stm32f767_canopen_reference"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.bin"
+# Compile the optional CiA 402 personality independently. The reference avoids
+# a default combined 401/402 product personality because those profiles have
+# different product conformance obligations.
+cmake -S "$ROOT" -B "$CIA402_BUILD_DIR" \
+    -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
+    -DSTM32_CUBE_F7_DIR="$CUBE_DIR" \
+    -DSTM32_F7_LINKER_SCRIPT="$LINKER_SCRIPT" \
+    -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=1"
+cmake --build "$CIA402_BUILD_DIR" --parallel 2
+arm-none-eabi-size "$CIA402_BUILD_DIR/stm32f767_canopen_reference"
+test -s "$CIA402_BUILD_DIR/stm32f767_canopen_reference.hex"
+test -s "$CIA402_BUILD_DIR/stm32f767_canopen_reference.bin"
 printf '%s\n' 'Reference validation completed successfully.'

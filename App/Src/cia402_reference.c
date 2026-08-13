@@ -120,9 +120,10 @@ Cia402Reference_Process1ms(void) {
             break;
 
         case CIA402_STATUS_SWITCHED_ON:
-            if ((controlword & (CIA402_CW_ENABLE_VOLTAGE | CIA402_CW_QUICK_STOP))
-                != (CIA402_CW_ENABLE_VOLTAGE | CIA402_CW_QUICK_STOP)) {
+            if ((controlword & CIA402_CW_ENABLE_VOLTAGE) == 0U) {
                 OD_APP.x6041_statusword = CIA402_STATUS_SWITCH_ON_DISABLED;
+            } else if ((controlword & CIA402_CW_QUICK_STOP) == 0U) {
+                OD_APP.x6041_statusword = CIA402_STATUS_QUICK_STOP_ACTIVE;
             } else if ((controlword & CIA402_CW_SWITCH_ON) == 0U) {
                 OD_APP.x6041_statusword = CIA402_STATUS_READY_TO_SWITCH_ON;
             } else if ((controlword & CIA402_CW_LOW_NIBBLE)
@@ -133,7 +134,9 @@ Cia402Reference_Process1ms(void) {
             break;
 
         case CIA402_STATUS_OPERATION_ENABLED:
-            if ((controlword & CIA402_CW_QUICK_STOP) == 0U) {
+            if ((controlword & CIA402_CW_ENABLE_VOLTAGE) == 0U) {
+                OD_APP.x6041_statusword = CIA402_STATUS_SWITCH_ON_DISABLED;
+            } else if ((controlword & CIA402_CW_QUICK_STOP) == 0U) {
                 OD_APP.x6041_statusword = CIA402_STATUS_QUICK_STOP_ACTIVE;
             } else if ((controlword & CIA402_CW_ENABLE_OPERATION) == 0U) {
                 OD_APP.x6041_statusword = CIA402_STATUS_SWITCHED_ON;
@@ -141,7 +144,9 @@ Cia402Reference_Process1ms(void) {
             break;
 
         case CIA402_STATUS_QUICK_STOP_ACTIVE:
-            if ((controlword & CIA402_CW_QUICK_STOP) == 0U) {
+            if ((controlword & CIA402_CW_ENABLE_VOLTAGE) == 0U) {
+                OD_APP.x6041_statusword = CIA402_STATUS_SWITCH_ON_DISABLED;
+            } else if ((controlword & CIA402_CW_QUICK_STOP) == 0U) {
                 OD_APP.x6041_statusword = CIA402_STATUS_QUICK_STOP_ACTIVE;
             } else if ((controlword & CIA402_CW_LOW_NIBBLE)
                        == (CIA402_CW_SWITCH_ON | CIA402_CW_ENABLE_VOLTAGE | CIA402_CW_QUICK_STOP

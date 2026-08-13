@@ -102,9 +102,16 @@ resetFixture(void) {
 static void
 testCia401Bridge(void) {
     resetFixture();
+    /* Initialization must remove stale commanded outputs before the first PDO cycle. */
+    digitalOutput = UINT8_C(0xFF);
+    analogOutput1 = 32767;
+    OD_APP.x6200_writeDigitalOutputs = UINT8_C(0xFF);
+    OD_APP.x6422_writeAnalogOutput1 = 32767;
     Cia401Reference_Init();
     assert(OD_APP.x6200_writeDigitalOutputs == 0U);
     assert(OD_APP.x6422_writeAnalogOutput1 == 0);
+    assert(digitalOutput == 0U);
+    assert(analogOutput1 == 0);
 
     digitalInput = UINT8_C(0xA5);
     analogInput1 = 1234;
@@ -175,11 +182,86 @@ testCia402StateAndInterlocks(void) {
     assert(OD_APP.x6041_statusword == UINT16_C(0x0008));
     assert(!driveEnabled);
 }
-
+static void
+testCia402QuickStopAndUnsupportedMode(void) {
+    resetFixture();
+    Cia402Reference_Init();
+    interlocksHealthy = true;
+    OD_APP.x6040_controlword = UINT16_C(0x0006);
+    Cia402Reference_Process1ms();
+    OD_APP.x6040_controlword = UINT16_C(0x0007);
+    Cia402Reference_Process1ms();
+    OD_APP.x6060_modesOfOperation = 3;
+    OD_APP.x6040_controlword = UINT16_C(0x000F);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0027));
+    assert(driveEnabled);
+    /* Clearing quick-stop must immediately remove the drive-enable request. */
+    OD_APP.x6040_controlword = UINT16_C(0x000B);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0007));
+    assert(!driveEnabled);
+    OD_APP.x6040_controlword = UINT16_C(0x000F);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0027));
+    /* Unsupported operation modes fail closed with the reference diagnostic. */
+    OD_APP.x6060_modesOfOperation = 2;
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0040));
+    assert(OD_APP.x6061_modesOfOperationDisplay == 0);
+    assert(OD_APP.x603F_errorCode == UINT16_C(0xFF01));
+    assert(!driveEnabled);
+}
+static void
+testCia402DisableVoltageTakesPriority(void) {
+    resetFixture();
+    Cia402Reference_Init();
+    interlocksHealthy = true;
+    OD_APP.x6040_controlword = UINT16_C(0x0006);
+    Cia402Reference_Process1ms();
+    OD_APP.x6040_controlword = UINT16_C(0x0007);
+    Cia402Reference_Process1ms();
+    OD_APP.x6060_modesOfOperation = 3;
+    OD_APP.x6040_controlword = UINT16_C(0x000F);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0027));
+    assert(driveEnabled);
+    /* A simultaneous quick-stop request cannot mask removal of enable voltage. */
+    OD_APP.x6040_controlword = UINT16_C(0x0009);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0040));
+    assert(!driveEnabled);
+}
+static void
+testCia402HardwareFaultRecovery(void) {
+    resetFixture();
+    Cia402Reference_Init();
+    interlocksHealthy = true;
+    hardwareFault = true;
+    hardwareError = UINT16_C(0x2310);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0008));
+    assert(OD_APP.x603F_errorCode == UINT16_C(0x2310));
+    assert(!driveEnabled);
+    /* Reset may only be accepted after the hardware fault is no longer active. */
+    OD_APP.x6040_controlword = UINT16_C(0x0080);
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0008));
+    hardwareFault = false;
+    hardwareError = 0U;
+    Cia402Reference_Process1ms();
+    assert(OD_APP.x6041_statusword == UINT16_C(0x0040));
+    assert(OD_APP.x603F_errorCode == 0U);
+    assert(!driveEnabled);
+}
 int
 main(void) {
     testCia401Bridge();
     testCia402StateAndInterlocks();
+    testCia402QuickStopAndUnsupportedMode();
+    testCia402DisableVoltageTakesPriority();
+    testCia402HardwareFaultRecovery();
+
     puts("CiA 401 and CiA 402 reference profile tests passed.");
     return 0;
 }

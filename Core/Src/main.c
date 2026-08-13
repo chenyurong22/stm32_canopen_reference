@@ -7,6 +7,16 @@
 
 CAN_HandleTypeDef hcan1;
 TIM_HandleTypeDef htim7;
+/* APB1 is divided by four from 216 MHz (54 MHz), and STM32F7 timer kernels
+ * run at twice PCLK when the APB prescaler is not one. TIM7 therefore receives
+ * 108 MHz and must divide by 108000 for the CANopen 1 ms interrupt cadence. */
+#define CANOPEN_REFERENCE_TIM7_INPUT_HZ       108000000UL
+#define CANOPEN_REFERENCE_TIM7_PRESCALER_DIV  108000UL
+#define CANOPEN_REFERENCE_TIM7_PERIOD_TICKS   1UL
+_Static_assert(CANOPEN_REFERENCE_TIM7_INPUT_HZ
+                   / (CANOPEN_REFERENCE_TIM7_PRESCALER_DIV * CANOPEN_REFERENCE_TIM7_PERIOD_TICKS)
+                   == 1000UL,
+               "TIM7 must generate the CANopen 1 ms processing interrupt");
 
 int
 main(void) {
@@ -75,9 +85,9 @@ MX_TIM7_Init(void) {
     TIM_MasterConfigTypeDef masterConfig = {0};
 
     htim7.Instance = TIM7;
-    htim7.Init.Prescaler = 54000U - 1U;
+    htim7.Init.Prescaler = CANOPEN_REFERENCE_TIM7_PRESCALER_DIV - 1U;
     htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim7.Init.Period = 1U - 1U;
+    htim7.Init.Period = CANOPEN_REFERENCE_TIM7_PERIOD_TICKS - 1U;
     htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
     if (HAL_TIM_Base_Init(&htim7) != HAL_OK) {
         Error_Handler();

@@ -32,14 +32,25 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning title=SocketCAN vcan unavailable::The hosted kernel does not expose the vcan driver. Runtime wire-level tests are skipped; deterministic OD, Python, and C transport validation still run."
           fi
-      - name: Validate Object Dictionary, Python, and C transport sources
+      - name: Validate Object Dictionary, firmware contracts, and host sources
         run: |
           python3 scripts/validate_od.py
           tools/import_objdict.sh Generated --stage
           PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+            tests/test_firmware_configuration.py \
             tests/host/can_socket.py \
             tests/host/test_sdo.py \
             middleware/canopen/examples/canopen_vcan_device.py
+          PYTHONDONTWRITEBYTECODE=1 python3 tests/test_firmware_configuration.py
+          mkdir -p build/tests
+          gcc -std=c11 -Wall -Wextra -Werror \
+            -DCANOPEN_REFERENCE_ENABLE_CIA401=1 \
+            -DCANOPEN_REFERENCE_ENABLE_CIA402=1 \
+            -DCANOPEN_REFERENCE_ALLOW_COMBINED_PROFILES=1 \
+            -Itests/fakes -IApp/Inc \
+            tests/test_profiles.c App/Src/cia401_reference.c App/Src/cia402_reference.c \
+            -o build/tests/test_profiles
+          build/tests/test_profiles
           make -C tests/host all
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
@@ -74,6 +85,15 @@ jobs:
             -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld"
           cmake --build build/ci-firmware --parallel 2
           arm-none-eabi-size build/ci-firmware/stm32f767_canopen_reference
+      - name: Configure and build CiA 402 drive personality
+        run: |
+          cmake -S . -B build/ci-cia402 \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+            -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=1"
+          cmake --build build/ci-cia402 --parallel 2
+          arm-none-eabi-size build/ci-cia402/stm32f767_canopen_reference
       - name: Configure and build optional CiA 309 gateway personality
         run: |
           cmake -S . -B build/ci-gateway \
@@ -93,6 +113,10 @@ jobs:
             build/ci-firmware/stm32f767_canopen_reference.hex
             build/ci-firmware/stm32f767_canopen_reference.bin
             build/ci-firmware/stm32f767_canopen_reference.map
+            build/ci-cia402/stm32f767_canopen_reference
+            build/ci-cia402/stm32f767_canopen_reference.hex
+            build/ci-cia402/stm32f767_canopen_reference.bin
+            build/ci-cia402/stm32f767_canopen_reference.map
             build/ci-gateway/stm32f767_canopen_reference
             build/ci-gateway/stm32f767_canopen_reference.hex
             build/ci-gateway/stm32f767_canopen_reference.bin
