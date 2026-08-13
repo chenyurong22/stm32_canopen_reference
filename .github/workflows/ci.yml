@@ -9,23 +9,30 @@ permissions:
 
 jobs:
   host-vcan:
-    name: SocketCAN protocol regression
+    name: Host validation and SocketCAN protocol regression
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Create vcan0
+      - name: Probe and create vcan0 when supported
+        id: vcan
+        shell: bash
         run: |
-          # vcan may be built into the hosted kernel; only the interface
-          # creation is authoritative, so a missing loadable module is benign.
-          sudo modprobe vcan 2>/dev/null || true
-          if ! ip link show vcan0 >/dev/null 2>&1; then
-            sudo ip link add dev vcan0 type vcan
+          set -o pipefail
+          if ip link show vcan0 >/dev/null 2>&1; then
+            sudo ip link set vcan0 up
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            ip -details link show vcan0
+          elif sudo modprobe vcan 2>/dev/null && sudo ip link add dev vcan0 type vcan; then
+            sudo ip link set vcan0 up
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            ip -details link show vcan0
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=SocketCAN vcan unavailable::The hosted kernel does not expose the vcan driver. Runtime wire-level tests are skipped; deterministic OD, Python, and C transport validation still run."
           fi
-          sudo ip link set vcan0 up
-          ip -details link show vcan0
-      - name: Validate Object Dictionary and host sources
+      - name: Validate Object Dictionary, Python, and C transport sources
         run: |
           python3 scripts/validate_od.py
           tools/import_objdict.sh Generated --stage
@@ -33,10 +40,17 @@ jobs:
             tests/host/can_socket.py \
             tests/host/test_sdo.py \
             middleware/canopen/examples/canopen_vcan_device.py
-      - name: Compile and run SocketCAN integration tests
+          make -C tests/host all
+      - name: Run SocketCAN integration tests
+        if: steps.vcan.outputs.available == 'true'
         env:
           CAN_PORT_IFACE: vcan0
         run: make -C tests/host test
+      - name: Report skipped SocketCAN integration tests
+        if: steps.vcan.outputs.available != 'true'
+        run: |
+          echo "SocketCAN runtime tests require a Linux runner with CONFIG_CAN_VCAN."
+          echo "Run 'make -C tests/host test' on a standard Linux host after creating vcan0."
 
   cortex-m7-build:
     name: STM32F767 cross-build
