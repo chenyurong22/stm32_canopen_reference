@@ -1,13 +1,47 @@
+---
 name: CANopen reference validation
 
-on:
+"on":
   push:
   pull_request:
 
 permissions:
   contents: read
 
+env:
+  CMAKE_PACKAGE_VERSION: 3.28.3-1build7
+  ARM_GCC_PACKAGE_VERSION: 15:13.2.rel1-2
+  NEWLIB_PACKAGE_VERSION: 4.4.0.20231231-2
+  CPPCHECK_PACKAGE_VERSION: 2.13.0-2ubuntu3
+  STM32_CUBE_F7_REV: c2ecfd2d863d4cb1a138e63be4c8c1c4acd43d4d
+
 jobs:
+  static-analysis:
+    name: Project C static analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install pinned cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends "cppcheck=${CPPCHECK_PACKAGE_VERSION}"
+      - name: Analyze project-owned C sources
+        run: |
+          cppcheck \
+            --enable=warning,performance,portability \
+            --std=c11 \
+            --error-exitcode=1 \
+            --force \
+            --inline-suppr \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --template=gcc \
+            -IApp/Inc \
+            -Imiddleware/canopen/port \
+            App Core middleware/canopen/port tests
+
   host-vcan:
     name: Host validation and SocketCAN protocol regression
     runs-on: ubuntu-24.04
@@ -51,7 +85,7 @@ jobs:
             tests/test_profiles.c App/Src/cia401_reference.c App/Src/cia402_reference.c \
             -o build/tests/test_profiles
           build/tests/test_profiles
-          make -C tests/host all
+          make -C tests/host all test-stm32-facade test-gateway-default-deny
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
         env:
@@ -70,13 +104,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install ARM build dependencies
+      - name: Install pinned ARM build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends cmake gcc-arm-none-eabi libnewlib-arm-none-eabi git
-      - name: Retrieve STM32CubeF7 headers and HAL
+          sudo apt-get install --yes --no-install-recommends \
+            "cmake=${CMAKE_PACKAGE_VERSION}" \
+            "gcc-arm-none-eabi=${ARM_GCC_PACKAGE_VERSION}" \
+            "libnewlib-arm-none-eabi=${NEWLIB_PACKAGE_VERSION}" \
+            git
+      - name: Retrieve pinned STM32CubeF7 headers and HAL
         run: |
-          git clone --depth 1 --recurse-submodules https://github.com/STMicroelectronics/STM32CubeF7.git third_party/STM32CubeF7
+          git init third_party/STM32CubeF7
+          git -C third_party/STM32CubeF7 remote add origin https://github.com/STMicroelectronics/STM32CubeF7.git
+          git -C third_party/STM32CubeF7 fetch --depth 1 origin "$STM32_CUBE_F7_REV"
+          git -C third_party/STM32CubeF7 checkout --detach FETCH_HEAD
+          git -C third_party/STM32CubeF7 submodule update --init --recursive --depth 1
+          test "$(git -C third_party/STM32CubeF7 rev-parse HEAD)" = "$STM32_CUBE_F7_REV"
       - name: Configure and build firmware
         run: |
           cmake -S . -B build/ci-firmware \
@@ -100,15 +143,18 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
             -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
             -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
-            -DCMAKE_C_FLAGS=-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1
+            -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1"
           cmake --build build/ci-gateway --parallel 2
           arm-none-eabi-size build/ci-gateway/stm32f767_canopen_reference
+      - name: Record reproducibility manifest
+        run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
           name: stm32f767-canopen-reference
           if-no-files-found: error
           path: |
+            build/ci-build-manifest.txt
             build/ci-firmware/stm32f767_canopen_reference
             build/ci-firmware/stm32f767_canopen_reference.hex
             build/ci-firmware/stm32f767_canopen_reference.bin

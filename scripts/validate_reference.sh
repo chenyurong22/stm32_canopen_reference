@@ -8,6 +8,7 @@ CUBE_DIR=${STM32_CUBE_F7_DIR:-"$ROOT/third_party/STM32CubeF7"}
 LINKER_SCRIPT=${STM32_F7_LINKER_SCRIPT:-"$ROOT/linker/STM32F767_2M_512K_FLASH.ld"}
 BUILD_DIR=${BUILD_DIR:-"$ROOT/build/firmware"}
 CIA402_BUILD_DIR=${CIA402_BUILD_DIR:-"$ROOT/build/firmware-cia402"}
+GATEWAY_BUILD_DIR=${GATEWAY_BUILD_DIR:-"$ROOT/build/firmware-gateway"}
 
 command -v python3 >/dev/null
 command -v gcc >/dev/null
@@ -29,6 +30,7 @@ gcc -std=c11 -Wall -Wextra -Werror \
     "$ROOT/App/Src/cia402_reference.c" \
     -o "$ROOT/build/tests/test_profiles"
 "$ROOT/build/tests/test_profiles"
+make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny
 
 cmake -S "$ROOT" -B "$BUILD_DIR" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
@@ -38,9 +40,11 @@ cmake --build "$BUILD_DIR" --parallel 2
 arm-none-eabi-size "$BUILD_DIR/stm32f767_canopen_reference"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.bin"
-# Compile the optional CiA 402 personality independently. The reference avoids
-# a default combined 401/402 product personality because those profiles have
-# different product conformance obligations.
+"$ROOT/scripts/write_build_manifest.sh" "$BUILD_DIR/build-manifest.txt" "$CUBE_DIR"
+
+# Compile optional personalities independently. The reference avoids a default
+# combined 401/402 product personality because those profiles have different
+# product conformance obligations.
 cmake -S "$ROOT" -B "$CIA402_BUILD_DIR" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
     -DSTM32_CUBE_F7_DIR="$CUBE_DIR" \
@@ -50,4 +54,14 @@ cmake --build "$CIA402_BUILD_DIR" --parallel 2
 arm-none-eabi-size "$CIA402_BUILD_DIR/stm32f767_canopen_reference"
 test -s "$CIA402_BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$CIA402_BUILD_DIR/stm32f767_canopen_reference.bin"
+
+cmake -S "$ROOT" -B "$GATEWAY_BUILD_DIR" \
+    -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
+    -DSTM32_CUBE_F7_DIR="$CUBE_DIR" \
+    -DSTM32_F7_LINKER_SCRIPT="$LINKER_SCRIPT" \
+    -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1"
+cmake --build "$GATEWAY_BUILD_DIR" --parallel 2
+arm-none-eabi-size "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference"
+test -s "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference.hex"
+test -s "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference.bin"
 printf '%s\n' 'Reference validation completed successfully.'
