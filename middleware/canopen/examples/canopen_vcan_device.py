@@ -49,6 +49,11 @@ class Device:
             send(self.socket, 0x080 + node_id, bytes((0x10, 0x23, 0x10, 0, 0, 0, 0, 0)))
         send(self.socket, 0x700 + node_id, b"\x00")  # CANopen boot-up
 
+    def _publish_nmt_state(self, state: int, bootup: bool = False) -> None:
+        self.state = state
+        send(self.socket, 0x700 + self.node_id, bytes((0x00 if bootup else state,)))
+        self.next_heartbeat = time.monotonic() + (self.heartbeat_ms / 1000.0)
+
     def _heartbeat(self) -> None:
         now = time.monotonic()
         if now >= self.next_heartbeat:
@@ -153,21 +158,24 @@ class Device:
             send(self.socket, 0x7E4, bytes((0x4F, 0, 0, 0, 0, 0, 0, 0)))
 
     def handle(self, frame: Frame) -> None:
-        if frame.arbitration_id == 0x000 and len(frame.data) >= 2:
+        if frame.arbitration_id == 0x000 and len(frame.data) == 2:
             command, target = frame.data[0], frame.data[1]
             if target in (0, self.node_id):
                 if command == 0x01:
-                    self.state = 0x05
+                    self._publish_nmt_state(0x05)
                 elif command == 0x02:
-                    self.state = 0x04
-                elif command in (0x81, 0x82):
-                    self.state = 0x7F
-                    send(self.socket, 0x700 + self.node_id, b"\x00")
+                    self._publish_nmt_state(0x04)
+                elif command == 0x80:
+                    self._publish_nmt_state(0x7F)
+                elif command == 0x81:
+                    self._publish_nmt_state(0x7F, bootup=True)
+                elif command == 0x82:
+                    self._publish_nmt_state(0x7F)
         elif frame.arbitration_id == 0x600 + self.node_id and len(frame.data) == 8:
             self._handle_sdo(frame)
         elif frame.arbitration_id == 0x200 + self.node_id and len(frame.data) >= 2:
             self.values[(0x6200, 1)] = frame.data[:2]
-        elif frame.arbitration_id == 0x080 and self.state == 0x05:
+        elif frame.arbitration_id == 0x080 and len(frame.data) == 0 and self.state == 0x05:
             send(self.socket, 0x180 + self.node_id, self.values[(0x6200, 1)])
         elif frame.arbitration_id == 0x7E5:
             self._handle_lss(frame)

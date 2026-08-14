@@ -6,7 +6,35 @@ corresponding CANopenEditor project and regenerate the OD after each profile or
 PDO-map change; this reference demonstrates the generated C layout only.
 """
 from pathlib import Path
+import re
 import shutil
+
+from cia402_catalog import ARRAYS, RECORDS, REQUESTED_INDICES, SCALARS
+
+
+def _data_length(ctype):
+    match = re.fullmatch(r"char\[(\d+)\]", ctype)
+    if match:
+        return int(match.group(1))
+    return {"int8_t": 1, "uint8_t": 1, "int16_t": 2, "uint16_t": 2,
+            "int32_t": 4, "uint32_t": 4}[ctype]
+
+
+def _c_declaration(ctype, name, indent=""):
+    match = re.fullmatch(r"char\[(\d+)\]", ctype)
+    if match:
+        return f"{indent}char {name}[{match.group(1)}];"
+    return f"{indent}{ctype} {name};"
+
+
+def _attribute(access, length, string=False):
+    attribute = "ODA_SDO_R" if access == "ro" else "ODA_SDO_RW"
+    if length > 1 and not string:
+        attribute += " | ODA_MB"
+    if string:
+        attribute += " | ODA_STR"
+    return attribute
+
 
 ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM = ROOT / "third_party" / "CanOpenSTM32" / "CANopenNode" / "example"
@@ -19,7 +47,22 @@ shutil.copy2(UPSTREAM / "OD.c", OUTPUT / "OD.c")
 header = (OUTPUT / "OD.h").read_text()
 source = (OUTPUT / "OD.c").read_text()
 
-app_type = r'''typedef struct {
+def _catalog_member_declarations():
+    lines = []
+    for index, ident, ctype, *_ in SCALARS:
+        lines.append(_c_declaration(ctype, f"x{index:04X}_{ident}", "    "))
+    for index, ident, fields in RECORDS:
+        lines.append("    struct {")
+        lines.append("        uint8_t highestSub_indexSupported;")
+        for _sub, field, ctype, *_ in fields:
+            lines.append(_c_declaration(ctype, field, "        "))
+        lines.append(f"    }} x{index:04X}_{ident};")
+    for index, ident, ctype, _eds_type, _access, count, _fields in ARRAYS:
+        lines.append(f"    {ctype} x{index:04X}_{ident}[{count + 1}];")
+    return "\n".join(lines)
+
+
+app_type = f'''typedef struct {{
     /* CiA 401 reference process data. */
     uint8_t x6000_readDigitalInputs;
     uint8_t x6200_writeDigitalOutputs;
@@ -39,7 +82,10 @@ app_type = r'''typedef struct {
     int16_t x6077_torqueActualValue;
     int32_t x606C_velocityActualValue;
     int32_t x60FF_targetVelocity;
-} OD_APP_t;
+
+    /* CiA 402 catalog extension. */
+{_catalog_member_declarations()}
+}} OD_APP_t;
 
 #ifndef OD_ATTR_APP
 #define OD_ATTR_APP
@@ -52,24 +98,26 @@ if needle not in header:
     raise RuntimeError("Unexpected upstream OD.h layout while inserting OD_APP_t")
 header = header.replace(needle, "} OD_RAM_t;\n\n" + app_type + "#ifndef OD_ATTR_PERSIST_COMM", 1)
 
-shortcut_macros = r'''
-#define OD_ENTRY_H6000_readDigitalInputs &OD->list[33]
-#define OD_ENTRY_H603F_errorCode &OD->list[34]
-#define OD_ENTRY_H6040_controlword &OD->list[35]
-#define OD_ENTRY_H6041_statusword &OD->list[36]
-#define OD_ENTRY_H6060_modesOfOperation &OD->list[37]
-#define OD_ENTRY_H6061_modesOfOperationDisplay &OD->list[38]
-#define OD_ENTRY_H6064_positionActualValue &OD->list[39]
-#define OD_ENTRY_H606C_velocityActualValue &OD->list[40]
-#define OD_ENTRY_H6071_targetTorque &OD->list[41]
-#define OD_ENTRY_H6077_torqueActualValue &OD->list[42]
-#define OD_ENTRY_H607A_targetPosition &OD->list[43]
-#define OD_ENTRY_H60FF_targetVelocity &OD->list[44]
-#define OD_ENTRY_H6200_writeDigitalOutputs &OD->list[45]
-#define OD_ENTRY_H6401_readAnalogInput1 &OD->list[46]
-#define OD_ENTRY_H6411_readAnalogInput2 &OD->list[47]
-#define OD_ENTRY_H6422_writeAnalogOutput1 &OD->list[48]
-'''
+base_application = [
+    (0x6000, "readDigitalInputs"), (0x603F, "errorCode"),
+    (0x6040, "controlword"), (0x6041, "statusword"),
+    (0x6060, "modesOfOperation"), (0x6061, "modesOfOperationDisplay"),
+    (0x6064, "positionActualValue"), (0x606C, "velocityActualValue"),
+    (0x6071, "targetTorque"), (0x6077, "torqueActualValue"),
+    (0x607A, "targetPosition"), (0x60FF, "targetVelocity"),
+    (0x6200, "writeDigitalOutputs"), (0x6401, "readAnalogInput1"),
+    (0x6411, "readAnalogInput2"), (0x6422, "writeAnalogOutput1"),
+]
+application_names = dict(base_application)
+application_names.update((index, ident) for index, ident, *_ in SCALARS)
+application_names.update((index, ident) for index, ident, *_ in RECORDS)
+application_names.update((index, ident) for index, ident, *_ in ARRAYS)
+base_odlist = source.split("static OD_ATTR_OD OD_entry_t ODList[] = {", 1)[1].split("};", 1)[0]
+base_count = len(re.findall(r"^\s+\{0x", base_odlist, re.MULTILINE))
+shortcut_macros = "\n".join(
+    f"#define OD_ENTRY_H{index:04X}_{ident} &OD->list[{base_count + position}]"
+    for position, (index, ident) in enumerate(sorted(application_names.items()))
+) + "\n"
 needle = "#define OD_ENTRY_H1A03_TPDOMappingParameter &OD->list[32]\n"
 if needle not in header:
     raise RuntimeError("Unexpected upstream OD.h list shortcut layout")
@@ -96,6 +144,20 @@ OD_ATTR_APP OD_APP_t OD_APP = {
 };
 
 '''
+catalog_initializers = []
+for index, ident, ctype, _eds_type, _access, default, _pdo in SCALARS:
+    value = "{0}" if ctype.startswith("char[") else default
+    catalog_initializers.append(f"    .x{index:04X}_{ident} = {value},")
+for index, ident, fields in RECORDS:
+    catalog_initializers.append(f"    .x{index:04X}_{ident} = {{ .highestSub_indexSupported = {len(fields)},")
+    for _sub, field, _ctype, _eds_type, _access, default in fields:
+        catalog_initializers.append(f"        .{field} = {default},")
+    catalog_initializers[-1] = catalog_initializers[-1].rstrip(",")
+    catalog_initializers.append("    },")
+for index, ident, _ctype, _eds_type, _access, count, _fields in ARRAYS:
+    catalog_initializers.append(f"    .x{index:04X}_{ident} = {{ {count}, 0, 0 }},")
+source_app_init = source_app_init.replace("    .x60FF_targetVelocity = 0\n};", "    .x60FF_targetVelocity = 0,\n" + "\n".join(catalog_initializers) + "\n};")
+
 needle = "};\n\n\n\n/*******************************************************************************\n    All OD objects (constant definitions)"
 if needle not in source:
     raise RuntimeError("Unexpected upstream OD.c initialization layout")
@@ -118,6 +180,12 @@ object_members = r'''    OD_obj_var_t o_6000_readDigitalInputs;
     OD_obj_var_t o_606C_velocityActualValue;
     OD_obj_var_t o_60FF_targetVelocity;
 '''
+catalog_members = []
+catalog_members.extend(f"    OD_obj_var_t o_{index:04X}_{ident};" for index, ident, *_ in SCALARS)
+catalog_members.extend(f"    OD_obj_record_t o_{index:04X}_{ident}[{len(fields) + 1}];" for index, ident, fields in RECORDS)
+catalog_members.extend(f"    OD_obj_array_t o_{index:04X}_{ident};" for index, ident, *_ in ARRAYS)
+object_members = object_members.rstrip() + "\n" + "\n".join(catalog_members) + "\n"
+
 needle = "    OD_obj_record_t o_1A03_TPDOMappingParameter[9];\n"
 if needle not in source:
     raise RuntimeError("Unexpected upstream OD.c object member layout")
@@ -204,28 +272,56 @@ object_definitions = r'''    .o_6000_readDigitalInputs = {
         .dataLength = 4
     }
 '''
+
+def _dynamic_scalar_definition(index, ident, ctype, _eds_type, access, _default, _pdo):
+    length = _data_length(ctype)
+    string = ctype.startswith("char[")
+    return f"""    .o_{index:04X}_{ident} = {{
+        .dataOrig = &OD_APP.x{index:04X}_{ident},
+        .attribute = {_attribute(access, length, string)},
+        .dataLength = {length}
+    }}"""
+
+
+def _dynamic_record_definition(index, ident, fields):
+    lines = [f"    .o_{index:04X}_{ident} = {{", "        {", "            .dataOrig = &OD_APP.x%04X_%s.highestSub_indexSupported," % (index, ident), "            .subIndex = 0,", "            .attribute = ODA_SDO_R,", "            .dataLength = 1", "        },"]
+    for position, field, ctype, _eds_type, access, _default in fields:
+        length = _data_length(ctype)
+        lines.extend(["        {", f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.{field},", f"            .subIndex = {position},", f"            .attribute = {_attribute(access, length)},", f"            .dataLength = {length}", "        },"])
+    lines[-1] = lines[-1].rstrip(",")
+    lines.append("    }")
+    return "\n".join(lines)
+
+
+def _dynamic_array_definition(index, ident, ctype, _eds_type, access, count, _fields):
+    length = _data_length(ctype)
+    return f"""    .o_{index:04X}_{ident} = {{
+        .dataOrig0 = (uint8_t*) &OD_APP.x{index:04X}_{ident}[0],
+        .dataOrig = &OD_APP.x{index:04X}_{ident}[1],
+        .attribute0 = ODA_SDO_R,
+        .attribute = {_attribute(access, length)},
+        .dataElementLength = {length},
+        .dataElementSizeof = sizeof({ctype})
+    }}"""
+
+catalog_definitions = []
+catalog_definitions.extend(_dynamic_scalar_definition(*item) for item in SCALARS)
+catalog_definitions.extend(_dynamic_record_definition(index, ident, fields) for index, ident, fields in RECORDS)
+catalog_definitions.extend(_dynamic_array_definition(*item) for item in ARRAYS)
+object_definitions = object_definitions.rstrip() + ",\n" + ",\n".join(catalog_definitions)
+
+catalog_entries = []
+catalog_entries.extend((index, 1, "ODT_VAR", f"&ODObjs.o_{index:04X}_{ident}") for index, ident, *_ in base_application)
+catalog_entries.extend((index, 1, "ODT_VAR", f"&ODObjs.o_{index:04X}_{ident}") for index, ident, *_ in SCALARS)
+catalog_entries.extend((index, len(fields) + 1, "ODT_REC", f"&ODObjs.o_{index:04X}_{ident}") for index, ident, fields in RECORDS)
+catalog_entries.extend((index, count + 1, "ODT_ARR", f"&ODObjs.o_{index:04X}_{ident}") for index, ident, _ctype, _eds_type, _access, count, _fields in ARRAYS)
+entries = "\n".join(f"    {{0x{index:04X}, 0x{sub_count:02X}, {object_type}, {object_ref}, NULL}}," for index, sub_count, object_type, object_ref in sorted(catalog_entries)) + "\n"
+
 needle = "    }\n};\n\n\n/*******************************************************************************\n    Object dictionary\n"
 if needle not in source:
     raise RuntimeError("Unexpected upstream OD.c object initializer layout")
 source = source.replace(needle, "    },\n" + object_definitions + "};\n\n\n/*******************************************************************************\n    Object dictionary\n", 1)
 
-entries = r'''    {0x6000, 0x01, ODT_VAR, &ODObjs.o_6000_readDigitalInputs, NULL},
-    {0x603F, 0x01, ODT_VAR, &ODObjs.o_603F_errorCode, NULL},
-    {0x6040, 0x01, ODT_VAR, &ODObjs.o_6040_controlword, NULL},
-    {0x6041, 0x01, ODT_VAR, &ODObjs.o_6041_statusword, NULL},
-    {0x6060, 0x01, ODT_VAR, &ODObjs.o_6060_modesOfOperation, NULL},
-    {0x6061, 0x01, ODT_VAR, &ODObjs.o_6061_modesOfOperationDisplay, NULL},
-    {0x6064, 0x01, ODT_VAR, &ODObjs.o_6064_positionActualValue, NULL},
-    {0x606C, 0x01, ODT_VAR, &ODObjs.o_606C_velocityActualValue, NULL},
-    {0x6071, 0x01, ODT_VAR, &ODObjs.o_6071_targetTorque, NULL},
-    {0x6077, 0x01, ODT_VAR, &ODObjs.o_6077_torqueActualValue, NULL},
-    {0x607A, 0x01, ODT_VAR, &ODObjs.o_607A_targetPosition, NULL},
-    {0x60FF, 0x01, ODT_VAR, &ODObjs.o_60FF_targetVelocity, NULL},
-    {0x6200, 0x01, ODT_VAR, &ODObjs.o_6200_writeDigitalOutputs, NULL},
-    {0x6401, 0x01, ODT_VAR, &ODObjs.o_6401_readAnalogInput1, NULL},
-    {0x6411, 0x01, ODT_VAR, &ODObjs.o_6411_readAnalogInput2, NULL},
-    {0x6422, 0x01, ODT_VAR, &ODObjs.o_6422_writeAnalogOutput1, NULL},
-'''
 needle = "    {0x0000, 0x00, 0, NULL, NULL}\n"
 if needle not in source:
     raise RuntimeError("Unexpected upstream OD.c ODList terminator")
@@ -238,26 +334,15 @@ eds = (UPSTREAM / "DS301_profile.eds").read_text()
 eds = eds.replace("FileName=DS301_profile.eds", "FileName=stm32f767_canopen_reference.eds")
 eds = eds.replace("ProductName=New Product", "ProductName=STM32F767 CANopen Reference")
 eds = eds.replace("DynamicChannelsSupported=0", "DynamicChannelsSupported=1")
-eds = eds.replace("SupportedObjects=30\n1=0x1003", """SupportedObjects=46
-1=0x1003""", 1)
-optional_append = """\n31=0x6000
-32=0x603F
-33=0x6040
-34=0x6041
-35=0x6060
-36=0x6061
-37=0x6064
-38=0x606C
-39=0x6071
-40=0x6077
-41=0x607A
-42=0x60FF
-43=0x6200
-44=0x6401
-45=0x6411
-46=0x6422
-"""
-eds = eds.replace("30=0x1A03\n", "30=0x1A03\n" + optional_append, 1)
+optional_match = re.search(r"(?ms)^\[OptionalObjects\]\n.*?(?=^\[)", eds)
+if optional_match is None:
+    raise RuntimeError("Unexpected DS301 EDS OptionalObjects layout")
+base_optional = [int(value, 0) for value in re.findall(r"^\d+=(0x[0-9A-Fa-f]+)$", optional_match.group(0), re.MULTILINE)]
+application_indices = sorted(application_names)
+all_optional = base_optional + [index for index in application_indices if index not in base_optional]
+optional_lines = ["[OptionalObjects]", f"SupportedObjects={len(all_optional)}"]
+optional_lines.extend(f"{position}=0x{index:04X}" for position, index in enumerate(all_optional, start=1))
+eds = eds[:optional_match.start()] + "\n".join(optional_lines) + "\n" + eds[optional_match.end():]
 profile_entries = r'''
 [6000]
 ParameterName=Read digital inputs
@@ -402,6 +487,39 @@ DataType=0x0003
 AccessType=rw
 DefaultValue=0
 PDOMapping=1
-'''
-( ROOT / "ObjectDictionary" / "stm32f767_canopen_reference.eds").write_text(eds + "\n" + profile_entries)
+    '''
+
+def _eds_scalar_section(index, ident, eds_type, access, default, pdo):
+    name = re.sub(r"(?<!^)(?=[A-Z])", " ", ident).capitalize()
+    default_value = default if default else ""
+    return f"[{index:04X}]\nParameterName={name}\nObjectType=0x7\n;StorageLocation=RAM\nDataType={eds_type}\nAccessType={access}\nDefaultValue={default_value}\nPDOMapping={int(pdo)}\n"
+
+
+def _eds_record_sections(index, ident, fields):
+    name = re.sub(r"(?<!^)(?=[A-Z])", " ", ident).capitalize()
+    sections = [f"[{index:04X}]", f"ParameterName={name}", "ObjectType=0x9", f"SubNumber=0x{len(fields) + 1:02X}", ""]
+    sections.extend([f"[{index:04X}sub0]", f"ParameterName=Number of entries", "ObjectType=0x7", "DataType=0x0005", "AccessType=ro", f"DefaultValue={len(fields)}", "PDOMapping=0", ""])
+    for sub, field, _ctype, eds_type, access, default in fields:
+        field_name = re.sub(r"(?<!^)(?=[A-Z])", " ", field).capitalize()
+        sections.extend([f"[{index:04X}sub{sub}]", f"ParameterName={field_name}", "ObjectType=0x7", f"DataType={eds_type}", f"AccessType={access}", f"DefaultValue={default}", "PDOMapping=0", ""])
+    return "\n".join(sections)
+
+
+def _eds_array_sections(index, ident, eds_type, access, count, fields):
+    name = re.sub(r"(?<!^)(?=[A-Z])", " ", ident).capitalize()
+    sections = [f"[{index:04X}]", f"ParameterName={name}", "ObjectType=0x8", f"SubNumber=0x{count + 1:02X}", f"DataType={eds_type}", f"AccessType={access}", ""]
+    sections.extend([f"[{index:04X}sub0]", "ParameterName=Number of entries", "ObjectType=0x7", "DataType=0x0005", "AccessType=ro", f"DefaultValue={count}", "PDOMapping=0", ""])
+    for sub, field, default in fields:
+        field_name = re.sub(r"(?<!^)(?=[A-Z])", " ", field).capitalize()
+        sections.extend([f"[{index:04X}sub{sub}]", f"ParameterName={field_name}", "ObjectType=0x7", f"DataType={eds_type}", f"AccessType={access}", f"DefaultValue={default}", "PDOMapping=0", ""])
+    return "\n".join(sections)
+
+catalog_eds_sections = []
+catalog_eds_sections.extend(_eds_scalar_section(index, ident, eds_type, access, default, pdo) for index, ident, _ctype, eds_type, access, default, pdo in SCALARS)
+catalog_eds_sections.extend(_eds_record_sections(index, ident, fields) for index, ident, fields in RECORDS)
+catalog_eds_sections.extend(_eds_array_sections(index, ident, eds_type, access, count, fields) for index, ident, _ctype, eds_type, access, count, fields in ARRAYS)
+profile_entries += "\n" + "\n".join(catalog_eds_sections)
+
+eds_output = "\n".join(line.rstrip() for line in (eds + "\n" + profile_entries).splitlines()) + "\n"
+(ROOT / "ObjectDictionary" / "stm32f767_canopen_reference.eds").write_text(eds_output)
 print("Generated/OD.h, Generated/OD.c, and ObjectDictionary/stm32f767_canopen_reference.eds updated.")

@@ -28,6 +28,7 @@
 /* This reference supports common operation-mode values but does not implement
  * a trajectory generator, homing algorithm, torque loop, or power-stage safety
  * function. The hardware adapter owns those mechanisms. */
+#if (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U)
 static bool
 Cia402Reference_ModeIsSupported(int8_t mode) {
     switch (mode) {
@@ -45,6 +46,7 @@ Cia402Reference_ModeIsSupported(int8_t mode) {
             return false;
     }
 }
+#endif
 
 void
 Cia402Reference_ForceDisable(void) {

@@ -13,14 +13,17 @@ import re
 import sys
 from pathlib import Path
 
+from cia402_catalog import REQUESTED_INDICES
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EDS = ROOT / "ObjectDictionary" / "stm32f767_canopen_reference.eds"
 DEFAULT_OD_C = ROOT / "Generated" / "OD.c"
 DEFAULT_OD_H = ROOT / "Generated" / "OD.h"
-PROFILE_INDICES = [
+PROFILE_INDICES = sorted({
     0x6000, 0x603F, 0x6040, 0x6041, 0x6060, 0x6061, 0x6064, 0x606C,
     0x6071, 0x6077, 0x607A, 0x60FF, 0x6200, 0x6401, 0x6411, 0x6422,
-]
+    *REQUESTED_INDICES,
+})
 
 
 def fail(message: str) -> None:

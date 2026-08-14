@@ -31,6 +31,7 @@ gcc -std=c11 -Wall -Wextra -Werror \
     -o "$ROOT/build/tests/test_profiles"
 "$ROOT/build/tests/test_profiles"
 make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_canopen_wire_contract.py"
 
 cmake -S "$ROOT" -B "$BUILD_DIR" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \

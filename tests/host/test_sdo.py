@@ -112,6 +112,51 @@ class VcanCanopenTest(unittest.TestCase):
         tpdo = wait_for(self.socket, 0x180 + NODE_ID)
         self.assertEqual(tpdo.data, b"\x34\x12")
 
+    def test_nmt_standard_state_machine_transitions(self) -> None:
+        self.assertIn(wait_for(self.socket, 0x700 + NODE_ID).data, (b"\x00", b"\x7f"))
+        transitions = ((0x01, 0x05), (0x02, 0x04), (0x80, 0x7F))
+        for command, expected_state in transitions:
+            send(self.socket, 0x000, bytes((command, NODE_ID)))
+            heartbeat = wait_for(self.socket, 0x700 + NODE_ID)
+            self.assertEqual(heartbeat.data, bytes((expected_state,)))
+
+        # Reset-node emits the CANopen boot-up heartbeat and returns to pre-op.
+        send(self.socket, 0x000, bytes((0x81, NODE_ID)))
+        bootup = wait_for(self.socket, 0x700 + NODE_ID)
+        self.assertEqual(bootup.data, b"\x00")
+        send(self.socket, 0x000, bytes((0x01, 0x00)))
+        self.assertEqual(wait_for(self.socket, 0x700 + NODE_ID).data, b"\x05")
+
+    def test_malformed_nmt_frame_does_not_change_state(self) -> None:
+        self.assertIn(wait_for(self.socket, 0x700 + NODE_ID).data, (b"\x00", b"\x7f"))
+        send(self.socket, 0x000, b"\x01")
+        deadline = time.monotonic() + 0.2
+        while time.monotonic() < deadline:
+            frame = receive(self.socket, max(0.0, deadline - time.monotonic()))
+            if frame is not None and frame.arbitration_id == 0x700 + NODE_ID:
+                self.assertEqual(frame.data, b"\x7f")
+                return
+        self.fail("malformed NMT frame produced no state heartbeat")
+
+    def test_sync_is_state_gated(self) -> None:
+        self.assertIn(wait_for(self.socket, 0x700 + NODE_ID).data, (b"\x00", b"\x7f"))
+        send(self.socket, 0x000, bytes((0x02, NODE_ID)))
+        self.assertEqual(wait_for(self.socket, 0x700 + NODE_ID).data, b"\x04")
+        send(self.socket, 0x080, b"")
+        deadline = time.monotonic() + 0.05
+        while time.monotonic() < deadline:
+            frame = receive(self.socket, max(0.0, deadline - time.monotonic()))
+            self.assertFalse(frame is not None and frame.arbitration_id == 0x180 + NODE_ID)
+
+    def test_sdo_invalid_access_returns_canonical_abort(self) -> None:
+        send(self.socket, 0x600 + NODE_ID, bytes((0x40, 0x99, 0x99, 0, 0, 0, 0, 0)))
+        response = wait_for(self.socket, 0x580 + NODE_ID)
+        self.assertEqual(response.data, bytes((0x80, 0x99, 0x99, 0)) + (0x06020000).to_bytes(4, "little"))
+
+        send(self.socket, 0x600 + NODE_ID, bytes((0x23, 0x18, 0x10, 1, 0, 0, 0, 0)))
+        response = wait_for(self.socket, 0x580 + NODE_ID)
+        self.assertEqual(response.data, bytes((0x80, 0x18, 0x10, 1)) + (0x06010002).to_bytes(4, "little"))
+
     def test_dynamic_pdo_mapping_record_is_sdo_writable(self) -> None:
         send(self.socket, 0x600 + NODE_ID, bytes((0x2F, 0x00, 0x16, 0x00, 0x01, 0, 0, 0)))
         response = wait_for(self.socket, 0x580 + NODE_ID)
