@@ -128,9 +128,17 @@ python3 tests/test_canopen_wire_contract.py
 PYTHONPATH=.:tests python3 tests/run_uds_isotp_contract.py
 PYTHONPATH=.:tests python3 tests/run_nmea2000_gateway_contract.py
 make -C tests/host all test-stm32-facade test-gateway-default-deny
-make -C tests/host test-sanitize test-coverage
+make -C tests/host test-sanitize test-coverage-report
 python3 tests/conformance/run_core_vectors.py
 ```
+
+The optional fuzz target is a build-only libFuzzer harness. It injects arbitrary classic-CAN frame fields into the transport-neutral CiA 302/NMT protocol surface and exercises the project LSS bitrate, node-ID, store, and activation policy. A clang toolchain with libFuzzer support is required:
+
+```sh
+make -C tests/host test-fuzz
+```
+
+The target is intended to be run separately with a bounded corpus, timeout, and sanitizer configuration. Its results are host robustness evidence only; they do not replace hardware, EMC, HIL, security, or official CANopen conformance evidence.
 
 For the hardware acceptance runner, see [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/hardware/uds_cia302_test_procedure.md`](docs/hardware/uds_cia302_test_procedure.md). The complete board, Flash, watchdog, profile, security, and formal-evidence release procedure is [`docs/production_validation_plan.md`](docs/production_validation_plan.md). Release tags additionally require the mandatory SocketCAN job in GitHub Actions; a missing `vcan0` fails that release gate rather than being skipped.
 

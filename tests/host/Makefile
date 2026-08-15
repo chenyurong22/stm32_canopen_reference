@@ -10,8 +10,11 @@ COVERAGE_FLAGS := --coverage -O0 -g
 COVERAGE_MIN_LINE ?= 80
 COVERAGE_MIN_FUNCTION ?= 80
 COVERAGE_MIN_BRANCH ?= 60
+FUZZER ?= clang
+FUZZ_BUILD_DIR := $(ROOT)/build/host-fuzz
+FUZZER_FLAGS ?= -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -O1 -g
 
-.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-recovery check-vcan
+.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-fuzz test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-recovery check-vcan
 
 all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_can_recovery
 
@@ -107,6 +110,16 @@ test-coverage-report: test-coverage
 		--min-function $(COVERAGE_MIN_FUNCTION) \
 		--min-branch $(COVERAGE_MIN_BRANCH)
 
+test-fuzz:
+	@command -v $(FUZZER) >/dev/null 2>&1 || (echo "$(FUZZER) with libFuzzer support is required for test-fuzz" >&2; exit 127)
+	@mkdir -p $(FUZZ_BUILD_DIR)
+	$(FUZZER) $(CFLAGS) $(FUZZER_FLAGS) \
+		-I$(ROOT)/tests/fakes -I$(ROOT)/App/Inc -I$(ROOT)/middleware/canopen/core \
+		$(ROOT)/tests/fuzz/fuzz_canopen_frame.c \
+		$(ROOT)/middleware/canopen/core/cia302_nmt_master.c \
+		$(ROOT)/App/Src/canopen_reference_lss.c \
+		-o $(FUZZ_BUILD_DIR)/fuzz_canopen_frame
+
 check-vcan:
 	@test -d /sys/class/net/$${CAN_PORT_IFACE:-vcan0} || (echo "Missing $${CAN_PORT_IFACE:-vcan0}; run scripts/setup_vcan.sh" >&2; exit 1)
 
@@ -115,4 +128,4 @@ test: all test-stm32-facade test-gateway-default-deny check-vcan
 	PYTHONDONTWRITEBYTECODE=1 CAN_PORT_IFACE=$${CAN_PORT_IFACE:-vcan0} python3 $(ROOT)/tests/host/test_sdo.py
 
 clean:
-	rm -rf $(BUILD_DIR) $(SANITIZER_BUILD_DIR) $(COVERAGE_BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(SANITIZER_BUILD_DIR) $(COVERAGE_BUILD_DIR) $(FUZZ_BUILD_DIR)
