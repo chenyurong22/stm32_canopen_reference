@@ -98,25 +98,37 @@ def validate_vector(node_id: int, vector: dict) -> None:
 
     request = vector.get("request", {})
     if "event" in request:
-        if category not in {"busoff", "recovery"}:
-            fail(f"{vector['name']}: event request is only valid for recovery categories")
-        if request["event"] not in {"bus_off", "recovery_complete", "recovery_exhausted"}:
-            fail(f"{vector['name']}: unknown recovery event")
-        if expected.get("service") != "can_recovery":
-            fail(f"{vector['name']}: recovery event must expect can_recovery")
-        if expected.get("state") not in {"reset_requested", "running", "safe_fault"}:
-            fail(f"{vector['name']}: invalid recovery state")
-        return
+        event = request["event"]
+        if category in {"busoff", "recovery", "reset"}:
+            if event not in {"bus_off", "recovery_retry", "recovery_complete", "recovery_exhausted", "reset_requested"}:
+                fail(f"{vector['name']}: unknown recovery/reset event")
+            if expected.get("service") != "can_recovery":
+                fail(f"{vector['name']}: recovery/reset event must expect can_recovery")
+            if expected.get("state") not in {"reset_requested", "running", "safe_fault"}:
+                fail(f"{vector['name']}: invalid recovery state")
+            return
+        if category == "can_error":
+            allowed = {"warning", "passive", "rx_overflow", "tx_failure", "ack", "stuff", "form", "bit", "crc", "error_warning_transition", "recovered"}
+            if event not in allowed or expected.get("service") != "can_error" or expected.get("error") != event:
+                fail(f"{vector['name']}: invalid CAN controller error vector")
+            return
+        fail(f"{vector['name']}: event request is only valid for recovery, reset, or CAN-error categories")
+        
 
     cob_id, payload, expected = frame(vector)
     service = expected.get("service")
 
-    if service == "nmt":
+    if service == "nmt" and expected.get("command") != "invalid":
         commands = {1: "start", 2: "stop", 0x80: "pre_operational", 0x81: "reset_node", 0x82: "reset_communication"}
         if cob_id != 0 or len(payload) != 2 or payload[1] not in (0, node_id):
             fail(f"{vector['name']}: invalid NMT frame")
         if commands.get(payload[0]) != expected.get("command"):
             fail(f"{vector['name']}: NMT command mismatch")
+    elif category == "nmt_invalid":
+        if cob_id != 0 or len(payload) != 2 or payload[1] not in (0, node_id) or payload[0] in {1, 2, 0x80, 0x81, 0x82}:
+            fail(f"{vector['name']}: invalid NMT stimulus is not invalid")
+        if expected.get("service") != "nmt" or expected.get("command") != "invalid":
+            fail(f"{vector['name']}: invalid NMT vector metadata mismatch")
     elif service == "heartbeat":
         states = {0: "bootup", 4: "stopped", 5: "operational", 0x7F: "pre_operational"}
         if cob_id != 0x700 + node_id or len(payload) != 1 or states.get(payload[0]) != expected.get("nmt_state"):
@@ -128,10 +140,19 @@ def validate_vector(node_id: int, vector: dict) -> None:
             fail(f"{vector['name']}: EMCY code mismatch")
     elif service in {"sdo_upload_request", "sdo_upload_segment_request", "sdo_download_request", "sdo_abort", "sdo_timeout"}:
         validate_sdo(vector, node_id, cob_id, payload, expected)
-    elif service in {"tpdo1", "rpdo1"}:
-        expected_cob = (0x180 if service == "tpdo1" else 0x200) + node_id
-        if cob_id != expected_cob or not 0 <= len(payload) <= 8:
+    elif service in {"sdo_abort_expected"}:
+        if cob_id != 0x600 + node_id or len(payload) != 8:
+            fail(f"{vector['name']}: invalid SDO abort stimulus frame")
+        if expected.get("index") != int.from_bytes(payload[1:3], "little") or expected.get("subindex") != payload[3]:
+            fail(f"{vector['name']}: SDO abort stimulus object mismatch")
+        if expected.get("abort_code") is None:
+            fail(f"{vector['name']}: SDO abort stimulus missing expected code")
+    elif service in {"tpdo1", "tpdo2", "tpdo3", "tpdo4", "rpdo1", "rpdo2", "rpdo3", "rpdo4"}:
+        pdo_bases = {"tpdo1": 0x180, "tpdo2": 0x280, "tpdo3": 0x380, "tpdo4": 0x480, "rpdo1": 0x200, "rpdo2": 0x300, "rpdo3": 0x400, "rpdo4": 0x500}
+        if cob_id != pdo_bases[service] + node_id or not 0 <= len(payload) <= 8:
             fail(f"{vector['name']}: invalid {service} frame")
+        if expected.get("node_id", node_id) != node_id:
+            fail(f"{vector['name']}: PDO node mismatch")
     elif service == "sync":
         if cob_id != 0x80 or len(payload) not in (0, 1):
             fail(f"{vector['name']}: invalid SYNC vector")
@@ -140,15 +161,24 @@ def validate_vector(node_id: int, vector: dict) -> None:
     elif service == "time":
         if cob_id != 0x100 or len(payload) != expected.get("payload_length"):
             fail(f"{vector['name']}: invalid TIME vector")
-    elif service == "lss":
+    elif service in {"lss", "lss_invalid_sequence"}:
         if cob_id != 0x7E4 or len(payload) != 8:
             fail(f"{vector['name']}: invalid LSS frame")
-        commands = {0x11: "configure_node_id", 0x13: "configure_bitrate", 0x04: "switch_state_global"}
+        commands = {
+            0x04: "switch_state_global", 0x11: "configure_node_id", 0x13: "configure_bitrate",
+            0x15: "activate_bitrate", 0x17: "store_configuration", 0x40: "switch_state_selective",
+            0x5A: "inquire_vendor_id", 0x5B: "inquire_product_code", 0x5E: "inquire_node_id",
+        }
         if commands.get(payload[0]) != expected.get("command"):
             fail(f"{vector['name']}: LSS command mismatch")
+        if service == "lss_invalid_sequence" and not expected.get("invalid_sequence"):
+            fail(f"{vector['name']}: LSS invalid-sequence marker missing")
     elif category == "invalid_od":
         if service != "sdo_download_request" or int.from_bytes(payload[1:3], "little") != 0xFFFF or not expected.get("invalid"):
             fail(f"{vector['name']}: invalid-OD vector is not an invalid SDO access")
+    elif service == "time_invalid":
+        if cob_id != 0x100 or len(payload) != expected.get("payload_length"):
+            fail(f"{vector['name']}: invalid TIME vector shape mismatch")
     else:
         fail(f"{vector['name']}: unsupported service {service!r}")
 
@@ -164,8 +194,8 @@ def main() -> int:
     if not 1 <= node_id <= 127:
         fail("node_id must be in the CANopen range 1..127")
     vectors = document.get("vectors")
-    if not isinstance(vectors, list) or len(vectors) < 30:
-        fail("vectors must contain at least 30 cases")
+    if not isinstance(vectors, list) or len(vectors) < 100:
+        fail("vectors must contain at least 100 cases")
     names = [vector.get("name") for vector in vectors]
     if len(names) != len(set(names)):
         fail("vector names must be unique")
