@@ -14,7 +14,7 @@ The firmware provides the communication and application boundaries needed to dev
 - The Object Dictionary and generated CANopen sources define the network-visible interface.
 - The default application starts in a safe output state and keeps optional functions disabled unless explicitly selected.
 
-This repository is a **reference implementation**, not a device-profile or functional-safety certification. A product implementation must add its exact board support, electrical protection, production Object Dictionary, application behavior, HIL evidence, and applicable conformance testing.
+This repository is a **reference implementation**, not a device-profile or functional-safety certification. A product implementation must add its exact board support, electrical protection, production Object Dictionary, application behavior, HIL evidence, and applicable conformance testing. The formal supported and unsupported feature boundary is defined in [`PRODUCT_SCOPE.md`](PRODUCT_SCOPE.md), with implementation and evidence detail in [`docs/feature_matrix.md`](docs/feature_matrix.md).
 
 The project is released under the [Apache License 2.0](LICENSE). Third-party components retain their respective licenses, which are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
 

@@ -43,6 +43,7 @@ PRODUCTION_PLAN = (ROOT / "docs" / "production_validation_plan.md").read_text(en
 RELEASE_CANDIDATE = (ROOT / "docs" / "release_v0.9.0_candidate.md").read_text(encoding="utf-8")
 RELEASE_GATE = (ROOT / "scripts" / "check_production_release_gate.sh").read_text(encoding="utf-8")
 MEMORY_GATE = (ROOT / "scripts" / "check_memory_budget.sh").read_text(encoding="utf-8")
+PRODUCT_SCOPE = (ROOT / "PRODUCT_SCOPE.md").read_text(encoding="utf-8")
 FUZZ_HARNESS = (ROOT / "tests" / "fuzz" / "fuzz_canopen_frame.c").read_text(encoding="utf-8")
 FUZZ_VECTOR_DATA = json.loads((ROOT / "tests" / "conformance" / "core_vectors.json").read_text(encoding="utf-8"))
 
@@ -274,12 +275,29 @@ class FirmwareConfigurationTests(unittest.TestCase):
         """The candidate milestone distinguishes software evidence from external production evidence."""
         for expected in ("v0.9.0", "hardware-validation-candidate", "not a production approval", "Formal conformance", "Pending"):
             self.assertIn(expected, RELEASE_CANDIDATE)
-        for expected in ("--production", "--evidence-dir", "board_electrical_review.md", "formal_canopen_conformance.md", "production release gate"):
+        for expected in ("--production", "--evidence-dir", "validate_external_evidence.py", "production release gate"):
             self.assertIn(expected, RELEASE_GATE)
         for expected in ("stm32-canopen-memory-budget-v1", "MAX_TEXT_BYTES", "MAX_RAM_BYTES", "stack depth and worst-case timing"):
             self.assertIn(expected, MEMORY_GATE)
         for expected in ("LLVMFuzzerTestOneInput", "cia302_nmt_master_receive", "CANopenReferenceLss_StoreConfiguration"):
             self.assertIn(expected, FUZZ_HARNESS)
+
+    def test_product_scope_freezes_supported_and_unsupported_claims(self) -> None:
+        """Public scope distinguishes reference personalities from unsupported production features."""
+        for expected in (
+            "# Product Scope",
+            "CiA 401 I/O device",
+            "CiA 402 drive interface",
+            "CiA 302 NMT-master supervision",
+            "CiA 309 gateway foundation",
+            "No embedded UDS server or embedded ISO-TP implementation is claimed",
+            "No embedded NMEA 2000 stack or field interoperability is claimed",
+            "No secure boot, key provisioning, firmware authentication",
+            "v0.9.0",
+            "v1.0.0",
+        ):
+            self.assertIn(expected, PRODUCT_SCOPE)
+        self.assertTrue((ROOT / "PRODUCT_SCOPE.md").is_file())
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
