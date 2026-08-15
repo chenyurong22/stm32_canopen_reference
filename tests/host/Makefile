@@ -7,9 +7,10 @@ CC ?= cc
 CFLAGS := -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 SANITIZER_FLAGS := -fsanitize=address,undefined -fno-omit-frame-pointer -O1 -g
 COVERAGE_FLAGS := --coverage -O0 -g
-COVERAGE_MIN_LINE ?= 80
-COVERAGE_MIN_FUNCTION ?= 80
-COVERAGE_MIN_BRANCH ?= 60
+# Release coverage floor; override only for exploratory local work.
+COVERAGE_MIN_LINE ?= 90
+COVERAGE_MIN_FUNCTION ?= 95
+COVERAGE_MIN_BRANCH ?= 85
 FUZZER ?= $(shell command -v clang 2>/dev/null || command -v clang-18 2>/dev/null || echo clang)
 FUZZ_BUILD_DIR := $(ROOT)/build/host-fuzz
 FUZZER_FLAGS ?= -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -O1 -g

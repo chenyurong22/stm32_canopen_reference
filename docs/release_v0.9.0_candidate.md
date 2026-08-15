@@ -20,7 +20,7 @@ This milestone is not a production approval, a functional-safety claim, or an of
 | Resource budget | GNU ld map section-size report for text, data, BSS, Flash load, and RAM | Automated in the STM32 build job |
 | Release artifacts | Firmware ELF/HEX/BIN/MAP for all CI personalities, JUnit XML, coverage JSON, sanitizer report, memory report, and manifest | Validated before artifact upload |
 
-The current host coverage gate is an explicit repository baseline of **at least 80% line, 80% function, and 60% branch coverage** for the currently exercised project-owned host modules. The measured report must be retained with the candidate artifact. The recommended production target of 90% line, 95% function, and 85% branch remains a strengthening target until the exercised protocol and error-path surface reaches it; it must not be claimed as met by the current report. The STM32 CI personalities use the explicit production compiler profile and tightened map budgets described in [`docs/production_build_profile.md`](production_build_profile.md).
+The host release gate enforces **at least 90% line, 95% function, and 85% branch coverage** for the exercised project-owned host modules. The expanded deterministic recovery and CiA 302 boundary tests currently measure **97.97% line, 100% function, and 87.32% branch coverage**. The measured report must be retained with the candidate artifact. This remains host software evidence only; it does not replace physical timing, HIL, EMC, or conformance evidence. The STM32 CI personalities use the explicit production compiler profile and tightened map budgets described in [`docs/production_build_profile.md`](production_build_profile.md).
 
 ## Required external evidence before production labeling
 
