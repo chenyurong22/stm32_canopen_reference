@@ -128,6 +128,7 @@ python3 tests/test_canopen_wire_contract.py
 PYTHONPATH=.:tests python3 tests/run_uds_isotp_contract.py
 PYTHONPATH=.:tests python3 tests/run_nmea2000_gateway_contract.py
 make -C tests/host all test-stm32-facade test-gateway-default-deny
+python3 tests/conformance/run_core_vectors.py
 ```
 
 For the hardware acceptance runner, see [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/hardware/uds_cia302_test_procedure.md`](docs/hardware/uds_cia302_test_procedure.md).
@@ -173,6 +174,8 @@ CMakeLists.txt                   ARM firmware and host validation build definiti
 
 Project-owned application code belongs in `App/` or the project middleware directories. CubeMX-generated platform code remains in `Core/`, and third-party stack code remains under `third_party/`. Do not link both the project runtime wrapper and the original CANopenNode STM32 application wrapper in the same firmware image.
 
+The runtime has explicit startup, running, reset-requested, reinitializing, and safe-fault states. CAN bus-off recovery is bounded and mainline-only. OD 1010h/1011h persistence uses CRC-validated dual-slot Flash on the reference linker map; configure `CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS` for a board-specific write-rate policy before production use. The opt-in IWDG path requires measured LSI timing and reset-recovery validation.
+
 ## Application examples
 
 ### Industrial remote I/O
@@ -212,6 +215,7 @@ The reference does not define a universal STM32F767 board pinout, external CAN t
 | Dependencies and licenses | [THIRD_PARTY.md](THIRD_PARTY.md) and [LICENSE](LICENSE) |
 | Contribution process | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security boundaries | [SECURITY.md](SECURITY.md) |
+| Feature and evidence status | [Feature matrix](docs/feature_matrix.md) |
 | Change history | [CHANGELOG.md](CHANGELOG.md) |
 
 The upstream components are [CANopenNode](https://github.com/CANopenNode/CANopenNode) and [CanOpenSTM32](https://github.com/CANopenNode/CanOpenSTM32).

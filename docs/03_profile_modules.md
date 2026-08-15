@@ -19,6 +19,14 @@ The CiA 401 family covers device profiles for generic I/O modules, while CiA 402
 
 On initialization and after an explicit safe-output request, the module writes zero to the reference output objects and calls the physical output hooks with zero. A product must independently ensure that zero is actually the required safe signal; it may instead require a separate relay, enable line, de-energized state, or hardware safety function.
 
+| CiA 401 engineering policy | Reference status | Product decision required |
+|---|---|---|
+| Sampling/update cadence | One application service call per 1 ms TIM7 cycle | Measure worst-case interrupt latency and define channel-specific deadlines. |
+| Digital debounce | Not selected by the reference | Define per-channel debounce and event-loss behavior. |
+| Analog scaling/filtering | Raw board hook values are bridged | Define units, calibration, filtering, saturation, and invalid-value handling. |
+| Output interlock/fault behavior | Weak hooks remain safe and de-energized | Define independent enable, relay, current limit, and diagnostic reaction. |
+| PDO examples | Generated OD and mapping seam are provided | Approve the product PDO map and update EDS/XDD. |
+
 ## CiA 402 reference binding
 
 `App/Src/cia402_reference.c` contains a bounded controlword/statusword transition reference for the common states **switch-on disabled**, **ready to switch on**, **switched on**, **operation enabled**, **quick stop active**, and **fault**. It transfers feedback to the OD and only calls the power-stage command hook when both the CiA 402 state is operation enabled and the board-reported interlock is healthy. CiA 402 standardizes communication behavior and parameterization for drives; the physical torque, velocity, position, braking, and safety behavior remains product-specific.[2]
@@ -29,6 +37,19 @@ On initialization and after an explicit safe-output request, the module writes z
 | Modes | Recognizes common profile and cyclic modes, mirrors a supported requested mode to `0x6061` | Mode-specific trajectory, homing, torque/current, velocity, position, interpolation, limit, and unit implementation. |
 | Targets/feedback | Bridges `0x607A`, `0x60FF`, `0x6071`, `0x6064`, `0x606C`, and `0x6077` through hardware hooks | Servo loop, time synchronization analysis, sensor validation, following-error supervision, and deterministic motion control. |
 | Fault handling | Forces software drive disable on reported fault or unhealthy interlocks | Safety-rated fault reaction, STO, brake control, watchdog coverage, fault history, and recovery authorization. |
+
+### CiA 402 mode status
+
+| Mode/capability | Reference status |
+|---|---|
+| Profile Position | Reference target bridge only; no product trajectory planner |
+| Profile Velocity | Reference target bridge only; no product velocity loop |
+| Profile Torque | Not implemented |
+| Homing | Not implemented |
+| Cyclic Synchronous Position | Not implemented |
+| Cyclic Synchronous Velocity | Not implemented |
+| Cyclic Synchronous Torque | Not implemented |
+| Feedback and power stage | Board-specific hooks |
 
 > **Do not use this module as the only drive safety function.** The default weak hardware hooks report unhealthy interlocks and refuse to enable a drive. A real integration must provide an independent hardware path that moves the actuator to its required safe state even if the MCU, CAN controller, software task, or network is faulty.
 
