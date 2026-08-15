@@ -55,6 +55,16 @@ Build each personality in a clean directory. Do not combine mutually exclusive p
 
 The project transport boundary keeps hardware-specific CAN operations in `middleware/canopen/port/` and the application-owned CANopenNode binding in `App/` and `third_party/CanOpenSTM32/`. A transport implementation must report queue or send failure explicitly, preserve the configured standard CAN identifier and DLC, and avoid blocking in interrupt context.
 
+## Generate API documentation
+
+Install Doxygen on the development host and run the following from the repository root:
+
+```sh
+doxygen Doxyfile
+```
+
+The generated HTML is written under `build/doxygen/html/`. The configuration intentionally scans only project-owned public headers and excludes vendor, generated, and build sources.
+
 ## Error and safety expectations
 
 Public project APIs use explicit Boolean or status returns where an operation can fail. Callers must handle CAN queue-full, invalid node-ID, invalid DLC, unavailable board hooks, and reset conditions. A successful NMT transition is not a safety authorization: power-stage enable, emergency shutdown, watchdog response, and interlock behavior remain board and product responsibilities.
