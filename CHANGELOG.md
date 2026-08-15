@@ -23,6 +23,11 @@ All notable changes to this project are documented here. The project follows sem
 - Added six machine-readable core CANopen regression vectors with a deterministic software-only validator; these are not official conformance evidence.
 - Added JSON reproducibility manifests containing source, submodule, toolchain, personality, Object Dictionary, and linker hashes, with CI and local validation checks.
 - Added explicit storage slot-size/write-rate contracts, filter-capacity overflow checks, observable runtime lifecycle states, and corresponding source-contract coverage.
+- Expanded the deterministic CANopen corpus to 31 vectors covering NMT, heartbeat, EMCY, SDO transfer variants and aborts, PDO/mapping, SYNC, TIME, LSS, reset, invalid OD, timeout, bus-off, and recovery, with category-count validation.
+- Added host AddressSanitizer/UndefinedBehaviorSanitizer and gcov targets and executed them in CI and the local reproducible validation script.
+- Added a release-tag SocketCAN job that fails when `vcan0` cannot be created, while preserving portable PR behavior when hosted kernels do not expose vcan.
+- Added `docs/production_validation_plan.md` with objective physical CAN, bus-off, Flash power-loss/endurance, watchdog timing, CiA 401/402/302/LSS, security, and formal-conformance evidence procedures.
+- Added source contracts for release gating, hardening targets, local validation alignment, and production evidence artifacts.
 
 The reference firmware remains a non-certified baseline. Production release still requires board-specific Flash endurance and power-loss testing, watchdog timing measurement, physical CAN/HIL validation, EMC testing, and applicable official conformance evidence.
 
