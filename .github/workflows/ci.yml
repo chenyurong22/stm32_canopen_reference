@@ -3,6 +3,10 @@ name: CANopen reference validation
 
 "on":
   push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
 
 permissions:
@@ -116,6 +120,7 @@ jobs:
             -o build/tests/test_profiles
           build/tests/test_profiles
           make -C tests/host all test-stm32-facade test-gateway-default-deny
+          make -C tests/host test-sanitize test-coverage
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
         env:
@@ -126,6 +131,33 @@ jobs:
         run: |
           echo "SocketCAN runtime tests require a Linux runner with CONFIG_CAN_VCAN."
           echo "Run 'make -C tests/host test' on a standard Linux host after creating vcan0."
+
+  release-vcan:
+    name: Release candidate mandatory SocketCAN regression
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends gcc make iproute2 kmod
+      - name: Require vcan0 for release validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! ip link show vcan0 >/dev/null 2>&1; then
+            sudo modprobe vcan
+            sudo ip link add dev vcan0 type vcan
+          fi
+          sudo ip link set vcan0 up
+          ip -details link show vcan0
+      - name: Run mandatory SocketCAN integration tests
+        env:
+          CAN_PORT_IFACE: vcan0
+        run: make -C tests/host test
 
   cortex-m7-build:
     name: STM32F767 cross-build
