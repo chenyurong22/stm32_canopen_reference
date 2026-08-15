@@ -17,12 +17,12 @@ This repository is an **STM32 CANopen reference platform**. CANopenNode is the p
 | Watchdog supervision | Implemented as opt-in dual-rate IWDG | Configuration/source contracts and enabled ARM build | Timing/reset test required | N/A |
 | CiA 401 I/O | Default reference personality and board hooks | Profile tests and source contracts | Board I/O required | Not claimed |
 | CiA 402 state/control | Reference state machine, controlword, statusword, fault reset | Profile tests | Board power stage/feedback required | Not claimed |
-| CiA 302 NMT-master supervision | Partial bounded peer supervision reference | Host NMT-master tests | Multi-node test required | Not claimed |
+| CiA 302 NMT-master supervision | Partial bounded configured-peer supervision reference; standard 0x1F80–0x1F89 Network List/Configuration Manager objects are absent | Host NMT-master tests | Multi-node test required | Not claimed |
 | CiA 309 gateway | Optional bounded foundation | Gateway deny-by-default test | Security and transport HIL required | Not claimed |
 | UDS | Host-side contract model only | UDS contract runner | Embedded implementation required | Not claimed |
 | ISO-TP | Host-side contract model only | ISO-TP contract runner | Embedded implementation required | Not claimed |
-| CiA 418 | Generated OD/reference artifacts only | Validation artifacts | Application HIL required | Not claimed |
-| NMEA 2000 | Host gateway contract only | Host contract runner | Embedded stack required | Not claimed |
+| CiA 418 | Explicit opt-in adapter synchronized to a detached generated model; not live-OD/SDO integrated | Adapter unit/source-contract tests | Dedicated battery-personality HIL required | Not claimed |
+| NMEA 2000 | Host gateway contract only; no embedded C implementation | Host contract runner | Embedded stack and address-claim HIL required | Not claimed |
 | CAN-FD/FDCAN | Not implemented; target uses bxCAN | None | Required if selected | Not claimed |
 | Bootloader/firmware update | Not implemented | None | Required | Not claimed |
 
@@ -59,9 +59,13 @@ This repository is an **STM32 CANopen reference platform**. CANopenNode is the p
 
 ## CiA 302 and LSS boundaries
 
-The CiA 302 personality is a **NMT-master supervision reference**, not a complete network configuration manager. The current scope covers configured peer boot-up/heartbeat supervision and bounded NMT behavior. A complete Network List, Configuration Manager, and production commissioning workflow remain future work.
+The CiA 302 personality is a **NMT-master supervision reference**, not a complete network configuration manager. The current scope covers configured peer boot-up/heartbeat supervision and bounded NMT behavior. The standard Network List/Configuration Manager objects at 0x1F80–0x1F89 are not present in this reference, and a complete Network List, Configuration Manager, and production commissioning workflow remain future work.
 
 LSS is integrated through the stack and project policy hooks, including node-ID/bitrate persistence seams. Complete Fastscan commissioning behavior, product provisioning, and conformance evidence remain future work.
+
+The CiA 418 adapter is initialized only when its explicit build option is selected and synchronizes a detached generated battery model. Its indexes collide with the default CiA 401/402 OD, so no `OD_extension_init()` registration or live SDO/PDO claim is made. A dedicated battery-personality CANopenNode OD is required for that next scope change.
+
+UDS/ISO-TP and NMEA 2000 are host-side contract models. No embedded UDS server, ISO-TP transport, NMEA 2000 stack, or address-claim state machine is present in the STM32 firmware.
 
 ## Evidence rule
 

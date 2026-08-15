@@ -3,6 +3,10 @@
 The model handles standard 29-bit identifier construction/parsing and a
 small battery mapping. It is deliberately transport-neutral; the production
 CAN driver and NMEA address-claim policy remain integration responsibilities.
+
+Implementation boundary: this file is host-side gateway contract code only.
+The STM32F767 firmware contains no embedded NMEA 2000 stack, address-claim
+state machine, or field interoperability implementation.
 """
 from __future__ import annotations
 

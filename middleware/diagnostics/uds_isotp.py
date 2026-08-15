@@ -4,6 +4,10 @@ This is a deterministic host-side contract model. The current STM32F767
 reference uses classic bxCAN, so CAN-FD transport is deliberately not claimed.
 The model supports ISO-TP single/first/consecutive/flow-control frames and a
 small UDS service set suitable for diagnostics integration tests.
+
+Implementation boundary: this file is host-side validation code only. The
+STM32F767 firmware contains no embedded ISO-TP transport or UDS server, so this
+module must not be presented as an on-target diagnostic implementation.
 """
 from __future__ import annotations
 

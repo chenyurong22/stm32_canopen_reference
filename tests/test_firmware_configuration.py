@@ -47,6 +47,9 @@ RELEASE_GATE = (ROOT / "scripts" / "check_production_release_gate.sh").read_text
 MEMORY_GATE = (ROOT / "scripts" / "check_memory_budget.sh").read_text(encoding="utf-8")
 EVIDENCE_INIT = (ROOT / "scripts" / "init_external_evidence_package.sh").read_text(encoding="utf-8")
 PRODUCT_SCOPE = (ROOT / "PRODUCT_SCOPE.md").read_text(encoding="utf-8")
+FEATURE_MATRIX = (ROOT / "docs" / "feature_matrix.md").read_text(encoding="utf-8")
+UDS_MODEL = (ROOT / "middleware" / "diagnostics" / "uds_isotp.py").read_text(encoding="utf-8")
+NMEA_MODEL = (ROOT / "middleware" / "gateway" / "nmea2000_gateway.py").read_text(encoding="utf-8")
 FUZZ_HARNESS = (ROOT / "tests" / "fuzz" / "fuzz_canopen_frame.c").read_text(encoding="utf-8")
 FUZZ_VECTOR_DATA = json.loads((ROOT / "tests" / "conformance" / "core_vectors.json").read_text(encoding="utf-8"))
 
@@ -335,6 +338,19 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("not the live CANopenNode OD", APP_RUNTIME)
         self.assertIn("not the live CANopenNode OD", CIA418_HEADER)
         self.assertIn("Cia418Reference_SyncToGeneratedOd", CIA418_SOURCE)
+
+    def test_protocol_boundaries_are_documented_at_source_and_scope_levels(self) -> None:
+        """Host-only and partial protocol implementations cannot silently become product claims."""
+        for expected in (
+            "0x1F80–0x1F89",
+            "No embedded UDS server",
+            "No embedded NMEA 2000 stack",
+            "not live-OD/SDO integrated",
+        ):
+            self.assertIn(expected, FEATURE_MATRIX if "live-OD" in expected or "0x1F80" in expected else PRODUCT_SCOPE)
+        self.assertIn("standard CiA 302 Network List/Configuration Manager", CIA302_SOURCE)
+        self.assertIn("host-side validation code only", UDS_MODEL)
+        self.assertIn("host-side gateway contract code only", NMEA_MODEL)
 
     def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""

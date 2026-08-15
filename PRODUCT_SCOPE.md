@@ -10,7 +10,7 @@ This repository is a **reference firmware platform** for STM32F767 CANopen devel
 |---|---|---|---|
 | CiA 401 I/O device | Default | CANopenNode communication services, generated OD integration, board I/O seams, safe startup hooks, and profile-oriented host tests | Product-specific electrical limits, channel calibration, debounce requirements, board diagnostics, HIL evidence, and formal CiA 401 conformance |
 | CiA 402 drive interface | Optional | Reference state/controlword/statusword/fault-reset behavior and Profile Position/Velocity adapter seams | Complete drive product, torque/homing/CSP/CSV/CST behavior, motor feedback, power-stage safety, limits, following-error behavior, HIL, and formal conformance |
-| CiA 302 NMT-master supervision | Optional | Bounded configured-peer boot-up and heartbeat supervision with deterministic host tests | Complete network list, configuration manager, commissioning workflow, startup configuration manager, multi-node production evidence, and formal conformance |
+| CiA 302 NMT-master supervision | Optional | Bounded configured-peer boot-up and heartbeat supervision with deterministic host tests; standard Network List/Configuration Manager objects 0x1F80–0x1F89 are not implemented | Complete network list, configuration manager, commissioning workflow, startup configuration manager, multi-node production evidence, and formal conformance |
 | CiA 309 gateway foundation | Optional | Bounded gateway foundation with deny-by-default policy tests | Authenticated production transport, authorization model, audit trail, security approval, and gateway conformance |
 
 ## Protocol and feature boundaries
@@ -20,8 +20,8 @@ This repository is a **reference firmware platform** for STM32F767 CANopen devel
 | NMT, heartbeat, EMCY, SDO, PDO, SYNC | Integrated through CANopenNode and project configuration | Requires product OD approval, board testing, stress testing, and applicable conformance evidence |
 | LSS | Stack integration and project policy hooks | Complete Fastscan commissioning and multi-node provisioning are not claimed |
 | UDS / ISO-TP | Host-side contract models | No embedded UDS server or embedded ISO-TP implementation is claimed |
-| CiA 418 | Generated/reference artifacts only | No complete CiA 418 device profile or physical device model is claimed |
-| NMEA 2000 | Host gateway contract only | No embedded NMEA 2000 stack or field interoperability is claimed |
+| CiA 418 | Explicit opt-in adapter plus synchronized generated model artifact; not part of the default live CANopenNode OD | No CiA 418 SDO/PDO device profile is claimed until a dedicated battery-personality CANopenNode OD, EDS, hardware data source, and validation package exist |
+| NMEA 2000 | Host gateway contract only; no embedded C implementation | No embedded NMEA 2000 stack or field interoperability is claimed; address-claim state machine is also absent |
 | CAN-FD/FDCAN | Not implemented; target uses bxCAN | No CAN-FD capability is claimed |
 | Bootloader and firmware update | Not implemented | No secure update, signature verification, rollback, or anti-rollback capability is claimed |
 | Secure boot and product security | Repository policy and release boundaries only | No secure boot, key provisioning, firmware authentication, or production debug-lock evidence is claimed |

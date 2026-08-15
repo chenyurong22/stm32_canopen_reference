@@ -4,6 +4,11 @@
  * Project-owned opt-in CiA 302 NMT-master adapter. The adapter deliberately
  * reuses CANopenNode's NMT master transmit path and heartbeat consumer instead
  * of taking ownership of the STM32 HAL callbacks.
+ *
+ * Scope boundary: this module provides bounded configured-peer supervision only.
+ * It does not implement the standard CiA 302 Network List/Configuration Manager
+ * objects (0x1F80-0x1F89), commissioning workflow, or a complete multi-node
+ * production network manager.
  */
 #include "canopen_reference_cia302.h"
 
