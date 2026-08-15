@@ -35,6 +35,10 @@ CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 MANIFEST_SCRIPT = (ROOT / "scripts" / "write_build_manifest.sh").read_text(encoding="utf-8")
 HAL_CONF = (ROOT / "Core" / "Inc" / "stm32f7xx_hal_conf.h").read_text(encoding="utf-8")
 CAN_PORT = (ROOT / "middleware" / "canopen" / "port" / "can_port.c").read_text(encoding="utf-8")
+CI = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+HOST_MAKEFILE = (ROOT / "tests" / "host" / "Makefile").read_text(encoding="utf-8")
+VALIDATE_SCRIPT = (ROOT / "scripts" / "validate_reference.sh").read_text(encoding="utf-8")
+PRODUCTION_PLAN = (ROOT / "docs" / "production_validation_plan.md").read_text(encoding="utf-8")
 
 
 def source_integer(name: str) -> int:
@@ -236,6 +240,24 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertTrue((ROOT / "tests" / "conformance" / "core_vectors.json").is_file())
         self.assertTrue((ROOT / "tests" / "conformance" / "run_core_vectors.py").is_file())
         self.assertTrue((ROOT / "docs" / "feature_matrix.md").is_file())
+
+    def test_release_gate_and_local_validation_are_explicit(self) -> None:
+        """Release tags require vcan and local validation cannot omit hardening gates."""
+        for expected in (
+            'tags:',
+            '"v*"',
+            "release-vcan:",
+            "if: startsWith(github.ref, 'refs/tags/v')",
+            "Require vcan0 for release validation",
+            "make -C tests/host test-sanitize test-coverage",
+        ):
+            self.assertIn(expected, CI)
+        for expected in ("test-sanitize", "test-coverage", "fsanitize=address,undefined", "--coverage"):
+            self.assertIn(expected, HOST_MAKEFILE)
+        for expected in ("test-sanitize test-coverage", "run_uds_isotp_contract.py", "run_nmea2000_gateway_contract.py"):
+            self.assertIn(expected, VALIDATE_SCRIPT)
+        for expected in ("Bus-off recovery campaign", "Flash persistence and power-loss campaign", "Watchdog timing and reset campaign", "Formal conformance and release record"):
+            self.assertIn(expected, PRODUCTION_PLAN)
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
