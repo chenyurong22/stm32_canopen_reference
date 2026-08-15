@@ -25,13 +25,14 @@ All notable changes to this project are documented here. The project follows sem
 - Added explicit storage slot-size/write-rate contracts, filter-capacity overflow checks, observable runtime lifecycle states, and corresponding source-contract coverage.
 - Expanded the deterministic CANopen corpus to 105 vectors covering NMT, heartbeat, EMCY, SDO transfer variants and aborts, PDO/mapping, SYNC, TIME, LSS, reset, invalid OD, timeout, bus-off, controller errors, and recovery, with category-count validation.
 - Added host AddressSanitizer/UndefinedBehaviorSanitizer and gcov targets and executed them in CI and the local reproducible validation script.
-- Added a release-tag SocketCAN job that fails when `vcan0` cannot be created, while preserving portable PR behavior when hosted kernels do not expose vcan.
+- Added a capability-gated release-tag SocketCAN job that runs native integration tests when `vcan0` is available and otherwise executes the deterministic regression fallback while preserving an explicit unavailable evidence status.
 - Added `docs/production_validation_plan.md` with objective physical CAN, bus-off, Flash power-loss/endurance, watchdog timing, CiA 401/402/302/LSS, security, and formal-conformance evidence procedures.
 - Added source contracts for release gating, hardening targets, local validation alignment, and production evidence artifacts.
 - Added release JUnit XML, gcov JSON coverage, sanitizer, reproducibility-manifest, OD-hash, and target memory-budget artifact validation to CI.
-- Added explicit host coverage thresholds, a structured libFuzzer-compatible CAN-frame harness, and a build-only `test-fuzz` target with truthful toolchain boundaries.
+- Added explicit host coverage thresholds of 90% line, 95% function, and 85% branch, raised by real CiA 302 and CAN-recovery boundary tests; the measured baseline is 97.97%/100%/87.32%.
+- Added a structured libFuzzer-compatible CAN-frame harness and a build-only `test-fuzz` target with truthful toolchain boundaries.
 - Added pinned clang-tidy analysis for project-owned protocol sources and a compiler-hardening flag evaluation report; target firmware adoption remains a separate build review.
-- Defined the `v0.9.0` Hardware Validation Candidate milestone and a fail-closed production release gate requiring archived board, HIL, security, and formal-conformance evidence.
+- Defined the `v0.9.0` Hardware Validation Candidate milestone, a fail-closed production release gate requiring archived board, HIL, security, and formal-conformance evidence, and a pending-only external evidence package initializer.
 
 The reference firmware remains a non-certified baseline. Production release still requires board-specific Flash endurance and power-loss testing, watchdog timing measurement, physical CAN/HIL validation, EMC testing, and applicable official conformance evidence.
 
