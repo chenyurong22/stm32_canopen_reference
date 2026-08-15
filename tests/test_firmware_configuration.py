@@ -553,6 +553,10 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceTiming_MainlineEnter", APP_RUNTIME)
         self.assertIn("CANopenReferenceTiming_MainlineExit", APP_RUNTIME)
         self.assertIn("DWT_CTRL_CYCCNTENA_Msk", TIMING_SOURCE)
+        self.assertIn("CANOPEN_REFERENCE_TIMING_ISR_WARNING_US 500U", PROFILE)
+        self.assertIn("CANOPEN_REFERENCE_TIMING_ISR_WARNING_US >= CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US", PROFILE)
+        self.assertIn("tim7_warning_count", TIMING_HEADER)
+        self.assertIn("CANOPEN_REFERENCE_TIMING_ISR_WARNING_US", TIMING_SOURCE)
 
     def test_hil_timing_measurement_schema_is_pending_and_non_claimable(self) -> None:
         """HIL evidence has fixed timing fields but no fabricated measurement values."""

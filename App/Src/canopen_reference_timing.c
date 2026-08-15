@@ -13,6 +13,9 @@
 #ifndef CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US
 #define CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US 1000U
 #endif
+#ifndef CANOPEN_REFERENCE_TIMING_ISR_WARNING_US
+#define CANOPEN_REFERENCE_TIMING_ISR_WARNING_US 500U
+#endif
 
 static volatile CANopenReferenceTimingStats canopenReferenceTimingStats;
 static volatile uint32_t canopenReferenceTimingLastTim7Cycle;
@@ -77,8 +80,13 @@ CANopenReferenceTiming_Tim7Exit(uint32_t start_cycles) {
     uint32_t elapsed = CANopenReferenceTiming_ReadCycles() - start_cycles;
     uint32_t budget_cycles = (canopenReferenceTimingStats.core_clock_hz / 1000000U)
                            * CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US;
+    uint32_t warning_cycles = (canopenReferenceTimingStats.core_clock_hz / 1000000U)
+                            * CANOPEN_REFERENCE_TIMING_ISR_WARNING_US;
     CANopenReferenceTiming_SaturatingIncrement(&canopenReferenceTimingStats.tim7_irq_count);
     CANopenReferenceTiming_SaturatingMax(&canopenReferenceTimingStats.tim7_irq_cycles_max, elapsed);
+    if (elapsed > warning_cycles) {
+        CANopenReferenceTiming_SaturatingIncrement(&canopenReferenceTimingStats.tim7_warning_count);
+    }
     if (elapsed > budget_cycles) {
         CANopenReferenceTiming_SaturatingIncrement(&canopenReferenceTimingStats.tim7_overrun_count);
     }

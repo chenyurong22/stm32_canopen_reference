@@ -21,6 +21,7 @@ typedef struct {
     uint32_t tim7_irq_cycles_max;
     uint32_t tim7_period_cycles_max;
     uint32_t tim7_overrun_count;
+    uint32_t tim7_warning_count;
     uint32_t can_irq_count[CANOPEN_REFERENCE_TIMING_CAN_CONTEXT_COUNT];
     uint32_t can_irq_cycles_max[CANOPEN_REFERENCE_TIMING_CAN_CONTEXT_COUNT];
     uint32_t mainline_sample_count;
