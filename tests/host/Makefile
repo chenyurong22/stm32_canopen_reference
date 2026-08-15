@@ -31,8 +31,8 @@ $(BUILD_DIR)/test_cia302_nmt_master: $(ROOT)/tests/test_cia302_nmt_master.c $(RO
 $(BUILD_DIR)/test_lss_policy: $(ROOT)/tests/test_lss_policy.c $(ROOT)/App/Src/canopen_reference_lss.c $(ROOT)/App/Inc/canopen_reference_lss.h $(ROOT)/tests/fakes/CANopen.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/tests/fakes -I$(ROOT)/App/Inc $^ -o $@
 
-$(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@
+$(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/Generated/cia418_OD.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc -I$(ROOT)/Generated $^ -o $@
 
 $(BUILD_DIR)/test_can_recovery: $(ROOT)/tests/test_can_recovery.c $(ROOT)/App/Src/canopen_reference_can_recovery.c $(ROOT)/App/Inc/canopen_reference_can_recovery.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@

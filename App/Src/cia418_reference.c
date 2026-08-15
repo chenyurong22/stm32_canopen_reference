@@ -121,3 +121,38 @@ Cia418Reference_ReadObject(const Cia418ReferenceState *state,
         default: return false;
     }
 }
+
+void
+Cia418Reference_SyncToGeneratedOd(const Cia418ReferenceState *state,
+                                   CIA418_OD_APP_t *od_app) {
+    if (state == NULL || od_app == NULL) {
+        return;
+    }
+
+    (void)memset(od_app, 0, sizeof(*od_app));
+    od_app->x6000_batteryStatus = state->battery_status;
+    od_app->x6001_chargerStatus = state->charger_status;
+    od_app->x6010_temperature = state->temperature;
+    od_app->x6050_cumulativeTotalAhCharge = state->cumulative_total_ah_charge;
+    od_app->x6051_ahExpendedSinceLastCharge = state->ah_expended_since_last_charge;
+    od_app->x6052_ahReturnedDuringLastCharge = state->ah_returned_during_last_charge;
+    od_app->x6053_ahSinceLastEqualization = state->ah_since_last_equalization;
+    od_app->x6060_batteryVoltage = state->battery_voltage;
+    od_app->x6070_chargeCurrentRequested = state->charge_current_requested;
+    od_app->x6080_chargerStateOfCharge = state->charger_state_of_charge;
+    od_app->x6081_batteryStateOfCharge = state->battery_state_of_charge;
+    od_app->x6090_waterLevelStatus = state->water_level_status;
+    od_app->x6020_batteryParameters.batteryType = state->battery_type;
+    od_app->x6020_batteryParameters.ahCapacity = state->ah_capacity;
+    od_app->x6020_batteryParameters.maximumChargeCurrent = state->maximum_charge_current;
+    od_app->x6020_batteryParameters.numberOfCells = state->number_of_cells;
+
+    (void)memcpy(&od_app->x6030_batterySerialNumber[0], state->battery_serial_number,
+                 sizeof(state->battery_serial_number));
+    (void)memcpy(&od_app->x6031_batteryId[0], state->battery_id, sizeof(state->battery_id));
+    (void)memcpy(&od_app->x6040_vehicleSerialNumber[0], state->vehicle_serial_number,
+                 sizeof(state->vehicle_serial_number));
+    (void)memcpy(&od_app->x6041_vehicleId[0], state->vehicle_id, sizeof(state->vehicle_id));
+    (void)memcpy(&od_app->x6054_dateOfLastEqualization[0], state->date_of_last_equalization,
+                 sizeof(state->date_of_last_equalization));
+}

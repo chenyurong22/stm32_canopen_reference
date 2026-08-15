@@ -29,6 +29,8 @@ PROFILE = (ROOT / "App" / "Inc" / "canopen_reference_config.h").read_text(encodi
 BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding="utf-8")
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
 CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
+CIA418_HEADER = (ROOT / "App" / "Inc" / "cia418_reference.h").read_text(encoding="utf-8")
+CIA418_SOURCE = (ROOT / "App" / "Src" / "cia418_reference.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
 LIFECYCLE = (ROOT / "App" / "Inc" / "canopen_reference_lifecycle.h").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
@@ -322,6 +324,17 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceBoard_SetCanTransceiverEnabled(false);", BOARD)
         self.assertIn("CANopenReferenceHw_DriveSetEnable(false);", BOARD)
         self.assertIn("CANopenReferenceHw_WriteDigitalOutputs(0U);", BOARD)
+
+    def test_cia418_adapter_mode_is_explicit_and_not_claimed_as_live_od(self) -> None:
+        """CiA 418 is opt-in, mutually exclusive, and clearly separated from SDO-visible OD claims."""
+        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 adapter/model personality" OFF)', CMAKE)
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_CIA418=$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA418}>", CMAKE)
+        self.assertIn("#error \"CiA 418 adapter mode cannot be combined", PROFILE)
+        self.assertIn("Cia418Reference_Init(&canopenReferenceCia418State);", APP_RUNTIME)
+        self.assertIn("Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);", APP_RUNTIME)
+        self.assertIn("not the live CANopenNode OD", APP_RUNTIME)
+        self.assertIn("not the live CANopenNode OD", CIA418_HEADER)
+        self.assertIn("Cia418Reference_SyncToGeneratedOd", CIA418_SOURCE)
 
     def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""

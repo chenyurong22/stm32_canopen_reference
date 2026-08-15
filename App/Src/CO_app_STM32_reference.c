@@ -20,6 +20,7 @@
 #include "canopen_reference_storage.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"
+#include "cia418_reference.h"
 
 #define CANOPEN_REFERENCE_NMT_CONTROL \
     (CO_NMT_STARTUP_TO_OPERATIONAL | CO_NMT_ERR_ON_ERR_REG | CO_ERR_REG_GENERIC_ERR | CO_ERR_REG_COMMUNICATION)
@@ -36,6 +37,9 @@ static volatile bool canopenReferenceSafeFault;
 static volatile bool canopenReferenceRecoveryAttemptActive;
 static CANopenReferenceCanRecovery canopenReferenceCanRecovery;
 static CANopenReferenceRuntimeState canopenReferenceRuntimeState = CANOPEN_REFERENCE_RUNTIME_INIT;
+#if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
+static Cia418ReferenceState canopenReferenceCia418State;
+#endif
 
 static void
 CANopenReference_SetRuntimeState(CANopenReferenceRuntimeState state) {
@@ -154,6 +158,10 @@ static void
 CANopenReference_ForceSafeApplication(void) {
     Cia401Reference_ForceSafeOutputs();
     Cia402Reference_ForceDisable();
+#if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
+    Cia418Reference_ForceSafe(&canopenReferenceCia418State);
+    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
+#endif
 }
 
 static int
@@ -308,6 +316,12 @@ canopen_app_resetCommunication(void) {
 
     Cia401Reference_Init();
     Cia402Reference_Init();
+#if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
+    /* This initializes only the explicit adapter/model mode. The generated
+     * CiA 418 artifact is not the live CANopenNode OD and is not SDO-visible. */
+    Cia418Reference_Init(&canopenReferenceCia418State);
+    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
+#endif
 
     if (HAL_TIM_Base_Start_IT(canopenNodeSTM32->timerHandle) != HAL_OK) {
         CANopenReference_ForceSafeApplication();
@@ -385,6 +399,9 @@ canopen_app_interrupt(void) {
      * printf operation is permitted in this interrupt context. */
     Cia401Reference_Process1ms();
     Cia402Reference_Process1ms();
+#if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
+    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
+#endif
 
 #if (CO_CONFIG_PDO) & CO_CONFIG_TPDO_ENABLE
     CO_process_TPDO(CO, syncWas, 1000U, NULL);

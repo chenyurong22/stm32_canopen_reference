@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "cia418_OD.h"
+
 #define CIA418_STATUS_READY 0x01U
 #define CIA418_STATUS_FAULT 0x80U
 
@@ -74,5 +76,12 @@ bool Cia418Reference_ReadObject(const Cia418ReferenceState *state, uint16_t inde
                                 uint8_t sub_index, uint32_t *value);
 /** Force the adapter into its safe-fault state. */
 void Cia418Reference_ForceSafe(Cia418ReferenceState *state);
+/** Copy adapter state into the generated CiA 418 model artifact.
+ *
+ * This model is intentionally not the live CANopenNode OD. A dedicated
+ * battery-personality OD is required before CiA 418 SDO access can be claimed.
+ */
+void Cia418Reference_SyncToGeneratedOd(const Cia418ReferenceState *state,
+                                       CIA418_OD_APP_t *od_app);
 
 #endif /* CIA418_REFERENCE_H */
