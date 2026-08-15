@@ -13,6 +13,7 @@ env:
   ARM_GCC_PACKAGE_VERSION: 15:13.2.rel1-2
   NEWLIB_PACKAGE_VERSION: 4.4.0.20231231-2
   CPPCHECK_PACKAGE_VERSION: 2.13.0-2ubuntu3
+  CLANG_FORMAT_PACKAGE_VERSION: 1:18.0-59~exp2
   STM32_CUBE_F7_REV: c2ecfd2d863d4cb1a138e63be4c8c1c4acd43d4d
 
 jobs:
@@ -27,6 +28,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends "cppcheck=${CPPCHECK_PACKAGE_VERSION}"
+      - name: Install pinned clang-format
+        run: |
+          sudo apt-get install --yes --no-install-recommends "clang-format=${CLANG_FORMAT_PACKAGE_VERSION}"
+      - name: Check formatted project-owned CiA 302 module
+        run: |
+          clang-format --dry-run --Werror \
+            middleware/canopen/core/cia302_nmt_master.c \
+            middleware/canopen/core/cia302_nmt_master.h
       - name: Analyze project-owned C sources
         run: |
           cppcheck \
