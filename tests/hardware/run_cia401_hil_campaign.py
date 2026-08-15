@@ -36,8 +36,9 @@ def parse_equipment(values: list[str]) -> dict[str, str]:
     return result
 
 
-def sha256(path: Path) -> str | None:
-    if not path.is_file():
+def sha256(path: Path | None) -> str | None:
+    """Return an image digest when supplied; absent image means no digest."""
+    if path is None or not path.is_file():
         return None
     digest = hashlib.sha256()
     with path.open("rb") as stream:
