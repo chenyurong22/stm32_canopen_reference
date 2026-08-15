@@ -120,11 +120,13 @@ The gateway is a bounded foundation only. A product must provide an authenticate
 
 ### Run host validation
 
+The contract runners import project packages from the repository root, so the two package-based commands explicitly set `PYTHONPATH=.:tests`. The wire-contract suite is executable as a standalone script and fails non-zero when any assertion fails.
+
 ```sh
 python3 tests/test_firmware_configuration.py
 python3 tests/test_canopen_wire_contract.py
-python3 tests/run_uds_isotp_contract.py
-python3 tests/run_nmea2000_gateway_contract.py
+PYTHONPATH=.:tests python3 tests/run_uds_isotp_contract.py
+PYTHONPATH=.:tests python3 tests/run_nmea2000_gateway_contract.py
 make -C tests/host all test-stm32-facade test-gateway-default-deny
 ```
 
