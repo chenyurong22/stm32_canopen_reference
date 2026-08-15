@@ -50,6 +50,7 @@ add_executable(${PROJECT_NAME}
     App/Src/cia401_reference.c
     App/Src/cia402_reference.c
     middleware/canopen/core/canopen_core.c
+    middleware/canopen/core/cia302_nmt_master.c
     Generated/OD.c
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c
     ${CANOPEN_NODE_DIR}/CANopen.c
