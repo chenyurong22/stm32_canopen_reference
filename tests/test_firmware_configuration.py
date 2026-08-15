@@ -54,16 +54,17 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in (
             "hcan1.Init.Prescaler = 6U;",
             "hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;",
-            "hcan1.Init.TimeSeg1 = CAN_BS1_15TQ;",
-            "hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;",
+            "hcan1.Init.TimeSeg1 = CAN_BS1_14TQ;",
+            "hcan1.Init.TimeSeg2 = CAN_BS2_3TQ;",
             "hcan1.Init.AutoBusOff = ENABLE;",
             "hcan1.Init.AutoRetransmission = ENABLE;",
         ):
             self.assertIn(expected, MAIN)
         pclk1_hz = 54_000_000
-        time_quanta = 1 + 15 + 2
+        time_quanta = 1 + 14 + 3
         self.assertEqual(pclk1_hz // (6 * time_quanta), 500_000)
         self.assertEqual(pclk1_hz % (6 * time_quanta), 0)
+        self.assertAlmostEqual((1 + 14) / time_quanta, 15.0 / 18.0)
 
     def test_tim7_is_exactly_one_millisecond(self) -> None:
         """TIM7 runs from the doubled APB1 timer clock when APB1 is divided by four."""

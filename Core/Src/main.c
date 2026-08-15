@@ -71,8 +71,8 @@ MX_CAN1_Init(void) {
     hcan1.Init.Prescaler = 6U;
     hcan1.Init.Mode = CAN_MODE_NORMAL;
     hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-    hcan1.Init.TimeSeg1 = CAN_BS1_15TQ;
-    hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
+    hcan1.Init.TimeSeg1 = CAN_BS1_14TQ;
+    hcan1.Init.TimeSeg2 = CAN_BS2_3TQ;
     hcan1.Init.TimeTriggeredMode = DISABLE;
     hcan1.Init.AutoBusOff = ENABLE;
     hcan1.Init.AutoWakeUp = DISABLE;
