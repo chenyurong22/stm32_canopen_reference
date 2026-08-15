@@ -18,6 +18,7 @@ env:
   NEWLIB_PACKAGE_VERSION: 4.4.0.20231231-2
   CPPCHECK_PACKAGE_VERSION: 2.13.0-2ubuntu3
   CLANG_FORMAT_PACKAGE_VERSION: 1:18.0-59~exp2
+  CLANG_TIDY_PACKAGE_VERSION: 1:18.0-59~exp2
   STM32_CUBE_F7_REV: c2ecfd2d863d4cb1a138e63be4c8c1c4acd43d4d
 
 jobs:
@@ -40,6 +41,19 @@ jobs:
           clang-format --dry-run --Werror \
             middleware/canopen/core/cia302_nmt_master.c \
             middleware/canopen/core/cia302_nmt_master.h
+      - name: Install pinned clang-tidy
+        run: |
+          sudo apt-get install --yes --no-install-recommends "clang-tidy=${CLANG_TIDY_PACKAGE_VERSION}"
+      - name: Analyze project-owned sources with clang-tidy
+        run: |
+          clang-tidy \
+            App/Src/canopen_reference_can_recovery.c \
+            App/Src/canopen_reference_lss.c \
+            middleware/canopen/core/cia302_nmt_master.c \
+            --config-file=.clang-tidy \
+            --warnings-as-errors='' \
+            -- \
+            -std=c11 -Itests/fakes -IApp/Inc -Imiddleware/canopen/core
       - name: Analyze project-owned C sources
         run: |
           cppcheck \
