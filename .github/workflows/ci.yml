@@ -244,6 +244,14 @@ jobs:
           CANOPEN_REFERENCE_PERSONALITY: all-ci-personalities
           STM32_F7_LINKER_SCRIPT: ${{ github.workspace }}/linker/STM32F767_2M_512K_FLASH.ld
         run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
+      - name: Check target memory budget
+        env:
+          MAX_TEXT_BYTES: 1572864
+          MAX_DATA_BYTES: 524288
+          MAX_BSS_BYTES: 524288
+          MAX_FLASH_LOAD_BYTES: 1572864
+          MAX_RAM_BYTES: 524288
+        run: scripts/check_memory_budget.sh build/ci-firmware/stm32f767_canopen_reference.map build/memory-budget.json
       - name: Generate host coverage and sanitizer reports
         env:
           COVERAGE_MIN_LINE: 80
@@ -269,6 +277,7 @@ jobs:
           path: |
             build/ci-build-manifest.txt
             build/ci-build-manifest.json
+            build/memory-budget.json
             build/reports/test-results.xml
             build/reports/coverage-summary.json
             build/reports/sanitizer-report.txt
