@@ -26,6 +26,7 @@ BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding=
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
 CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
+FILTER_SOURCE = APP_RUNTIME
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 CAN_PORT = (ROOT / "middleware" / "canopen" / "port" / "can_port.c").read_text(encoding="utf-8")
 
@@ -124,6 +125,17 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "#define CO_CONFIG_LEDS                0x01U",
         ):
             self.assertIn(expected, FEATURES)
+
+    def test_node_specific_can_acceptance_filter_is_configured(self) -> None:
+        """bxCAN uses exact 16-bit list filters for the configured node and LSS."""
+        self.assertIn("CANopenReference_ConfigureCanFilter", FILTER_SOURCE)
+        self.assertIn("CAN_FILTERMODE_IDLIST", FILTER_SOURCE)
+        self.assertIn("CAN_FILTERSCALE_16BIT", FILTER_SOURCE)
+        self.assertIn("ids[8] = (uint16_t)(0x600U + node_id)", FILTER_SOURCE)
+        self.assertIn("ids[9] = (uint16_t)(0x700U + node_id)", FILTER_SOURCE)
+        self.assertIn("ids[10] = 0x7E4U", FILTER_SOURCE)
+        self.assertIn("ids[11] = 0x7E5U", FILTER_SOURCE)
+        self.assertIn("for (uint32_t bank = 0U; bank < 3U; ++bank)", FILTER_SOURCE)
 
     def test_storage_is_enabled_and_initialized_before_canopen(self) -> None:
         """OD 1010h/1011h persistence is enabled through project-owned code."""

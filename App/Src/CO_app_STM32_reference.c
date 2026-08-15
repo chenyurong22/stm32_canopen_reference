@@ -31,6 +31,50 @@ CO_t *CO = NULL;
 static uint32_t canopenReferenceLastTick;
 static CANopenReferenceLssState canopenReferenceLssState;
 
+bool
+CANopenReference_ConfigureCanFilter(uint8_t node_id) {
+    static const uint16_t common_ids[] = {0x000U, 0x080U, 0x100U};
+    CAN_HandleTypeDef *hcan;
+    uint16_t ids[12];
+
+    if (canopenNodeSTM32 == NULL || canopenNodeSTM32->CANHandle == NULL
+        || node_id == 0U || node_id > 127U) {
+        return false;
+    }
+    hcan = canopenNodeSTM32->CANHandle;
+    ids[0] = common_ids[0];
+    ids[1] = common_ids[1];
+    ids[2] = common_ids[2];
+    ids[3] = (uint16_t)(0x080U + node_id); /* EMCY */
+    ids[4] = (uint16_t)(0x200U + node_id); /* RPDO1 */
+    ids[5] = (uint16_t)(0x300U + node_id); /* RPDO2 */
+    ids[6] = (uint16_t)(0x400U + node_id); /* RPDO3 */
+    ids[7] = (uint16_t)(0x500U + node_id); /* RPDO4 */
+    ids[8] = (uint16_t)(0x600U + node_id); /* SDO server request */
+    ids[9] = (uint16_t)(0x700U + node_id); /* heartbeat/node guarding */
+    ids[10] = 0x7E4U; /* LSS master -> slave */
+    ids[11] = 0x7E5U; /* LSS slave -> master */
+
+    for (uint32_t bank = 0U; bank < 3U; ++bank) {
+        CAN_FilterTypeDef filter = {0};
+        uint32_t base = bank * 4U;
+        filter.FilterBank = bank;
+        filter.FilterMode = CAN_FILTERMODE_IDLIST;
+        filter.FilterScale = CAN_FILTERSCALE_16BIT;
+        filter.FilterIdHigh = (uint16_t)(ids[base] << 5U);
+        filter.FilterIdLow = (uint16_t)(ids[base + 1U] << 5U);
+        filter.FilterMaskIdHigh = (uint16_t)(ids[base + 2U] << 5U);
+        filter.FilterMaskIdLow = (uint16_t)(ids[base + 3U] << 5U);
+        filter.FilterFIFOAssignment = CAN_RX_FIFO0;
+        filter.FilterActivation = ENABLE;
+        filter.SlaveStartFilterBank = 14U;
+        if (HAL_CAN_ConfigFilter(hcan, &filter) != HAL_OK) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static void
 CANopenReference_ApplyIdentity(void) {
     OD_PERSIST_COMM.x1018_identity.vendor_ID = CANOPEN_REFERENCE_VENDOR_ID;
@@ -121,6 +165,9 @@ canopen_app_resetCommunication(void) {
     CANopenReferenceCia302_PrepareOd();
 
     canopenNodeSTM32->activeNodeID = canopenNodeSTM32->desiredNodeID;
+    if (!CANopenReference_ConfigureCanFilter(canopenNodeSTM32->activeNodeID)) {
+        return -3;
+    }
     error = CO_CANopenInit(CO, NULL, NULL, OD, NULL, CANOPEN_REFERENCE_NMT_CONTROL,
                            CANOPEN_REFERENCE_FIRST_HB_MS, CANOPEN_REFERENCE_SDO_SRV_TIMEOUT_MS,
                            CANOPEN_REFERENCE_SDO_CLI_TIMEOUT_MS, true, canopenNodeSTM32->activeNodeID, &errorInfo);
