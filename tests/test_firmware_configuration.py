@@ -360,7 +360,16 @@ class FirmwareConfigurationTests(unittest.TestCase):
             self.assertIn(expected, plan)
         for expected in ("--dry-run", '"status": "PENDING"', '"pass_claim_allowed": False', "physical execution"):
             self.assertIn(expected, initializer)
-        for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
+        for expected in (
+            '"can_rx_to_rpdo_latency_cycles_max"',
+            '"can_rx_to_application_latency_cycles_max"',
+            '"rpdo_to_gpio_output_latency_cycles_max"',
+            '"sync_to_tpdo_latency_cycles_max"',
+            '"bus_load_campaign"',
+            "for load_percent in plan[\"measurement_schema\"][\"bus_load_campaign\"][\"load_percentages\"]",
+        ):
+            self.assertIn(expected, initializer)
+        for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone", "Bus-load campaign matrix", "CAN-to-application latency procedure", "25%", "95%", "PENDING"):
             self.assertIn(expected, procedure)
 
     def test_linker_memory_contract_fails_closed(self) -> None:
@@ -580,8 +589,21 @@ class FirmwareConfigurationTests(unittest.TestCase):
             '"tim7_isr_cycles_max"',
             '"tim7_period_cycles_max"',
             '"tim7_overrun_count"',
+            '"tim7_warning_count"',
+            '"app_interrupt_cycles_max"',
+            '"sync_cycles_max"',
+            '"rpdo_cycles_max"',
+            '"cia401_cycles_max"',
+            '"cia402_cycles_max"',
+            '"cia418_cycles_max"',
+            '"tpdo_cycles_max"',
             '"can_irq_cycles_max"',
             '"can_fifo_overflow_count"',
+            '"can_rx_to_rpdo_latency_cycles_max"',
+            '"can_rx_to_application_latency_cycles_max"',
+            '"rpdo_to_gpio_output_latency_cycles_max"',
+            '"sync_to_tpdo_latency_cycles_max"',
+            '"bus_load_campaign"',
             '"bus_load_percent"',
             '"temperature_c"',
             '"supply_voltage_v"',

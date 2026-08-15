@@ -23,8 +23,10 @@
     "case-level result with measured values",
     "TIM7 ISR cycle-count maxima and period-jitter summary",
     "mainline and CO_process duration summary",
+    "CANopen application-interrupt total and per-phase cycle maxima",
     "CAN IRQ occupancy by TX/RX0/RX1/error source",
     "CAN FIFO occupancy/overflow counters",
+    "CAN-to-application latency measurements",
     "captured bus-load percentage and timestamped CAN trace"
   ],
   "measurement_schema": {
@@ -35,12 +37,29 @@
     "bus_load_percent": "timestamped analyzer result",
     "tim7_isr_cycles_max": "DWT or equivalent maximum",
     "tim7_period_cycles_max": "DWT or equivalent maximum inter-entry interval",
-    "tim7_overrun_count": "count over the campaign interval",
+    "tim7_warning_count": "count above CANOPEN_REFERENCE_TIMING_ISR_WARNING_US",
+    "tim7_overrun_count": "count above CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US",
     "mainline_cycles_max": "DWT or equivalent maximum",
+    "app_interrupt_cycles_max": "DWT or equivalent maximum for canopen_app_interrupt() excluding TIM7 wrapper dispatch",
+    "sync_cycles_max": "DWT maximum for CO_process_SYNC",
+    "rpdo_cycles_max": "DWT maximum for CO_process_RPDO",
+    "cia401_cycles_max": "DWT maximum for Cia401Reference_Process1ms",
+    "cia402_cycles_max": "DWT maximum for Cia402Reference_Process1ms",
+    "cia418_cycles_max": "DWT maximum for the optional Cia418Reference synchronization adapter",
+    "tpdo_cycles_max": "DWT maximum for CO_process_TPDO",
     "can_irq_cycles_max": "per-source IRQ maximum",
     "can_fifo_overflow_count": "target diagnostic counter",
+    "can_rx_to_rpdo_latency_cycles_max": "timestamped CAN RX entry to RPDO processing completion; board campaign measurement",
+    "can_rx_to_application_latency_cycles_max": "timestamped CAN RX entry to application-variable update; board campaign measurement",
+    "rpdo_to_gpio_output_latency_cycles_max": "RPDO processing completion to board GPIO transition; board-specific external measurement",
+    "sync_to_tpdo_latency_cycles_max": "SYNC reception/processing to TPDO transmission; timestamped CAN trace and DWT correlation",
     "temperature_c": "measured DUT temperature",
-    "supply_voltage_v": "measured DUT supply voltage"
+    "supply_voltage_v": "measured DUT supply voltage",
+    "bus_load_campaign": {
+      "load_percentages": [25, 50, 75, 90, 95],
+      "columns": ["bus_load_percent", "tim7_isr_cycles_max", "tim7_warning_count", "tim7_overrun_count", "can_irq_cycles_max", "can_fifo_overflow_count"],
+      "values": "one pending row per load percentage; all measured values remain null until hardware execution"
+    }
   },
   "campaigns": [
     {"id": "startup", "title": "Startup and safe-state", "cases": ["power_on", "reset", "boot_time", "initial_nmt_state", "initial_heartbeat", "safe_outputs"]},

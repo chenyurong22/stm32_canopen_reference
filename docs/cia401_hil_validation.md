@@ -74,7 +74,7 @@ Power interruption must be injected only through the approved fixture and within
 
 ## Timing and load measurements
 
-The instrumented qualification image is built with `CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=ON`. The operator must export the `CANopenReferenceTiming_GetStats()` snapshot at the end of each relevant campaign and retain the raw snapshot with the firmware SHA. The snapshot must include maximum TIM7 ISR cycles, maximum TIM7 period spacing, TIM7 budget-overrun count, mainline duration, and per-source CAN IRQ duration/counts.
+The instrumented qualification image is built with `CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=ON`. The operator must export the `CANopenReferenceTiming_GetStats()` snapshot at the end of each relevant campaign and retain the raw snapshot with the firmware SHA. The snapshot must include maximum TIM7 ISR cycles, maximum TIM7 period spacing, TIM7 warning and hard-budget counts, mainline duration, the complete `canopen_app_interrupt()` duration, each enabled SYNC/RPDO/CiA 401/CiA 402/CiA 418/TPDO phase maximum, and per-source CAN IRQ duration/counts.
 
 The external campaign record must additionally contain the measured core clock, nominal CAN bitrate and sample point, timestamped bus-load percentage, CAN FIFO overflow count, DUT temperature, and supply voltage. The timing counters are evidence inputs only; they do not automatically determine PASS. Acceptance limits must be approved for the selected board, transceiver, clock tolerance, CAN load, and product profile before execution.
 
@@ -89,5 +89,25 @@ At minimum, the operator should correlate the following values:
 | Mainline duration | DWT snapshot and watchdog trace | Shows whether synchronous work can starve the superloop. |
 | Bus load and physical timing | Independent timestamped CAN capture | Separates wire-time limits from firmware latency. |
 | Temperature and supply | Calibrated instrument record | Makes timing and Flash/watchdog results reproducible. |
+
+### Bus-load campaign matrix
+
+Run the same representative CiA 401 PDO/SYNC workload at each target load. The analyzer must calculate load from timestamped CAN traffic over a documented observation window; the operator must retain the raw trace and record the matching firmware timing snapshot. The table is a campaign template, not a result table. Every cell remains `PENDING` until hardware execution.
+
+| Target bus load | TIM7 max cycles | CAN IRQ max cycles | FIFO overflow count | TIM7 overrun count |
+|---:|---:|---:|---:|---:|
+| 25% | PENDING | PENDING | PENDING | PENDING |
+| 50% | PENDING | PENDING | PENDING | PENDING |
+| 75% | PENDING | PENDING | PENDING | PENDING |
+| 90% | PENDING | PENDING | PENDING | PENDING |
+| 95% | PENDING | PENDING | PENDING | PENDING |
+
+The campaign must use the same clock, bitrate, sample-point configuration, PDO mapping, node count, and traffic mix at every load point. If the requested percentage cannot be achieved within the analyzer tolerance, record the measured percentage rather than silently relabeling the row. Acceptance limits for warning counts, hard overruns, FIFO overflow, and application latency must be approved for the selected product before execution; the repository does not convert this matrix into a conformance claim.
+
+### CAN-to-application latency procedure
+
+Latency must be measured with a common time base and retained alongside the DWT snapshot. Mark the CAN RX interrupt entry with the source-specific timing wrapper and correlate it with the captured frame identifier and analyzer timestamp. For `can_rx_to_rpdo_latency_cycles_max`, measure from the matching RX event to completion of `CO_process_RPDO()`. For `can_rx_to_application_latency_cycles_max`, measure from the matching RX event to the update of the application variable under test. For `rpdo_to_gpio_output_latency_cycles_max`, use a board-specific GPIO probe or logic-analyzer channel at the real output transition; the generic reference weak hardware seam cannot supply physical transition evidence by itself. For `sync_to_tpdo_latency_cycles_max`, correlate the SYNC frame timestamp with the corresponding TPDO transmission timestamp and retain the frame IDs, sequence, and observation window.
+
+The host harness must report the clock frequency used to convert cycles to time, probe/analyzer calibration status, frame identifiers, trigger definitions, sample rate, and worst-case/max sample count. Missing correlation, missing board-level output probing, or unavailable timestamps leaves the field `null`/`PENDING`; no value may be inferred from the software phase maximum.
 
 The pending initializer writes these fields as `null` or empty maps and continues to set `status` to `PENDING` and `pass_claim_allowed` to `false`. No empty field may be replaced with a guessed value.
