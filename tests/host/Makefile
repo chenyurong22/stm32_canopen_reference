@@ -10,7 +10,7 @@ COVERAGE_FLAGS := --coverage -O0 -g
 COVERAGE_MIN_LINE ?= 80
 COVERAGE_MIN_FUNCTION ?= 80
 COVERAGE_MIN_BRANCH ?= 60
-FUZZER ?= clang
+FUZZER ?= $(shell command -v clang 2>/dev/null || command -v clang-18 2>/dev/null || echo clang)
 FUZZ_BUILD_DIR := $(ROOT)/build/host-fuzz
 FUZZER_FLAGS ?= -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -O1 -g
 
