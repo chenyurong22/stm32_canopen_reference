@@ -206,13 +206,17 @@ CANopenReferenceStorage_BoardRestore(void *data, size_t length) {
 static bool
 storage_store_rate_allowed(void) {
 #if defined(STM32F767xx)
+#if CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS == 0U
+    return true;
+#else
     uint32_t now;
 
-    if (CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS == 0U || !s_store_tick_valid) {
+    if (!s_store_tick_valid) {
         return true;
     }
     now = HAL_GetTick();
     return (uint32_t)(now - s_last_store_tick) >= CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS;
+#endif
 #else
     return true;
 #endif
