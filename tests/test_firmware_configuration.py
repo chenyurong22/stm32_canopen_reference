@@ -357,6 +357,22 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_can_physical_layer_qualification_remains_external(self) -> None:
+        """Electrical CAN behavior requires calibrated board-level evidence."""
+        can_phy = (ROOT / "docs" / "can_physical_layer_qualification.md").read_text(encoding="utf-8")
+        for expected in (
+            "PENDING hardware/laboratory",
+            "500 kbit/s",
+            "sample point",
+            "CANH/CANL",
+            "Differential voltage",
+            "Termination",
+            "ACK and errors",
+            "Transceiver control",
+            "host `vcan` pass is software evidence only",
+        ):
+            self.assertIn(expected, can_phy)
+
     def test_watchdog_qualification_remains_external_and_explicit(self) -> None:
         """Watchdog timing and reset behavior remain board-level evidence gates."""
         watchdog = (ROOT / "docs" / "watchdog_qualification.md").read_text(encoding="utf-8")
