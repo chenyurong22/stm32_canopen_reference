@@ -304,28 +304,101 @@ class Acceptance:
     def test_cia302_reset_node(self) -> None:
         self._send_nmt_and_expect(0x81, 0x00, self.args.remote_node)
 
-    def test_cia302_broadcast_start(self) -> None:
+    @property
+    def monitored_nodes(self) -> list[int]:
+        return [self.args.remote_node, *self.args.additional_remote_nodes]
+
+    def _send_broadcast_and_expect(self, command: int, state: int) -> None:
         assert self.bus is not None
         self.bus.drain()
-        self.bus.send(0x000, bytes([0x01, 0x00]))
-        self._wait_can(0x700 + self.args.remote_node, bytes([0x05]), self.args.nmt_timeout)
+        self.bus.send(0x000, bytes([command, 0x00]))
+        for node_id in self.monitored_nodes:
+            self._wait_can(0x700 + node_id, bytes([state]), self.args.nmt_timeout)
 
-    def test_cia302_heartbeat(self) -> None:
+    def test_cia302_broadcast_start(self) -> None:
+        self._send_broadcast_and_expect(0x01, 0x05)
+
+    def test_cia302_broadcast_preop(self) -> None:
+        self._send_broadcast_and_expect(0x80, 0x7F)
+
+    def test_cia302_broadcast_stop(self) -> None:
+        self._send_broadcast_and_expect(0x02, 0x04)
+
+    def test_cia302_broadcast_reset_communication(self) -> None:
+        self._send_broadcast_and_expect(0x82, 0x00)
+
+    def test_cia302_target_reset_communication(self) -> None:
+        self._send_nmt_and_expect(0x82, 0x00, self.args.remote_node)
+
+    def test_cia302_targeted_isolation(self) -> None:
+        if not self.args.additional_remote_nodes:
+            raise RuntimeError("SKIP: targeted isolation requires --additional-remote-node")
         assert self.bus is not None
-        deadline = time.monotonic() + self.args.heartbeat_window
-        count = 0
+        isolated = self.args.additional_remote_nodes[0]
+        self._send_nmt_and_expect(0x80, 0x7F, self.args.remote_node)
+        self._send_nmt_and_expect(0x80, 0x7F, isolated)
+        self.bus.drain()
+        self.bus.send(0x000, bytes([0x01, self.args.remote_node]))
+        self._wait_can(0x700 + self.args.remote_node, bytes([0x05]), self.args.nmt_timeout)
+        deadline = time.monotonic() + self.args.nmt_timeout
         while time.monotonic() < deadline:
             frame = self.bus.recv(deadline - time.monotonic())
-            if frame is not None and frame.can_id == 0x700 + self.args.remote_node and len(frame.data) == 1:
-                count += 1
-        if count < self.args.min_heartbeats:
-            raise AssertionError(f"received {count} heartbeats, expected at least {self.args.min_heartbeats}")
+            if frame is not None and frame.can_id == 0x700 + isolated and frame.data != bytes([0x7F]):
+                raise AssertionError("targeted NMT command changed an unaddressed node")
 
-    def test_cia302_malformed_nmt(self) -> None:
+    def _heartbeat_samples(self, node_id: int, window: float) -> list[Frame]:
+        assert self.bus is not None
+        deadline = time.monotonic() + window
+        samples: list[Frame] = []
+        while time.monotonic() < deadline:
+            frame = self.bus.recv(deadline - time.monotonic())
+            if frame is not None and frame.can_id == 0x700 + node_id and len(frame.data) == 1:
+                samples.append(frame)
+        return samples
+
+    def test_cia302_heartbeat(self) -> None:
+        for node_id in self.monitored_nodes:
+            samples = self._heartbeat_samples(node_id, self.args.heartbeat_window)
+            if len(samples) < self.args.min_heartbeats:
+                raise AssertionError(
+                    f"node {node_id}: received {len(samples)} heartbeats, "
+                    f"expected at least {self.args.min_heartbeats}"
+                )
+            invalid = [frame for frame in samples if frame.data[0] not in (0x00, 0x04, 0x05, 0x7F)]
+            if invalid:
+                raise AssertionError(f"node {node_id}: invalid heartbeat state {invalid[0].data.hex(' ')}")
+
+    def test_cia302_heartbeat_timing(self) -> None:
+        if self.args.heartbeat_window <= 0 or self.args.heartbeat_max_gap <= 0:
+            raise AssertionError("heartbeat window and maximum gap must be positive")
+        for node_id in self.monitored_nodes:
+            samples = self._heartbeat_samples(node_id, self.args.heartbeat_window)
+            if len(samples) < self.args.min_heartbeats:
+                raise AssertionError(f"node {node_id}: insufficient heartbeat samples for timing")
+            gaps = [b.timestamp - a.timestamp for a, b in zip(samples, samples[1:])]
+            if not gaps:
+                raise AssertionError(f"node {node_id}: at least two samples are required for timing")
+            maximum_gap = max(gaps)
+            if maximum_gap > self.args.heartbeat_max_gap:
+                raise AssertionError(
+                    f"node {node_id}: heartbeat gap {maximum_gap:.3f}s exceeds "
+                    f"{self.args.heartbeat_max_gap:.3f}s"
+                )
+            if self.args.heartbeat_period is not None:
+                tolerance = max(self.args.heartbeat_period * self.args.heartbeat_jitter, 0.005)
+                for gap in gaps:
+                    if abs(gap - self.args.heartbeat_period) > tolerance:
+                        raise AssertionError(
+                            f"node {node_id}: heartbeat period {gap:.3f}s outside "
+                            f"{self.args.heartbeat_period:.3f}s +/- {tolerance:.3f}s"
+                        )
+
+    def _assert_preop_after_invalid_frames(self, invalid_frames: list[bytes]) -> None:
         assert self.bus is not None
         self._send_nmt_and_expect(0x80, 0x7F, self.args.remote_node)
         self.bus.drain()
-        self.bus.send(0x000, bytes([0x01]))
+        for payload in invalid_frames:
+            self.bus.send(0x000, payload)
         deadline = time.monotonic() + self.args.nmt_timeout
         observed = 0
         while time.monotonic() < deadline:
@@ -333,9 +406,26 @@ class Acceptance:
             if frame is not None and frame.can_id == 0x700 + self.args.remote_node:
                 observed += 1
                 if frame.data != bytes([0x7F]):
-                    raise AssertionError("one-byte NMT frame changed the remote state")
+                    raise AssertionError(
+                        f"invalid NMT sequence changed state to {frame.data.hex(' ')}"
+                    )
         if observed == 0:
-            raise AssertionError("no heartbeat observed while checking malformed NMT frame")
+            raise AssertionError("no heartbeat observed during malformed NMT matrix")
+
+    def test_cia302_malformed_nmt(self) -> None:
+        self._assert_preop_after_invalid_frames([bytes([0x01])])
+
+    def test_cia302_malformed_nmt_matrix(self) -> None:
+        self._assert_preop_after_invalid_frames(
+            [
+                b"",
+                bytes([0x01]),
+                bytes([0x01, self.args.remote_node, 0x00]),
+                bytes([0x03, self.args.remote_node]),
+                bytes([0x01, 0xFF]),
+                bytes([0x80, 0x00]),
+            ]
+        )
 
     def selected_tests(self) -> Iterable[tuple[str, Callable[[], None]]]:
         tests = {
@@ -353,8 +443,15 @@ class Acceptance:
             "cia302-stop": self.test_cia302_stop,
             "cia302-reset-node": self.test_cia302_reset_node,
             "cia302-broadcast-start": self.test_cia302_broadcast_start,
+            "cia302-broadcast-preop": self.test_cia302_broadcast_preop,
+            "cia302-broadcast-stop": self.test_cia302_broadcast_stop,
+            "cia302-broadcast-reset-communication": self.test_cia302_broadcast_reset_communication,
+            "cia302-target-reset-communication": self.test_cia302_target_reset_communication,
+            "cia302-targeted-isolation": self.test_cia302_targeted_isolation,
             "cia302-heartbeat": self.test_cia302_heartbeat,
+            "cia302-heartbeat-timing": self.test_cia302_heartbeat_timing,
             "cia302-malformed-nmt": self.test_cia302_malformed_nmt,
+            "cia302-malformed-nmt-matrix": self.test_cia302_malformed_nmt_matrix,
         }
         if self.args.tests:
             unknown = sorted(set(self.args.tests) - set(tests))
@@ -386,6 +483,9 @@ class Acceptance:
                 "uds_tx_id": self.args.uds_tx_id,
                 "uds_rx_id": self.args.uds_rx_id,
                 "remote_node": self.args.remote_node,
+                "additional_remote_nodes": self.args.additional_remote_nodes,
+                "heartbeat_period": self.args.heartbeat_period,
+                "heartbeat_max_gap": self.args.heartbeat_max_gap,
                 "results": [asdict(r) for r in self.results],
             }
             with open(self.args.json_out, "w", encoding="utf-8") as handle:
@@ -401,11 +501,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--uds-tx-id", type=lambda s: int(s, 0), default=0x7E0)
     parser.add_argument("--uds-rx-id", type=lambda s: int(s, 0), default=0x7E8)
     parser.add_argument("--remote-node", type=int, default=2)
+    parser.add_argument("--additional-remote-node", dest="additional_remote_nodes", action="append", type=int, default=[],
+                        help="additional node-ID for broadcast and targeted-isolation tests; repeatable")
     parser.add_argument("--timeout", type=float, default=1.0)
     parser.add_argument("--nmt-timeout", type=float, default=2.0)
     parser.add_argument("--reset-wait", type=float, default=5.0)
     parser.add_argument("--heartbeat-window", type=float, default=3.0)
     parser.add_argument("--min-heartbeats", type=int, default=2)
+    parser.add_argument("--heartbeat-period", type=float, default=None,
+                        help="expected heartbeat period in seconds; omit to check maximum gap only")
+    parser.add_argument("--heartbeat-jitter", type=float, default=0.20,
+                        help="relative period tolerance for timing acceptance (default: 20%%)")
+    parser.add_argument("--heartbeat-max-gap", type=float, default=2.0,
+                        help="maximum permitted heartbeat gap in seconds (default: 2.0)")
     parser.add_argument("--did", type=parse_did, default=bytes.fromhex("F190"))
     parser.add_argument("--multiframe-request", type=hex_bytes, default=bytes.fromhex("22 F1 90 F1 91 F1 92 F1 93"))
     parser.add_argument("--write-did", type=parse_did, default=bytes.fromhex("F1 90"))
@@ -434,4 +542,7 @@ if __name__ == "__main__":
 # uds-default-session uds-extended-session uds-tester-present uds-read-did
 # uds-unknown-service uds-multiframe uds-write-did uds-reset
 # cia302-bootup cia302-start cia302-preop cia302-stop cia302-reset-node
-# cia302-broadcast-start cia302-heartbeat cia302-malformed-nmt
+# cia302-broadcast-start cia302-broadcast-preop cia302-broadcast-stop
+# cia302-broadcast-reset-communication cia302-target-reset-communication
+# cia302-targeted-isolation cia302-heartbeat cia302-heartbeat-timing
+# cia302-malformed-nmt cia302-malformed-nmt-matrix

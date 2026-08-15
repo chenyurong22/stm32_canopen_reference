@@ -10,13 +10,20 @@
 
 #include "canopen_reference_config.h"
 
-/* A device uses NMT slave processing in all builds. The master helper is needed
- * only when the explicitly enabled CiA 309 gateway accepts authorized NMT
- * commands for remote nodes. */
-#if CANOPEN_REFERENCE_ENABLE_GATEWAY
-#define CO_CONFIG_NMT                 0x02U
+/* NMT master support is enabled only for the explicit CiA 302 personality or
+ * the existing gateway personality. The normal firmware remains a slave. */
+#if (CANOPEN_REFERENCE_ENABLE_GATEWAY || CANOPEN_REFERENCE_ENABLE_CIA302_MASTER)
+#define CO_CONFIG_NMT                 CO_CONFIG_NMT_MASTER
 #else
 #define CO_CONFIG_NMT                 0U
+#endif
+
+/* The CiA 302 adapter reuses CANopenNode heartbeat monitoring callbacks. */
+#if CANOPEN_REFERENCE_ENABLE_CIA302_MASTER
+#define CO_CONFIG_HB_CONS              (CO_CONFIG_HB_CONS_ENABLE | CO_CONFIG_HB_CONS_CALLBACK_MULTI \
+                                        | CO_CONFIG_HB_CONS_QUERY_FUNCT)
+#else
+#define CO_CONFIG_HB_CONS              CO_CONFIG_HB_CONS_ENABLE
 #endif
 
 /* SDO server: expedited (always present), segmented, block, and OD-triggered

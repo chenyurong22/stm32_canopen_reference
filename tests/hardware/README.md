@@ -38,6 +38,24 @@ python3 tests/hardware/run_uds_cia302_acceptance.py \
   --json-out results/uds_cia302.json
 ```
 
+For a two-node network, add the second monitored node to make broadcast and
+address-isolation checks meaningful:
+
+```bash
+GIT_SHA="$(git rev-parse HEAD)" \
+python3 tests/hardware/run_uds_cia302_acceptance.py \
+  --iface can0 --remote-node 2 --additional-remote-node 3 \
+  --heartbeat-period 1.0 --heartbeat-max-gap 2.0 \
+  --json-out results/uds_cia302_multi_node.json
+```
+
+The timing values must match the heartbeat producer configuration. Do not use
+`--heartbeat-period` unless the producer period is known from the target OD or
+product configuration; `--heartbeat-max-gap` is always checked by the timing
+test. Broadcast tests verify every node listed by `--remote-node` and repeated
+`--additional-remote-node` options.
+
+
 The process exits with status `0` when there are no failures and `1` when at least one test fails. Runtime availability problems, such as a missing interface or permission, terminate with status `2`. Destructive tests that are not explicitly enabled are recorded as `SKIP` and do not fail the run.
 
 ## Destructive gates
@@ -63,12 +81,32 @@ Use `--tests` with one or more names to run a focused check:
 | Group | Test names |
 |---|---|
 | UDS/ISO-TP | `uds-default-session`, `uds-extended-session`, `uds-tester-present`, `uds-read-did`, `uds-unknown-service`, `uds-multiframe`, `uds-write-did`, `uds-reset` |
-| CiA 302/NMT | `cia302-bootup`, `cia302-start`, `cia302-preop`, `cia302-stop`, `cia302-reset-node`, `cia302-broadcast-start`, `cia302-heartbeat`, `cia302-malformed-nmt` |
+| CiA 302/NMT slave/wire | `cia302-bootup`, `cia302-start`, `cia302-preop`, `cia302-stop`, `cia302-reset-node`, `cia302-broadcast-start`, `cia302-broadcast-preop`, `cia302-broadcast-stop`, `cia302-broadcast-reset-communication`, `cia302-target-reset-communication`, `cia302-targeted-isolation`, `cia302-heartbeat`, `cia302-heartbeat-timing`, `cia302-malformed-nmt`, `cia302-malformed-nmt-matrix` |
 
-For product-specific behavior, adjust `--did`, `--multiframe-request`, `--write-did`, `--write-value`, `--reset-type`, `--timeout`, `--nmt-timeout`, `--reset-wait`, `--heartbeat-window`, and `--min-heartbeats` rather than modifying the test code.
+For product-specific behavior, adjust `--did`, `--multiframe-request`, `--write-did`, `--write-value`, `--reset-type`, `--timeout`, `--nmt-timeout`, `--reset-wait`, `--heartbeat-window`, `--min-heartbeats`, `--heartbeat-period`, `--heartbeat-jitter`, and `--heartbeat-max-gap` rather than modifying the test code.
+
+The runner is an external NMT-master test tool. It validates the DUT’s NMT
+slave behavior and heartbeat producer over the physical bus. Embedded CiA 302
+master supervision is a separate opt-in firmware personality, built with:
+
+```bash
+cmake -S . -B build-cia302 \
+  -DSTM32_CUBE_F7_DIR=/path/to/STM32CubeF7 \
+  -DSTM32_F7_LINKER_SCRIPT=/path/to/STM32F767xx_FLASH.ld \
+  -DCANOPEN_REFERENCE_ENABLE_CIA302_MASTER=ON
+cmake --build build-cia302
+```
+
+That personality monitors the configured peer node (default node 11), exposes
+bounded `network_ready`, boot-timeout, heartbeat-timeout, and invalid-frame
+counters through the UART diagnostic line when
+`CANOPEN_REFERENCE_UART_DIAGNOSTICS=1`, and must be tested with an independent
+CANopen peer or deterministic simulator. The default image remains an NMT
+slave and does not emit master commands.
+
 
 ## JSON results
 
 When `--json-out` is supplied, the runner writes schema version `1` with the interface, CAN identifiers, remote node, optional `GIT_SHA`, and one result object per selected test. Each result contains the test name, `PASS`/`FAIL`/`SKIP` status, detail string, and elapsed milliseconds. Store the JSON file with the raw CAN trace, firmware metadata, and bench configuration.
 
-The default runner is intentionally a bounded diagnostic contract and does not claim to implement an embedded UDS server. It validates the activated target behavior over the physical CAN link and complements the host-side contract model in `middleware/diagnostics/uds_isotp.py`.
+The runner is intentionally a bounded diagnostic contract and does not claim to implement an embedded UDS server. It validates activated target behavior over the physical CAN link and complements the host-side contract model in `middleware/diagnostics/uds_isotp.py`. The CiA 302 test names in this file cover external NMT control; the embedded-master path additionally requires the opt-in firmware build and peer-network evidence described above.

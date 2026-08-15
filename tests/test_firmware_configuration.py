@@ -19,6 +19,10 @@ MSP = (ROOT / "Core" / "Src" / "stm32f7xx_hal_msp.c").read_text(encoding="utf-8"
 FEATURES = (ROOT / "App" / "Inc" / "CO_driver_custom.h").read_text(encoding="utf-8")
 PROFILE = (ROOT / "App" / "Inc" / "canopen_reference_config.h").read_text(encoding="utf-8")
 BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding="utf-8")
+CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
+CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
+APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
+CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 
 
 def source_integer(name: str) -> int:
@@ -109,6 +113,18 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceBoard_SetCanTransceiverEnabled(false);", BOARD)
         self.assertIn("CANopenReferenceHw_DriveSetEnable(false);", BOARD)
         self.assertIn("CANopenReferenceHw_WriteDigitalOutputs(0U);", BOARD)
+
+    def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
+        """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""
+        self.assertIn("option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER", CMAKE)
+        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)', CMAKE)
+        self.assertIn("#define CANOPEN_REFERENCE_ENABLE_CIA302_MASTER 0U", PROFILE)
+        self.assertIn("CANopenReferenceCia302_PreProcess(now);", APP_RUNTIME)
+        self.assertLess(APP_RUNTIME.index("CANopenReferenceCia302_PreProcess(now);"),
+                        APP_RUNTIME.index("resetCommand = CO_process("))
+        self.assertIn("CO_FLAG_READ(node->CANrxNew)", CIA302_SOURCE)
+        self.assertIn("CANopenReferenceCia302_PreProcess", CIA302_HEADER)
+        self.assertIn("event_count_heartbeat_timeout", CIA302_HEADER)
 
 
 if __name__ == "__main__":

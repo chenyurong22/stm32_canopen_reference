@@ -8,6 +8,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(STM32_CUBE_F7_DIR "" CACHE PATH "Path to the STM32CubeF7 firmware package")
 set(STM32_F7_LINKER_SCRIPT "" CACHE FILEPATH "Board/package-specific GNU LD script")
+option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)
 
 if(NOT STM32_CUBE_F7_DIR)
     message(FATAL_ERROR "Set STM32_CUBE_F7_DIR to an STM32CubeF7 package. See docs/02_build_and_cubemx.md.")
@@ -45,6 +46,7 @@ add_executable(${PROJECT_NAME}
     App/Src/CO_app_STM32_reference.c
     App/Src/canopen_reference_hw.c
     App/Src/canopen_reference_board.c
+    App/Src/canopen_reference_cia302.c
     App/Src/canopen_reference_diagnostics.c
     App/Src/canopen_reference_gateway.c
     App/Src/canopen_reference_lss.c
@@ -65,6 +67,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USE_HAL_DRIVER
     CO_DRIVER_CUSTOM
     CO_USE_GLOBALS
+    CANOPEN_REFERENCE_ENABLE_CIA302_MASTER=$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA302_MASTER}>
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.
     __int64_t_defined=1)

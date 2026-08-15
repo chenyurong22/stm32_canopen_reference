@@ -11,6 +11,7 @@
 #include "CANopen.h"
 #include "OD.h"
 #include "canopen_reference_config.h"
+#include "canopen_reference_cia302.h"
 #include "canopen_reference_diagnostics.h"
 #include "canopen_reference_gateway.h"
 #include "canopen_reference_lss.h"
@@ -86,6 +87,7 @@ canopen_app_resetCommunication(void) {
     }
 
     CANopenReference_ForceSafeApplication();
+    CANopenReferenceCia302_Deinit();
     CO->CANmodule->CANnormal = false;
     CO_CANsetConfigurationMode((void *)canopenNodeSTM32);
     CO_CANmodule_disable(CO->CANmodule);
@@ -104,6 +106,7 @@ canopen_app_resetCommunication(void) {
         return -3;
     }
     CANopenReferenceLss_Init(CO, &canopenReferenceLssState);
+    CANopenReferenceCia302_PrepareOd();
 
     canopenNodeSTM32->activeNodeID = canopenNodeSTM32->desiredNodeID;
     error = CO_CANopenInit(CO, NULL, NULL, OD, NULL, CANOPEN_REFERENCE_NMT_CONTROL,
@@ -115,6 +118,7 @@ canopen_app_resetCommunication(void) {
     }
 
     CANopenReferenceGateway_Init(CO);
+    CANopenReferenceCia302_Init(CO, canopenNodeSTM32->activeNodeID, HAL_GetTick());
 
     error = CO_CANopenInitPDO(CO, CO->em, OD, canopenNodeSTM32->activeNodeID, &errorInfo);
     if (error != CO_ERROR_NO && error != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
@@ -152,7 +156,9 @@ canopen_app_process(void) {
     elapsedUs = (now - canopenReferenceLastTick) * 1000U;
     canopenReferenceLastTick = now;
 
+    CANopenReferenceCia302_PreProcess(now);
     resetCommand = CO_process(CO, CANopenReferenceGateway_Authorized(), elapsedUs, NULL);
+    CANopenReferenceCia302_Process(now);
     canopenNodeSTM32->outStatusLEDRed = CO_LED_RED(CO->LEDs, CO_LED_CANopen);
     canopenNodeSTM32->outStatusLEDGreen = CO_LED_GREEN(CO->LEDs, CO_LED_CANopen);
     CANopenReferenceDiagnostics_Process(canopenNodeSTM32->activeNodeID, CO->CANmodule->CANerrorStatus,

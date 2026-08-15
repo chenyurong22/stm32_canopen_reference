@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "canopen_reference_diagnostics.h"
+#include "canopen_reference_cia302.h"
+#include "canopen_reference_config.h"
 
 #include <stdio.h>
 
@@ -20,15 +22,33 @@ CANopenReferenceDiagnostics_Process(uint8_t node_id, uint16_t can_error_status, 
                                     uint32_t now_ms) {
 #if CANOPEN_REFERENCE_UART_DIAGNOSTICS
     static uint32_t last_report_ms;
-    char line[80];
+    char line[160];
     int written;
+    CANopenReferenceCia302Snapshot cia302;
 
     if ((uint32_t)(now_ms - last_report_ms) < CANOPEN_REFERENCE_DIAGNOSTICS_PERIOD_MS) {
         return;
     }
     last_report_ms = now_ms;
-    written = snprintf(line, sizeof(line), "CANopen node=%u err=0x%04X led=%u/%u\r\n", (unsigned)node_id,
+    CANopenReferenceCia302_GetSnapshot(&cia302);
+#if CANOPEN_REFERENCE_ENABLE_CIA302_MASTER
+    written = snprintf(line, sizeof(line),
+                       "CANopen node=%u err=0x%04X led=%u/%u cia302=1 run=%u ready=%u peer=%u state=0x%02X "
+                       "boot=%lu hb=%lu hbt=%lu bt=%lu net=%lu inv=%lu last=%u/%u/0x%02X\r\n",
+                       (unsigned)node_id, (unsigned)can_error_status, (unsigned)led_green, (unsigned)led_red,
+                       (unsigned)cia302.running, (unsigned)cia302.network_ready,
+                       (unsigned)cia302.monitored_node_id, (unsigned)cia302.monitored_node_state,
+                       (unsigned long)cia302.event_count_bootup, (unsigned long)cia302.event_count_heartbeat,
+                       (unsigned long)cia302.event_count_heartbeat_timeout,
+                       (unsigned long)cia302.event_count_boot_timeout,
+                       (unsigned long)cia302.event_count_network_ready,
+                       (unsigned long)cia302.event_count_invalid_frame,
+                       (unsigned)cia302.last_event_type, (unsigned)cia302.last_event_node_id,
+                       (unsigned)cia302.last_event_state);
+#else
+    written = snprintf(line, sizeof(line), "CANopen node=%u err=0x%04X led=%u/%u cia302=0\r\n", (unsigned)node_id,
                        (unsigned)can_error_status, (unsigned)led_green, (unsigned)led_red);
+#endif
     if (written > 0) {
         uint16_t length = (uint16_t)((written >= (int)sizeof(line)) ? sizeof(line) - 1U : (unsigned)written);
         CANopenReferenceDiagnostics_Write((const uint8_t *)line, length);

@@ -65,4 +65,27 @@
 #define CANOPEN_REFERENCE_ENABLE_GATEWAY         0U
 #endif
 
+/* CiA 302 NMT master is an opt-in personality. The default image remains an
+ * NMT slave and does not emit remote-node commands. The peer defaults are
+ * deliberately explicit so the hardware procedure is reproducible. */
+#ifndef CANOPEN_REFERENCE_ENABLE_CIA302_MASTER
+#define CANOPEN_REFERENCE_ENABLE_CIA302_MASTER   0U
+#endif
+#ifndef CANOPEN_REFERENCE_CIA302_PEER_NODE_ID
+#define CANOPEN_REFERENCE_CIA302_PEER_NODE_ID    11U
+#endif
+#ifndef CANOPEN_REFERENCE_CIA302_HEARTBEAT_TIMEOUT_MS
+#define CANOPEN_REFERENCE_CIA302_HEARTBEAT_TIMEOUT_MS 1500U
+#endif
+#ifndef CANOPEN_REFERENCE_CIA302_BOOT_TIMEOUT_MS
+#define CANOPEN_REFERENCE_CIA302_BOOT_TIMEOUT_MS 10000U
+#endif
+#ifndef CANOPEN_REFERENCE_CIA302_AUTO_START
+#define CANOPEN_REFERENCE_CIA302_AUTO_START      0U
+#endif
+
+#if (CANOPEN_REFERENCE_CIA302_PEER_NODE_ID < 1U) || (CANOPEN_REFERENCE_CIA302_PEER_NODE_ID > 127U)
+#error "CANOPEN_REFERENCE_CIA302_PEER_NODE_ID must be in the CANopen range 1..127."
+#endif
+
 #endif /* CANOPEN_REFERENCE_CONFIG_H */
