@@ -2,6 +2,7 @@
 #ifndef CANOPEN_REFERENCE_DIAGNOSTICS_H
 #define CANOPEN_REFERENCE_DIAGNOSTICS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -23,6 +24,18 @@ uint32_t CANopenReferenceDiagnostics_CanHardwareErrorCount(void);
 
 /** Return the most recent HAL CAN error bitmask. */
 uint32_t CANopenReferenceDiagnostics_LastCanHardwareError(void);
+
+/** Record a mainline runtime initialization/recovery failure code. */
+void CANopenReferenceDiagnostics_ReportRuntimeFault(uint32_t fault_code);
+
+/** Return the most recent runtime fault code, or zero when none is latched. */
+uint32_t CANopenReferenceDiagnostics_LastRuntimeFault(void);
+
+/** Record a completed bus-off recovery attempt. */
+void CANopenReferenceDiagnostics_ReportCanRecovery(bool success);
+
+/** Return the number of bus-off recovery attempts observed since boot. */
+uint32_t CANopenReferenceDiagnostics_CanRecoveryCount(void);
 
 #ifdef __cplusplus
 }

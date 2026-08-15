@@ -13,6 +13,8 @@
 
 static volatile uint32_t s_can_hardware_error_count;
 static volatile uint32_t s_last_can_hardware_error;
+static volatile uint32_t s_last_runtime_fault;
+static volatile uint32_t s_can_recovery_count;
 
 __attribute__((weak)) void
 CANopenReferenceDiagnostics_Write(const uint8_t *bytes, uint16_t length) {
@@ -34,6 +36,27 @@ CANopenReferenceDiagnostics_CanHardwareErrorCount(void) {
 uint32_t
 CANopenReferenceDiagnostics_LastCanHardwareError(void) {
     return __atomic_load_n(&s_last_can_hardware_error, __ATOMIC_ACQUIRE);
+}
+
+void
+CANopenReferenceDiagnostics_ReportRuntimeFault(uint32_t fault_code) {
+    __atomic_store_n(&s_last_runtime_fault, fault_code, __ATOMIC_RELEASE);
+}
+
+uint32_t
+CANopenReferenceDiagnostics_LastRuntimeFault(void) {
+    return __atomic_load_n(&s_last_runtime_fault, __ATOMIC_ACQUIRE);
+}
+
+void
+CANopenReferenceDiagnostics_ReportCanRecovery(bool success) {
+    (void)success;
+    (void)__atomic_fetch_add(&s_can_recovery_count, 1U, __ATOMIC_RELAXED);
+}
+
+uint32_t
+CANopenReferenceDiagnostics_CanRecoveryCount(void) {
+    return __atomic_load_n(&s_can_recovery_count, __ATOMIC_ACQUIRE);
 }
 
 void

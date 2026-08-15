@@ -41,6 +41,16 @@
 #define CANOPEN_REFERENCE_DEFAULT_BITRATE_KBPS  500U
 #define CANOPEN_REFERENCE_HEARTBEAT_MS          1000U
 
+/* Bus-off recovery is mainline-only: stop CAN, wait for the bus to settle,
+ * rebuild filters/OD state, and enter a latched safe fault after bounded
+ * failures. The board may override these values at compile time. */
+#ifndef CANOPEN_REFERENCE_CAN_RECOVERY_WAIT_MS
+#define CANOPEN_REFERENCE_CAN_RECOVERY_WAIT_MS  100U
+#endif
+#ifndef CANOPEN_REFERENCE_CAN_RECOVERY_MAX_ATTEMPTS
+#define CANOPEN_REFERENCE_CAN_RECOVERY_MAX_ATTEMPTS 3U
+#endif
+
 /* Replace before release. These are deliberately non-production reference
  * values. The same values must be updated in the EDS/XDD and production label. */
 #define CANOPEN_REFERENCE_VENDOR_ID             UINT32_C(0x00000000)
