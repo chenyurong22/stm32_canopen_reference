@@ -307,15 +307,36 @@ class FirmwareConfigurationTests(unittest.TestCase):
         ):
             self.assertIn(expected, PRODUCT_SCOPE)
         self.assertTrue((ROOT / "PRODUCT_SCOPE.md").is_file())
+        self.assertTrue((ROOT / "product" / "cia401_od.yaml").is_file())
+        self.assertTrue((ROOT / "scripts" / "validate_cia401_product.py").is_file())
         cia401_product = (ROOT / "PRODUCT_CIA401.md").read_text(encoding="utf-8")
         for expected in (
             "CiA 401 Product Definition and Freeze Gate",
             "CiA 401 I/O device",
-            "product/cia401_pdo.yaml",
+            "product/cia401_od.yaml",
             "Hardware/HIL",
             "embedded UDS/ISO-TP server",
+            "XDD export remains a separately tracked release gate",
         ):
             self.assertIn(expected, cia401_product)
+
+    def test_cia401_od_pdo_authority_is_explicit(self) -> None:
+        """The selected CiA 401 product has one machine-checkable OD/PDO authority."""
+        manifest = (ROOT / "product" / "cia401_od.yaml").read_text(encoding="utf-8")
+        for expected in (
+            '"schema": "stm32-canopen-cia401-product-v1"',
+            '"personality": "cia401"',
+            '"default_mapping_is_empty": true',
+            '"0x6000"',
+            '"0x6200"',
+            '"0x1400"',
+            '"0x1800"',
+        ):
+            self.assertIn(expected, manifest)
+        validator = (ROOT / "scripts" / "validate_cia401_product.py").read_text(encoding="utf-8")
+        self.assertIn("fails closed", validator)
+        self.assertIn("Generated/OD.c", validator)
+        self.assertIn("Generated/OD.h", validator)
 
     def test_external_evidence_handoff_is_pending_and_fail_closed(self) -> None:
         """Evidence templates are explicit handoff artifacts and never fabricate PASS results."""

@@ -48,7 +48,7 @@ The software default is to move commanded outputs to a de-energized safe state d
 | EMCY | Standard CANopen emergency object is integrated | Define product error codes, repetition policy, clear policy, and service procedure |
 | SDO server | CANopenNode SDO server is integrated | Freeze timeout, abort behavior, access policy, and service-tool expectations |
 | SDO client | Optional configured client path exists in the reference | Decide whether it is part of the v1 product claim and test contract |
-| PDOs | Four RPDO and four TPDO communication/mapping records exist in the OD | Freeze the mappings and transmission policy in `product/cia401_pdo.yaml` |
+| PDOs | Four RPDO and four TPDO communication/mapping records exist in the OD | The authoritative defaults and mapping policy are recorded in `product/cia401_od.yaml`; product-specific non-empty mappings require a manifest revision and regenerated artifacts |
 | TPDO transmission | Determined by active OD communication parameters | Freeze event, inhibit, synchronous, and timer values |
 | RPDO behavior | RPDO writes reach the generated application objects | Freeze timeout, invalid-data, disable, and safe-output reactions |
 | SYNC | CANopenNode SYNC service is integrated | Define producer/consumer role, period, jitter, and PDO synchronization policy |
@@ -63,7 +63,7 @@ The product owner and hardware owner must approve the following before a product
 1. The exact STM32F767 ordering code, package, memory density, board revision, transceiver, oscillator, supply, termination, and connector are recorded.
 2. The number, electrical levels, polarity, filtering, calibration, and fault behavior of every I/O channel are recorded.
 3. The node-ID, bitrate, heartbeat, EMCY, NMT, LSS, SDO, SYNC, and persistence policies are approved.
-4. The authoritative OD, EDS/XDD, PDO mapping, firmware configuration, and acceptance tests identify the same product revision.
+4. The authoritative OD manifest, generated OD, EDS, firmware configuration, and acceptance tests identify the same product revision; an XDD export remains a separately tracked release gate because no XDD is currently checked in.
 5. Safe-state behavior is verified at the board level, including reset, watchdog, bus-off, brownout, and loss-of-communication cases.
 6. Hardware/HIL evidence is attached to the exact firmware SHA and board serial; host tests alone cannot close these gates.
 
@@ -78,4 +78,4 @@ The selected software baseline is recorded in [`docs/release_v0.9.0_rc1_baseline
 - `Generated/OD.c` and `Generated/OD.h`
 - `ObjectDictionary/stm32f767_canopen_reference.eds`
 
-These artifacts are the current reference inputs. They are not considered product-frozen until the OD/PDO authority and consistency checks described in the next roadmap phase pass.
+The authoritative manifest is `product/cia401_od.yaml`; `scripts/validate_cia401_product.py` checks it against the generated OD, EDS, and selected firmware personality. Hardware-specific values, a product-approved non-empty PDO map, and an XDD export remain explicit product-freeze gates.
