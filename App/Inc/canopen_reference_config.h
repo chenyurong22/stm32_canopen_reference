@@ -59,6 +59,16 @@
 #define CANOPEN_REFERENCE_UART_DIAGNOSTICS       0U
 #endif
 
+/* Independent watchdog supervision is opt-in until the board validates the
+ * nominal LSI frequency and reset-recovery behavior. Both the 1 ms timer path
+ * and the mainline must make progress before refresh is permitted. */
+#ifndef CANOPEN_REFERENCE_ENABLE_IWDG
+#define CANOPEN_REFERENCE_ENABLE_IWDG            0U
+#endif
+#ifndef CANOPEN_REFERENCE_IWDG_TIMEOUT_MS
+#define CANOPEN_REFERENCE_IWDG_TIMEOUT_MS        200U
+#endif
+
 /* CiA 309-3 ASCII gateway support is disabled unless the product has an
  * authenticated/physical diagnostic access policy and a bounded UART bridge. */
 #ifndef CANOPEN_REFERENCE_ENABLE_GATEWAY
