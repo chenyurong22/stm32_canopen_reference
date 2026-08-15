@@ -197,9 +197,16 @@ The reference does not define a universal STM32F767 board pinout, external CAN t
 
 ## Related documentation
 
-- [Hardware UDS/CiA 302 procedure](docs/hardware/uds_cia302_test_procedure.md)
-- [Hardware test runner](tests/hardware/README.md)
-- [Build and CubeMX notes](docs/02_build_and_cubemx.md)
-- [Object Dictionary](ObjectDictionary/stm32f767_canopen_reference.eds)
-- [CANopenNode](https://github.com/CANopenNode/CANopenNode)
-- [CanOpenSTM32](https://github.com/CANopenNode/CanOpenSTM32)
+| Topic | Document |
+|---|---|
+| Reproducible build and flashing | [BUILD.md](BUILD.md) |
+| CubeMX ownership and board porting | [Build and CubeMX notes](docs/02_build_and_cubemx.md) |
+| CAN wiring and hardware bring-up | [Hardware integration guide](docs/hardware.md) |
+| UDS/CiA 302 acceptance | [Hardware procedure](docs/hardware/uds_cia302_test_procedure.md) and [test runner](tests/hardware/README.md) |
+| Object Dictionary | [EDS](ObjectDictionary/stm32f767_canopen_reference.eds) |
+| Dependencies and licenses | [THIRD_PARTY.md](THIRD_PARTY.md) and [LICENSE](LICENSE) |
+| Contribution process | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Security boundaries | [SECURITY.md](SECURITY.md) |
+| Change history | [CHANGELOG.md](CHANGELOG.md) |
+
+The upstream components are [CANopenNode](https://github.com/CANopenNode/CANopenNode) and [CanOpenSTM32](https://github.com/CANopenNode/CanOpenSTM32).
