@@ -301,10 +301,21 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "No embedded NMEA 2000 stack or field interoperability is claimed",
             "No secure boot, key provisioning, firmware authentication",
             "v0.9.0",
+            "v0.9.0-rc1",
+            "509b49c",
             "v1.0.0",
         ):
             self.assertIn(expected, PRODUCT_SCOPE)
         self.assertTrue((ROOT / "PRODUCT_SCOPE.md").is_file())
+        cia401_product = (ROOT / "PRODUCT_CIA401.md").read_text(encoding="utf-8")
+        for expected in (
+            "CiA 401 Product Definition and Freeze Gate",
+            "CiA 401 I/O device",
+            "product/cia401_pdo.yaml",
+            "Hardware/HIL",
+            "embedded UDS/ISO-TP server",
+        ):
+            self.assertIn(expected, cia401_product)
 
     def test_external_evidence_handoff_is_pending_and_fail_closed(self) -> None:
         """Evidence templates are explicit handoff artifacts and never fabricate PASS results."""

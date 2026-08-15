@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is a **reference firmware platform** for STM32F767 CANopen development. It is not, by itself, a finished device, drive, gateway, safety product, or field-update system. A production product must select one declared personality, freeze its Object Dictionary and hardware design, and produce the required hardware, reliability, security, manufacturing, electrical, and conformance evidence.
+This repository is a **reference firmware platform** for STM32F767 CANopen development. It is not, by itself, a finished device, drive, gateway, safety product, or field-update system. The current v1 product path selects CiA 401 as its production-personality candidate; the definition and unresolved owner sign-offs are recorded in [`PRODUCT_CIA401.md`](PRODUCT_CIA401.md). A production product must select one declared personality, freeze its Object Dictionary and hardware design, and produce the required hardware, reliability, security, manufacturing, electrical, and conformance evidence.
 
 ## Declared reference personalities
 
@@ -36,7 +36,8 @@ The minimum product evidence for a selected personality includes the exact firmw
 
 | Release level | Meaning |
 |---|---|
-| `v0.9.0` Hardware Validation Candidate | Software gates pass, production compiler/resource checks pass, and the repository is ready for controlled board/HIL validation. External evidence is explicitly tracked and may remain pending. |
+| `v0.9.0` Historical hardware-validation candidate | Historical candidate tag retained at `9c04ef2`; it records an earlier software baseline. |
+| `v0.9.0-rc1` Hardware Validation Candidate | Immutable candidate tag at `509b49c`; selected CiA 401 product path and current software remediation baseline. External evidence is explicitly pending. |
 | `v1.0.0` Production release | All mandatory product requirements pass implementation, automated verification where applicable, physical/HIL verification where applicable, documented acceptance criteria, recorded evidence, and approved release review. |
 
 ## Scope-change rule
