@@ -19,9 +19,10 @@ extern "C" {
 CO_ReturnError_t CANopenReferenceStorage_Init(CO_t *co);
 
 /**
- * Board persistence seam. The default implementation is CRC-validated RAM and
- * therefore survives communication resets but not power loss. A product board
- * must override both hooks with Flash/EEPROM wear-managed storage.
+ * Board persistence seam. On STM32F767 builds the default implementation is
+ * a CRC-validated two-slot internal-Flash backend. A board may override both
+ * hooks for external EEPROM, FRAM, or a product-specific wear-leveling layer.
+ * The linker script reserves the final two 256 KiB sectors for this backend.
  */
 bool CANopenReferenceStorage_BoardStore(const void *data, size_t length);
 bool CANopenReferenceStorage_BoardRestore(void *data, size_t length);

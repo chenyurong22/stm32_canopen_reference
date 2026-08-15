@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Reference linker script for STM32F767 variants with 2 MiB FLASH and 512 KiB
- * SRAM. Verify the exact package, memory-map, bootloader reservation, external
- * memory use, and interrupt-vector location before production use. */
+ * SRAM. Verify the exact package, memory-map, bootloader reservation,
+ * external memory use, and interrupt-vector location before production use.
+ * Sectors 10 and 11 (0x08180000..0x081FFFFF) are reserved for the
+ * CANopenReferenceStorage two-slot persistence backend. */
 
 ENTRY(Reset_Handler)
 
@@ -11,7 +13,7 @@ _Min_Stack_Size = 0x800;
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 2048K
+  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 1536K
   RAM   (xrw) : ORIGIN = 0x20000000, LENGTH = 512K
 }
 
