@@ -21,6 +21,9 @@ STORAGE_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_storage.h").read_tex
 STORAGE_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_storage.c").read_text(encoding="utf-8")
 WATCHDOG_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_watchdog.h").read_text(encoding="utf-8")
 WATCHDOG_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_watchdog.c").read_text(encoding="utf-8")
+RECOVERY_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_can_recovery.h").read_text(encoding="utf-8")
+RECOVERY_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_can_recovery.c").read_text(encoding="utf-8")
+LINKER = (ROOT / "linker" / "STM32F767_2M_512K_FLASH.ld").read_text(encoding="utf-8")
 PROFILE = (ROOT / "App" / "Inc" / "canopen_reference_config.h").read_text(encoding="utf-8")
 BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding="utf-8")
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
@@ -132,11 +135,53 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReference_ConfigureCanFilter", FILTER_SOURCE)
         self.assertIn("CAN_FILTERMODE_IDLIST", FILTER_SOURCE)
         self.assertIn("CAN_FILTERSCALE_16BIT", FILTER_SOURCE)
-        self.assertIn("ids[8] = (uint16_t)(0x600U + node_id)", FILTER_SOURCE)
-        self.assertIn("ids[9] = (uint16_t)(0x700U + node_id)", FILTER_SOURCE)
-        self.assertIn("ids[10] = 0x7E4U", FILTER_SOURCE)
-        self.assertIn("ids[11] = 0x7E5U", FILTER_SOURCE)
-        self.assertIn("for (uint32_t bank = 0U; bank < 3U; ++bank)", FILTER_SOURCE)
+        for expected in (
+            "CANopenReference_FilterAdd(ids, &count, 0x000U)",
+            "CANopenReference_FilterAdd(ids, &count, 0x080U)",
+            "CANopenReference_FilterAdd(ids, &count, 0x7E4U)",
+            "CANopenReference_FilterAdd(ids, &count, 0x7E5U)",
+            "OD_PERSIST_COMM.x1280_SDOClientParameter.COB_IDServerToClientRx",
+            "for (uint32_t bank = 0U; bank < ((count + 3U) / 4U); ++bank)",
+        ):
+            self.assertIn(expected, FILTER_SOURCE)
+
+    def test_can_errors_and_busoff_recovery_are_mainline_bounded(self) -> None:
+        """ISR error capture maps faults and defers bounded recovery to mainline."""
+        for expected in (
+            "HAL_CAN_ErrorCallback",
+            "HAL_CAN_ERROR_BOF",
+            "HAL_CAN_ERROR_ACK",
+            "HAL_CAN_ERROR_RX_FOV0",
+            "HAL_CAN_ERROR_STF",
+            "CO_CAN_ERRTX_BUS_OFF",
+            "CANopenReferenceCanRecovery_Request",
+            "CANopenReferenceCanRecovery_Complete",
+            "CANOPEN_REFERENCE_CAN_RECOVERY_MAX_ATTEMPTS",
+            "CANopenReference_FailRuntime(0xCA000001UL)",
+        ):
+            self.assertIn(expected, APP_RUNTIME + RECOVERY_SOURCE)
+        self.assertNotIn("CANopenReferenceCanRecovery_Request", MAIN)
+
+    def test_storage_reserves_real_flash_slots_and_validates_images(self) -> None:
+        """The default STM32 backend cannot overlap the executable image and validates CRC/sequence metadata."""
+        for expected in (
+            "CANOPEN_REFERENCE_STORAGE_SLOT_A",
+            "CANOPEN_REFERENCE_STORAGE_SLOT_B",
+            "storage_flash_newest",
+            "storage_crc32",
+            "image->magic == CANOPEN_REFERENCE_STORAGE_MAGIC",
+            "slot_a->sequence",
+        ):
+            self.assertIn(expected, STORAGE_SOURCE)
+        self.assertIn("FLASH (rx)    : ORIGIN = 0x08000000, LENGTH = 1536K", LINKER)
+        self.assertIn("FLASH_NVM (r) : ORIGIN = 0x08180000, LENGTH = 512K", LINKER)
+
+    def test_transport_deadline_and_unsupported_target_contract(self) -> None:
+        """The standalone facade no longer ignores timeout or starts an unknown target."""
+        self.assertIn("HAL_GetTick()", CAN_PORT)
+        self.assertIn("HAL_Delay(1U)", CAN_PORT)
+        self.assertIn("return -ENOTSUP;", CAN_PORT)
+        self.assertIn("timeout_ms == 0U", CAN_PORT)
 
     def test_storage_is_enabled_and_initialized_before_canopen(self) -> None:
         """OD 1010h/1011h persistence is enabled through project-owned code."""
@@ -157,6 +202,10 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("HAL_IWDG_Refresh", WATCHDOG_SOURCE)
         self.assertIn("HAL_IWDG_MODULE_ENABLED", CMAKE)
         self.assertIn("#include \"stm32f7xx_hal_iwdg.h\"", HAL_CONF)
+        self.assertIn("CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS", PROFILE)
+        self.assertIn("__HAL_RCC_CLEAR_RESET_FLAGS", WATCHDOG_SOURCE)
+        self.assertIn("CANopenReferenceWatchdog_ResetFlags", WATCHDOG_SOURCE + WATCHDOG_HEADER)
+        self.assertIn("HAL_GetTick() - s_start_tick", WATCHDOG_SOURCE)
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
