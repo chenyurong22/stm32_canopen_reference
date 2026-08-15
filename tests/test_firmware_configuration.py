@@ -118,7 +118,7 @@ class FirmwareConfigurationTests(unittest.TestCase):
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""
         self.assertIn("option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER", CMAKE)
         self.assertIn('option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)', CMAKE)
-        self.assertIn("#define CANOPEN_REFERENCE_ENABLE_CIA302_MASTER 0U", PROFILE)
+        self.assertRegex(PROFILE, r"#define\s+CANOPEN_REFERENCE_ENABLE_CIA302_MASTER\s+0U")
         self.assertIn("CANopenReferenceCia302_PreProcess(now);", APP_RUNTIME)
         self.assertLess(APP_RUNTIME.index("CANopenReferenceCia302_PreProcess(now);"),
                         APP_RUNTIME.index("resetCommand = CO_process("))
