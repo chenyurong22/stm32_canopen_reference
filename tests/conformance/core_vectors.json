@@ -1,36 +1,37 @@
 {
-  "schema": "canopen-reference-core-vector-v1",
+  "schema": "canopen-reference-core-vector-v2",
   "node_id": 10,
   "vectors": [
-    {
-      "name": "nmt_start_node",
-      "request": {"cob_id": 0, "data": "010a"},
-      "expected": {"service": "nmt", "command": "start", "node_id": 10}
-    },
-    {
-      "name": "sync_frame",
-      "request": {"cob_id": 128, "data": ""},
-      "expected": {"service": "sync", "counter": null}
-    },
-    {
-      "name": "sdo_upload_identity_vendor",
-      "request": {"cob_id": 1546, "data": "4018100000000000"},
-      "expected": {"service": "sdo_upload_request", "server_node_id": 10, "index": 4120, "subindex": 0}
-    },
-    {
-      "name": "emcy_frame",
-      "request": {"cob_id": 138, "data": "0010010000000000"},
-      "expected": {"service": "emcy", "node_id": 10, "error_code": 4096}
-    },
-    {
-      "name": "heartbeat_operational",
-      "request": {"cob_id": 1802, "data": "05"},
-      "expected": {"service": "heartbeat", "node_id": 10, "nmt_state": "operational"}
-    },
-    {
-      "name": "lss_switch_state_global",
-      "request": {"cob_id": 2020, "data": "0401000000000000"},
-      "expected": {"service": "lss", "command": "switch_state_global", "mode": "waiting"}
-    }
+    {"name":"nmt_start","category":"nmt","request":{"cob_id":0,"data":"010a"},"expected":{"service":"nmt","command":"start"}},
+    {"name":"nmt_stop","category":"nmt","request":{"cob_id":0,"data":"020a"},"expected":{"service":"nmt","command":"stop"}},
+    {"name":"nmt_preoperational","category":"nmt","request":{"cob_id":0,"data":"800a"},"expected":{"service":"nmt","command":"pre_operational"}},
+    {"name":"nmt_reset_node","category":"nmt","request":{"cob_id":0,"data":"810a"},"expected":{"service":"nmt","command":"reset_node"}},
+    {"name":"heartbeat_operational","category":"heartbeat","request":{"cob_id":1802,"data":"05"},"expected":{"service":"heartbeat","nmt_state":"operational"}},
+    {"name":"heartbeat_preoperational","category":"heartbeat","request":{"cob_id":1802,"data":"7f"},"expected":{"service":"heartbeat","nmt_state":"pre_operational"}},
+    {"name":"emcy_generic_error","category":"emcy","request":{"cob_id":138,"data":"0010010000000000"},"expected":{"service":"emcy","error_code":4096}},
+    {"name":"emcy_overvoltage","category":"emcy","request":{"cob_id":138,"data":"1010010000000000"},"expected":{"service":"emcy","error_code":4112}},
+    {"name":"sdo_upload_expedited","category":"sdo","request":{"cob_id":1546,"data":"4018100000000000"},"expected":{"service":"sdo_upload_request","transfer":"expedited","index":4120,"subindex":0}},
+    {"name":"sdo_upload_segmented_initiate","category":"sdo","request":{"cob_id":1546,"data":"4000200000000000"},"expected":{"service":"sdo_upload_request","transfer":"segmented","index":8192,"subindex":0}},
+    {"name":"sdo_upload_segment_request","category":"sdo","request":{"cob_id":1546,"data":"6000000000000000"},"expected":{"service":"sdo_upload_segment_request","transfer":"segmented"}},
+    {"name":"sdo_download_expedited_u8","category":"sdo","request":{"cob_id":1546,"data":"2f00200001000000"},"expected":{"service":"sdo_download_request","transfer":"expedited","index":8192,"subindex":0,"size":1}},
+    {"name":"sdo_download_expedited_u32","category":"sdo","request":{"cob_id":1546,"data":"2300200078563412"},"expected":{"service":"sdo_download_request","transfer":"expedited","index":8192,"subindex":0,"size":4}},
+    {"name":"sdo_download_segmented_initiate","category":"sdo","request":{"cob_id":1546,"data":"2100200008000000"},"expected":{"service":"sdo_download_request","transfer":"segmented","index":8192,"subindex":0,"size":8}},
+    {"name":"sdo_abort","category":"sdo","request":{"cob_id":1418,"data":"8000200005000405"},"expected":{"service":"sdo_abort","abort_code":84148229}},
+    {"name":"pdo_tpdo1","category":"pdo","request":{"cob_id":394,"data":"78563412"},"expected":{"service":"tpdo1","node_id":10}},
+    {"name":"pdo_rpdo1","category":"pdo","request":{"cob_id":522,"data":"01000000"},"expected":{"service":"rpdo1","node_id":10}},
+    {"name":"pdo_mapping_write_count","category":"pdo_mapping","request":{"cob_id":1546,"data":"2f00160001000000"},"expected":{"service":"sdo_download_request","index":5632,"subindex":0,"size":1}},
+    {"name":"pdo_mapping_write_entry","category":"pdo_mapping","request":{"cob_id":1546,"data":"2300160010200060"},"expected":{"service":"sdo_download_request","index":5632,"subindex":0,"size":4}},
+    {"name":"sync_without_counter","category":"sync","request":{"cob_id":128,"data":""},"expected":{"service":"sync","counter":null}},
+    {"name":"sync_with_counter","category":"sync","request":{"cob_id":128,"data":"01"},"expected":{"service":"sync","counter":1}},
+    {"name":"time_absolute","category":"time","request":{"cob_id":256,"data":"e803050f081a26"},"expected":{"service":"time","payload_length":7}},
+    {"name":"lss_switch_state_global","category":"lss","request":{"cob_id":2020,"data":"0401000000000000"},"expected":{"service":"lss","command":"switch_state_global"}},
+    {"name":"lss_configure_node_id","category":"lss","request":{"cob_id":2020,"data":"110a000000000000"},"expected":{"service":"lss","command":"configure_node_id","node_id":10}},
+    {"name":"lss_configure_bitrate","category":"lss","request":{"cob_id":2020,"data":"1302000000000000"},"expected":{"service":"lss","command":"configure_bitrate"}},
+    {"name":"nmt_reset_communication","category":"reset","request":{"cob_id":0,"data":"820a"},"expected":{"service":"nmt","command":"reset_communication"}},
+    {"name":"invalid_od_access","category":"invalid_od","request":{"cob_id":1546,"data":"2fffff0000000000"},"expected":{"service":"sdo_download_request","transfer":"expedited","index":65535,"subindex":0,"size":1,"invalid":true}},
+    {"name":"sdo_response_timeout","category":"timeout","request":{"cob_id":1546,"data":"4018100000000000"},"expected":{"service":"sdo_timeout","timeout_ms":1000}},
+    {"name":"can_busoff_event","category":"busoff","request":{"event":"bus_off","hal_error":"HAL_CAN_ERROR_BOF"},"expected":{"service":"can_recovery","state":"reset_requested"}},
+    {"name":"can_recovery_success","category":"recovery","request":{"event":"recovery_complete","attempt":1},"expected":{"service":"can_recovery","state":"running"}},
+    {"name":"can_recovery_terminal_fault","category":"recovery","request":{"event":"recovery_exhausted","attempt":3},"expected":{"service":"can_recovery","state":"safe_fault"}}
   ]
 }
