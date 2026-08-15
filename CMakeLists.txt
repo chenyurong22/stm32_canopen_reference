@@ -27,7 +27,7 @@ file(GLOB_RECURSE CANOPEN_NODE_SOURCES CONFIGURE_DEPENDS
     "${CANOPEN_NODE_DIR}/304/*.c"
     "${CANOPEN_NODE_DIR}/305/*.c"
     "${CANOPEN_NODE_DIR}/309/*.c"
-    "${CANOPEN_NODE_DIR}/storage/*.c")
+    "${CANOPEN_NODE_DIR}/storage/CO_storage.c")
 
 file(GLOB HAL_SOURCES CONFIGURE_DEPENDS
     "${STM32_CUBE_F7_DIR}/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal*.c")
