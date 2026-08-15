@@ -1,126 +1,205 @@
-# STM32F767 CANopenNode Reference Firmware
+# STM32F767 CANopen Reference
 
-**Author:** Manus AI  
-**Status:** Build-validated engineering reference  
-**Default role:** Bare-metal CiA 401 generic I/O device with a selectable CiA 402 drive-interface reference
+A bare-metal CANopen reference firmware for the **STM32F767** microcontroller. The project combines STM32 HAL, the pinned [CANopenNode](https://github.com/CANopenNode/CANopenNode) stack, and project-owned application adapters for building CANopen devices, test nodes, and gateway prototypes.
 
-This repository is a clean, build-validated STM32F767 firmware reference built around [CANopenNode](https://github.com/CANopenNode/CANopenNode) and the `CanOpenSTM32` HAL/bxCAN binding. It establishes a disciplined separation between the CANopen communication stack, generated Object Dictionary (OD), profile-specific application logic, and physical board/power-stage control. The reference uses classic CAN on **CAN1**, a 25 MHz HSE clock, a 216 MHz system clock, APB1 at 54 MHz, and 500 kbit/s CAN bit timing with 18 time quanta per bit.
+The default firmware is configured as a **CiA 401 I/O device reference** using CAN1/bxCAN at **500 kbit/s**. Optional build personalities provide CiA 402 drive-control interfaces, CiA 302 NMT-master supervision, and a bounded CiA 309 gateway foundation. These personalities are integration references and require product-specific hardware validation, Object Dictionary approval, and conformance testing before production use.
 
-> **Important:** This is not a declaration of CiA 401, CiA 402, CiA 304, IEC 61508, ISO 13849, or SIL/PL conformity. It is a robust, traceable implementation starting point. Product compliance requires the applicable specifications, an exact EDS/XDD, hardware design review, fault analysis, timing measurements, protocol/profile conformance testing, and—where safety is claimed—an independent safety lifecycle and evidence.
+## Project description
 
-## Implemented reference boundary
+The firmware provides the communication and application boundaries needed to develop an STM32F767 CANopen device:
 
-CANopenNode supplies the CiA 301 communication mechanisms used by this project. The default device configuration enables SDO segmented and block transfers, CRC16 for block transfer, SDO client support, dynamic and bitwise PDO mapping, LSS slave services, and CiA 303 status LEDs. CiA 304 GFC/SRDO remains disabled. A separately buildable, disabled-by-default CiA 309 ASCII gateway personality is now provided behind explicit product and runtime authorization controls; it requires a dedicated UART/USB/network transport, command-permission policy, and security/interoperability evidence before release.[1] [2]
+- CANopenNode supplies CANopen communication services such as NMT, heartbeat, EMCY, SDO, PDO, SYNC, and LSS.
+- The STM32 HAL and CanOpenSTM32 binding connect CANopenNode to the STM32F767 bxCAN peripheral.
+- Project-owned code defines the runtime lifecycle, board safety hooks, device-profile adapters, diagnostics, gateway boundaries, and hardware test tools.
+- The Object Dictionary and generated CANopen sources define the network-visible interface.
+- The default application starts in a safe output state and keeps optional functions disabled unless explicitly selected.
 
-| Capability | Reference status | Location | Product completion required |
-|---|---:|---|---|
-| CiA 301 NMT, heartbeat, EMCY, SDO, SYNC, PDO | Enabled through CANopenNode | `App/Inc/CO_driver_custom.h` | Establish node-ID policy, COB-IDs, timeouts, EDS/XDD, network load, and conformance evidence. |
-| SDO block transfer | Enabled with 1024-byte buffer and CRC16 | `CO_driver_custom.h` | Size buffers and test abort paths, update policy, and worst-case latency. |
-| Dynamic/bitwise PDO mapping | Enabled | `CO_driver_custom.h`, `Generated/OD.*` | Constrain permitted mappings and test every released map and persistence behavior. |
-| LSS slave/Fastscan | Stack-enabled | `CO_driver_custom.h` | Provision identity, node-ID/bit-rate storage, reset behavior, and production commissioning procedure. |
-| CiA 401 generic I/O | Selected by default | `App/Src/cia401_reference.c` | Implement board drivers, electrical diagnosis, scaling, channel objects, and full profile object set. |
-| CiA 402 drive interface | Selectable, unit-tested state-reference | `App/Src/cia402_reference.c` | Implement actual modes, loops, units, limits, brakes, sensors, faults, and the complete required profile behavior. |
-| CiA 304 SRDO/GFC | Disabled | `CO_driver_custom.h` | Safety concept, independent channels, SRDO OD, watchdogs, FMEA/FM(E)DA, timing, and certification evidence. |
-| CANopen gateway | Optional, disabled-by-default CiA 309 ASCII adapter | `App/Src/canopen_reference_gateway.c` | Bind a bounded transport, define authorization/permissions, and perform security, load, and interoperability testing. |
+This repository is a **reference implementation**, not a device-profile or functional-safety certification. A product implementation must add its exact board support, electrical protection, production Object Dictionary, application behavior, HIL evidence, and applicable conformance testing.
 
-## Repository layout
+## Hardware reference
 
-| Path | Purpose |
+The current STM32F767 reference assumes the following interface:
+
+| Function | Reference assignment |
 |---|---|
-| `Core/` | STM32F767 entry point, bxCAN/TIM7 setup, interrupts, clocks, HAL configuration, linker/runtime policy. |
-| `App/` | CANopen runtime wrapper, profile bindings, hardware/board adapter interfaces, optional diagnostics, gateway bridge, and feature configuration. |
-| `middleware/canopen/` | Project-owned CANopen lifecycle facade, portable CAN-port contract, SocketCAN transport, and host wire-level device harness. |
-| `Generated/` | Generated-style OD C and header artifacts compiled into firmware. Do not hand-edit in a production workflow. |
-| `ObjectDictionary/` | Editable EDS artifact used for communication/profile review. |
-| `scripts/generate_reference_od.py` | Deterministically derives the reference OD artifacts from the pinned upstream example and profile overlay. |
-| `scripts/validate_od.py` | Checks EDS and generated OD synchronization and index ordering. |
-| `scripts/validate_reference.sh` | Runs the OD check, host profile tests, ARM firmware build, and artifact checks. |
-| `tools/import_objdict.sh` | Guarded import/staging command for generated objdictgen C/H artifacts or ZIP files. |
-| `tests/` | Host-side deterministic profile tests plus vcan CANopen wire-contract regression tests. |
-| `.github/workflows/ci.yml` | GitHub Actions vcan regression and default/optional-gateway Cortex-M7 build workflow. |
-| `docs/` | Architecture, CubeMX/build, middleware, board/HIL, profile/RTOS, audit, and remediation documentation. |
-| `third_party/` | Pinned upstream CANopenNode/STM32 binding plus an optional local STM32CubeF7 checkout for validation. |
+| CAN1 receive | PA11, alternate function AF9 |
+| CAN1 transmit | PA12, alternate function AF9 |
+| CAN nominal rate | 500 kbit/s |
+| External oscillator | 25 MHz HSE assumption |
+| System clock | 216 MHz reference configuration |
+| Real-time service | TIM7, 1 ms cadence |
+| CAN transceiver | External board-level device; not included in the MCU |
 
-## Hardware assumptions and timing
+The CAN transceiver, termination, connector, power supply, standby control, isolation, and application I/O are board-specific and must be implemented by the hardware integration.
 
-The reference uses **PA11** for CAN1 RX and **PA12** for CAN1 TX. A physical high-speed CAN transceiver is mandatory and its enable/standby control is deliberately board-specific. The bxCAN timing values are `Prescaler=6`, `BS1=15 TQ`, `BS2=2 TQ`, and `SJW=1 TQ`; with APB1 at 54 MHz this produces 500 kbit/s and an approximately 88.9% sample point. The 1 ms application service is driven by TIM7 using a 54 MHz timer kernel clock.
+## Build
 
-| Parameter | Reference value | Review required before hardware use |
-|---|---:|---|
-| MCU family | STM32F767, 2 MiB flash / 512 KiB SRAM linker reference | Confirm exact part/package and memory partitions. |
-| External clock | 25 MHz HSE | Replace `SystemClock_Config()` if the board differs. |
-| System/APB1 | 216 MHz / 54 MHz | Recalculate bxCAN and TIM7 settings after clock changes. |
-| CAN pins | CAN1 PA11/PA12 | Confirm AF9 routing, transceiver supply, termination, common-mode range, ESD, and standby behavior. |
-| Nominal bit rate | 500 kbit/s | Commission using the actual network topology and requirements. |
-| Main-loop scheduling | Non-blocking; TIM7 1 ms real-time path | Measure jitter, ISR priority, bus load, watchdog latency, and application execution time. |
+### Prerequisites
 
-## Build and validation
+Install the following tools on a Linux development host:
 
-The project is provided with CMake and an ARM GCC toolchain definition. A standard STM32CubeF7 firmware package is expected at `STM32_CUBE_F7_DIR`; it supplies the HAL sources, CMSIS device startup file, and system file. The reference linker script is for the 2 MiB/512 KiB STM32F767 memory map only.
+- CMake
+- GNU Arm Embedded Toolchain, including `arm-none-eabi-gcc` and `arm-none-eabi-size`
+- Native GCC and Make for host tests
+- Python 3
+- Git
+- An STM32CubeF7 package supplied separately from this repository
+
+The repository contains the CANopenNode and CanOpenSTM32 sources as submodules. STM32CubeF7 is intentionally supplied externally through `STM32_CUBE_F7_DIR`.
+
+### Clone the repository
 
 ```sh
-export STM32_CUBE_F7_DIR=/absolute/path/to/STM32CubeF7
-export STM32_F7_LINKER_SCRIPT=$PWD/linker/STM32F767_2M_512K_FLASH.ld
-scripts/validate_reference.sh
+git clone --recurse-submodules https://github.com/mahdi-benhassen/stm32_canopen_reference.git
+cd stm32_canopen_reference
+git submodule update --init --recursive
 ```
 
-The validation script checks the OD/EDS consistency, compiles and runs the application profile tests on the host, configures the Cortex-M7 target, builds the ELF, and verifies that HEX and BIN outputs exist. The validated image reports the following static size in the supplied configuration.
+### Build the default firmware
 
-| Image component | Size | Notes |
-|---|---:|---|
-| `.text` | 53,472 bytes | Code and read-only data. |
-| `.data` | 1,216 bytes | Initialized RAM. |
-| `.bss` | 9,624 bytes | Static RAM, including statically allocated CANopen objects. |
-| Total (`text + data + bss`) | 64,312 bytes | Does not constitute a stack-watermark, WCET, or hardware qualification result. |
-
-The CMake build defines `CO_USE_GLOBALS`, using CANopenNode’s supported global/static-object configuration for this single generated OD. The application’s newlib stubs intentionally reject file I/O and heap growth; this reference must not be converted to heap-dependent runtime behavior without an explicit memory, failure, and test strategy.
-
-## Object Dictionary workflow
-
-The EDS at `ObjectDictionary/stm32f767_canopen_reference.eds` is the editable external representation supplied with this reference. The `Generated/OD.c` and `Generated/OD.h` files demonstrate the firmware artifact layout expected by CANopenNode. A production project should retain its authoritative `objdictgen` project and regenerate both EDS/XDD and C artifacts whenever OD, profile, PDO-map, datatype, access, persistence, or default-value changes are made.
+Set `STM32_CUBE_F7_DIR` to the location of a controlled STM32CubeF7 package. The linker script shown below is a reference for an STM32F767 configuration with 2 MiB flash and 512 KiB SRAM; replace it when the target memory map differs.
 
 ```sh
-python3 scripts/generate_reference_od.py
-python3 scripts/validate_od.py
-tools/import_objdict.sh /path/to/objdictgen-output --stage
+cmake -S . -B build/f767 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DSTM32_CUBE_F7_DIR=/opt/STM32CubeF7 \
+  -DSTM32_F7_LINKER_SCRIPT="$PWD/linker/STM32F767_2M_512K_FLASH.ld" \
+  -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build/f767 --parallel
+arm-none-eabi-size build/f767/stm32f767_canopen_reference
 ```
 
-On a Linux host with permission to create a virtual CAN interface, run the wire-level protocol regression suite with `sudo scripts/setup_vcan.sh vcan0` followed by `CAN_PORT_IFACE=vcan0 make -C tests/host test`. The GitHub Actions workflow provisions that interface and also builds the optional gateway personality. See [`08_remediation_completion.md`](docs/08_remediation_completion.md) for exact validation status and the sandbox limitation.
+The build produces an ELF image and post-build HEX, BIN, and MAP artifacts in the selected build directory.
 
-The reference adds the following profile-facing indices. Whether each object is mandatory, optional, manufacturer-specific, PDO-mappable, or persistent in a released product must be decided against the licensed profile specification and product requirement.
+### Build optional personalities
 
-| Index | Reference meaning |
-|---:|---|
-| `0x6000`, `0x6200`, `0x6401`, `0x6411`, `0x6422` | CiA 401-style digital/analogue process data bridge. |
-| `0x603F`, `0x6040`, `0x6041` | CiA 402 error/control/status seam. |
-| `0x6060`, `0x6061` | Requested and displayed modes of operation. |
-| `0x6064`, `0x606C`, `0x6077` | Position, velocity, and torque feedback seam. |
-| `0x6071`, `0x607A`, `0x60FF` | Torque, position, and velocity command seam. |
+The default configuration enables CiA 401 and disables optional personalities. Select one personality deliberately and validate its Object Dictionary and hardware behavior before use.
 
-## Profile selection and hardware ownership
+#### CiA 402 drive reference
 
-Profile switches are declared in `App/Inc/canopen_reference_config.h`. CiA 401 is enabled by default; CiA 402 is disabled by default. Enabling both requires explicit `CANOPEN_REFERENCE_ALLOW_COMBINED_PROFILES=1` because a combined device must define a coherent device type, identity, OD, EDS/XDD, PDO policy, lifecycle, and conformance target.
+```sh
+cmake -S . -B build/cia402 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DSTM32_CUBE_F7_DIR=/opt/STM32CubeF7 \
+  -DSTM32_F7_LINKER_SCRIPT="$PWD/linker/STM32F767_2M_512K_FLASH.ld" \
+  -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=1"
 
-All physical I/O and drive control terminate at `App/Inc/canopen_reference_hw.h`. The weak reference implementations intentionally read safe/zero values, write safe/zero values, report unhealthy drive interlocks, and refuse to enable a drive. Replace each relevant hook in a board-specific implementation. Do not make raw GPIO, ADC, PWM, encoder, power-stage, STO, brake, or safety-monitor calls from the CANopen stack or OD code.
+cmake --build build/cia402 --parallel
+```
 
-## Remediation and integration records
+#### CiA 302 NMT-master reference
 
-The native CANopenNode lifecycle decision and compatibility facade are described in [`docs/05_architecture_decision.md`](docs/05_architecture_decision.md). Board safe-state and hardware-in-the-loop requirements are in [`docs/06_board_integration_and_hil.md`](docs/06_board_integration_and_hil.md), while the CiA 401/402, gateway, and FreeRTOS completion roadmap is in [`docs/07_profile_gateway_rtos_roadmap.md`](docs/07_profile_gateway_rtos_roadmap.md). The completed remediation traceability and reproducible validation results are in [`docs/08_remediation_completion.md`](docs/08_remediation_completion.md).
+```sh
+cmake -S . -B build/cia302 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DSTM32_CUBE_F7_DIR=/opt/STM32CubeF7 \
+  -DSTM32_F7_LINKER_SCRIPT="$PWD/linker/STM32F767_2M_512K_FLASH.ld" \
+  -DCANOPEN_REFERENCE_ENABLE_CIA302_MASTER=ON
 
-## Engineering release gate
+cmake --build build/cia302 --parallel
+```
 
-Before using this reference in a fielded product, execute the following engineering activities and retain their outputs in configuration control.
+The CiA 302 master personality is opt-in. It monitors a configured peer, supervises boot-up and heartbeat timing, and exposes bounded diagnostic state. It should be tested against a second CANopen node or deterministic network simulator.
 
-| Area | Required release evidence |
-|---|---|
-| Hardware | Schematic/layout review, transceiver and termination validation, EMC/ESD plan, power/reset behavior, boot/update architecture, fault injection, and temperature/voltage testing. |
-| CANopen | Exact EDS/XDD, DCF policy, node-ID/bit-rate provisioning, startup/error behavior, network load calculation, interoperability tests, protocol conformance results, and regression traces. |
-| CiA 401 | Signal scaling, channel diagnosis, output safe state, wiring-fault behavior, debounce/filtering, update timing, and I/O profile conformance evidence. |
-| CiA 402 | Mode-specific behavior, physical units, limits, homing, state transitions, following error, encoder/feedback loss, brake policy, fault reaction, quick stop, watchdog, and drive-profile conformance evidence. |
-| Safety | A separate safety plan, hazard/risk analysis, independent protection path, safety requirements, lifecycle records, coverage analysis, safety validation, and certification/assessment as required. |
-| Cybersecurity | Firmware signing/update policy, debug-port lifecycle, device identity/provisioning policy, configuration protection, diagnostics, and incident/update process. |
+#### Optional CiA 309 gateway foundation
 
-## References
+```sh
+cmake -S . -B build/gateway \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DSTM32_CUBE_F7_DIR=/opt/STM32CubeF7 \
+  -DSTM32_F7_LINKER_SCRIPT="$PWD/linker/STM32F767_2M_512K_FLASH.ld" \
+  -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1"
 
-[1]: https://github.com/CANopenNode/CANopenNode "CANopenNode repository"
-[2]: https://github.com/CANopenNode/CANopenNode/blob/master/doc/overview.md "CANopenNode overview and module documentation"
+cmake --build build/gateway --parallel
+```
+
+The gateway is a bounded foundation only. A product must provide an authenticated host transport and an explicit diagnostic-access policy.
+
+### Run host validation
+
+```sh
+python3 tests/test_firmware_configuration.py
+python3 tests/test_canopen_wire_contract.py
+python3 tests/run_uds_isotp_contract.py
+python3 tests/run_nmea2000_gateway_contract.py
+make -C tests/host all test-stm32-facade test-gateway-default-deny
+```
+
+For the hardware acceptance runner, see [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/hardware/uds_cia302_test_procedure.md`](docs/hardware/uds_cia302_test_procedure.md).
+
+## Brief source structure
+
+```text
+App/
+├── Inc/                         Project configuration and public application APIs
+└── Src/
+    ├── CO_app_STM32_reference.c Runtime lifecycle and CANopenNode integration
+    ├── canopen_reference_board.c Board safety and hardware abstraction hooks
+    ├── canopen_reference_cia302.c Opt-in CiA 302 NMT-master adapter
+    ├── canopen_reference_diagnostics.c Bounded diagnostic status publisher
+    ├── cia401_reference.c       CiA 401 I/O application adapter
+    ├── cia402_reference.c       CiA 402 drive-control reference adapter
+    └── canopen_reference_lss.c  Project LSS policy hooks
+
+Core/
+└── Src/                         CubeMX/HAL clock, GPIO, CAN, timer, and IRQ code
+
+Generated/
+├── OD.c / OD.h                  Generated CANopen Object Dictionary implementation
+└── cia418_OD.*                  Separate battery-profile reference artifacts
+
+middleware/
+├── canopen/core/                Project CANopen helpers and CiA 302 state machine
+├── canopen/port/                CAN-port abstraction and transport tests
+├── diagnostics/                 Host-side UDS/ISO-TP contract model
+└── gateway/                     Host-side gateway models
+
+third_party/
+└── CanOpenSTM32/                Pinned CANopenNode STM32 binding and stack
+
+tests/
+├── host/                        Native C transport and protocol tests
+├── hardware/                    SocketCAN HIL acceptance runner and procedure
+└── test_*.py                    Deterministic source and contract tests
+
+scripts/                         Object Dictionary and profile validation tools
+CMakeLists.txt                   ARM firmware and host validation build definitions
+```
+
+Project-owned application code belongs in `App/` or the project middleware directories. CubeMX-generated platform code remains in `Core/`, and third-party stack code remains under `third_party/`. Do not link both the project runtime wrapper and the original CANopenNode STM32 application wrapper in the same firmware image.
+
+## Application examples
+
+### Industrial remote I/O
+
+Use the default CiA 401 personality to build a distributed I/O node for machine panels, valve islands, sensor concentrators, or industrial controllers. Digital and analogue channels can be mapped into PDOs while configuration and diagnostics remain accessible through SDO.
+
+### Motion-control interface
+
+Use the CiA 402 reference seam as a starting point for a servo, actuator, pump, or positioning controller. The product must add the actual power-stage enable logic, feedback processing, limits, fault reactions, and supported operating modes before it can control machinery.
+
+### CANopen commissioning and supervision
+
+Use the CiA 302 personality with a second CANopen node to supervise boot-up, heartbeat availability, NMT state, startup policy, and network readiness. This is useful for controller prototypes, commissioning tools, and multi-node integration benches.
+
+### Diagnostic test node
+
+Use the host-side UDS/ISO-TP contract model and SocketCAN hardware runner to exercise diagnostic sessions, negative responses, CAN timing, NMT transitions, reset behavior, and heartbeat supervision during development and production test.
+
+### CANopen gateway prototype
+
+Use the bounded CiA 309 and gateway foundations as an integration starting point for a service tool, protocol bridge, or PC-connected commissioning interface. Add authentication, transport limits, access control, and fault handling before exposing the gateway to a deployed network.
+
+## Important limitations
+
+The reference does not define a universal STM32F767 board pinout, external CAN transceiver design, production Object Dictionary, application safety case, or device-profile certificate. Hardware teams must validate the exact MCU package, clock source, CAN physical layer, bus termination, node identity, PDO map, timing margins, reset behavior, and safe-state response on the target board.
+
+## Related documentation
+
+- [Hardware UDS/CiA 302 procedure](docs/hardware/uds_cia302_test_procedure.md)
+- [Hardware test runner](tests/hardware/README.md)
+- [Build and CubeMX notes](docs/02_build_and_cubemx.md)
+- [Object Dictionary](ObjectDictionary/stm32f767_canopen_reference.eds)
+- [CANopenNode](https://github.com/CANopenNode/CANopenNode)
+- [CanOpenSTM32](https://github.com/CANopenNode/CanOpenSTM32)
