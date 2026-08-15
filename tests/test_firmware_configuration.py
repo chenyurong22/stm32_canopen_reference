@@ -8,6 +8,7 @@ bxCAN timing, PA11/PA12 pin assignment, or 1 ms CANopen timer cadence.
 """
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -39,6 +40,11 @@ CI = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 HOST_MAKEFILE = (ROOT / "tests" / "host" / "Makefile").read_text(encoding="utf-8")
 VALIDATE_SCRIPT = (ROOT / "scripts" / "validate_reference.sh").read_text(encoding="utf-8")
 PRODUCTION_PLAN = (ROOT / "docs" / "production_validation_plan.md").read_text(encoding="utf-8")
+RELEASE_CANDIDATE = (ROOT / "docs" / "release_v0.9.0_candidate.md").read_text(encoding="utf-8")
+RELEASE_GATE = (ROOT / "scripts" / "check_production_release_gate.sh").read_text(encoding="utf-8")
+MEMORY_GATE = (ROOT / "scripts" / "check_memory_budget.sh").read_text(encoding="utf-8")
+FUZZ_HARNESS = (ROOT / "tests" / "fuzz" / "fuzz_canopen_frame.c").read_text(encoding="utf-8")
+FUZZ_VECTOR_DATA = json.loads((ROOT / "tests" / "conformance" / "core_vectors.json").read_text(encoding="utf-8"))
 
 
 def source_integer(name: str) -> int:
@@ -240,6 +246,8 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertTrue((ROOT / "tests" / "conformance" / "core_vectors.json").is_file())
         self.assertTrue((ROOT / "tests" / "conformance" / "run_core_vectors.py").is_file())
         self.assertTrue((ROOT / "docs" / "feature_matrix.md").is_file())
+        self.assertGreaterEqual(len(FUZZ_VECTOR_DATA["vectors"]), 100)
+        self.assertIn("len(vectors) < 100", (ROOT / "tests" / "conformance" / "run_core_vectors.py").read_text(encoding="utf-8"))
 
     def test_release_gate_and_local_validation_are_explicit(self) -> None:
         """Release tags require vcan and local validation cannot omit hardening gates."""
@@ -249,15 +257,28 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "release-vcan:",
             "if: startsWith(github.ref, 'refs/tags/v')",
             "Require vcan0 for release validation",
-            "make -C tests/host test-sanitize test-coverage",
+            "make -C tests/host test-coverage-report test-sanitize-report",
         ):
             self.assertIn(expected, CI)
-        for expected in ("test-sanitize", "test-coverage", "fsanitize=address,undefined", "--coverage"):
+        for expected in ("test-sanitize", "test-coverage-report", "test-sanitize-report", "test-fuzz", "fsanitize=address,undefined", "--coverage", "COVERAGE_MIN_BRANCH"):
             self.assertIn(expected, HOST_MAKEFILE)
+        for expected in ("test-results.xml", "coverage-summary.json", "sanitizer-report.txt", "validate_release_artifacts.py", "check_memory_budget.sh", "clang-tidy"):
+            self.assertIn(expected, CI)
         for expected in ("test-sanitize test-coverage", "run_uds_isotp_contract.py", "run_nmea2000_gateway_contract.py"):
             self.assertIn(expected, VALIDATE_SCRIPT)
         for expected in ("Bus-off recovery campaign", "Flash persistence and power-loss campaign", "Watchdog timing and reset campaign", "Formal conformance and release record"):
             self.assertIn(expected, PRODUCTION_PLAN)
+
+    def test_candidate_release_gate_is_fail_closed(self) -> None:
+        """The candidate milestone distinguishes software evidence from external production evidence."""
+        for expected in ("v0.9.0", "hardware-validation-candidate", "not a production approval", "Formal conformance", "Pending"):
+            self.assertIn(expected, RELEASE_CANDIDATE)
+        for expected in ("--production", "--evidence-dir", "board_electrical_review.md", "formal_canopen_conformance.md", "production release gate"):
+            self.assertIn(expected, RELEASE_GATE)
+        for expected in ("stm32-canopen-memory-budget-v1", "MAX_TEXT_BYTES", "MAX_RAM_BYTES", "stack depth and worst-case timing"):
+            self.assertIn(expected, MEMORY_GATE)
+        for expected in ("LLVMFuzzerTestOneInput", "cia302_nmt_master_receive", "CANopenReferenceLss_StoreConfiguration"):
+            self.assertIn(expected, FUZZ_HARNESS)
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
