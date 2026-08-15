@@ -43,6 +43,7 @@ PRODUCTION_PLAN = (ROOT / "docs" / "production_validation_plan.md").read_text(en
 RELEASE_CANDIDATE = (ROOT / "docs" / "release_v0.9.0_candidate.md").read_text(encoding="utf-8")
 RELEASE_GATE = (ROOT / "scripts" / "check_production_release_gate.sh").read_text(encoding="utf-8")
 MEMORY_GATE = (ROOT / "scripts" / "check_memory_budget.sh").read_text(encoding="utf-8")
+EVIDENCE_INIT = (ROOT / "scripts" / "init_external_evidence_package.sh").read_text(encoding="utf-8")
 PRODUCT_SCOPE = (ROOT / "PRODUCT_SCOPE.md").read_text(encoding="utf-8")
 FUZZ_HARNESS = (ROOT / "tests" / "fuzz" / "fuzz_canopen_frame.c").read_text(encoding="utf-8")
 FUZZ_VECTOR_DATA = json.loads((ROOT / "tests" / "conformance" / "core_vectors.json").read_text(encoding="utf-8"))
@@ -298,6 +299,20 @@ class FirmwareConfigurationTests(unittest.TestCase):
         ):
             self.assertIn(expected, PRODUCT_SCOPE)
         self.assertTrue((ROOT / "PRODUCT_SCOPE.md").is_file())
+
+    def test_external_evidence_handoff_is_pending_and_fail_closed(self) -> None:
+        """Evidence templates are explicit handoff artifacts and never fabricate PASS results."""
+        for expected in (
+            "--output",
+            "--release-commit",
+            '\"status\": \"PENDING\"',
+            "refusing to overwrite existing evidence directory",
+            "formal_canopen_conformance.md",
+            "release-socketcan-status.txt",
+        ):
+            self.assertIn(expected, EVIDENCE_INIT)
+        self.assertIn("PENDING", (ROOT / "docs" / "external_evidence_package.md").read_text(encoding="utf-8"))
+        self.assertTrue((ROOT / "scripts" / "validate_external_evidence.py").is_file())
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
