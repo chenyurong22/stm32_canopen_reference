@@ -20,6 +20,9 @@ void CANopenReferenceWatchdog_Process(void);
 /** Return the number of timer ticks observed by the mainline. */
 uint32_t CANopenReferenceWatchdog_MainlineTicks(void);
 
+/** Return reset flags captured before HAL initialization. */
+uint32_t CANopenReferenceWatchdog_ResetFlags(void);
+
 #ifdef __cplusplus
 }
 #endif

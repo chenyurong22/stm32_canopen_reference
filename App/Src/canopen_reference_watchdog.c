@@ -11,12 +11,21 @@ static IWDG_HandleTypeDef s_iwdg;
 static volatile uint32_t s_timer_ticks;
 static uint32_t s_last_mainline_tick;
 static uint32_t s_mainline_ticks;
+static uint32_t s_start_tick;
+static uint32_t s_reset_flags;
 
 void
 CANopenReferenceWatchdog_Init(void) {
+#if defined(STM32F767xx)
+    s_reset_flags = RCC->CSR;
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+#else
+    s_reset_flags = 0U;
+#endif
 #if CANOPEN_REFERENCE_ENABLE_IWDG
     const uint32_t nominal_lsi_hz = 32000U;
     uint32_t reload = (nominal_lsi_hz * CANOPEN_REFERENCE_IWDG_TIMEOUT_MS) / (64U * 1000U);
+    uint32_t lsi_start_tick;
 
     if (reload < 1U) {
         reload = 1U;
@@ -25,8 +34,12 @@ CANopenReferenceWatchdog_Init(void) {
         reload = 0x0FFFU;
     }
     __HAL_RCC_LSI_ENABLE();
+    lsi_start_tick = HAL_GetTick();
     while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) == RESET) {
-        /* LSI readiness is required before starting the independent watchdog. */
+        if ((uint32_t)(HAL_GetTick() - lsi_start_tick) >= CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS) {
+            Error_Handler();
+            return;
+        }
     }
     s_iwdg.Instance = IWDG;
     s_iwdg.Init.Prescaler = IWDG_PRESCALER_64;
@@ -34,11 +47,13 @@ CANopenReferenceWatchdog_Init(void) {
     s_iwdg.Init.Window = IWDG_WINDOW_DISABLE;
     if (HAL_IWDG_Init(&s_iwdg) != HAL_OK) {
         Error_Handler();
+        return;
     }
 #endif
     s_timer_ticks = 0U;
     s_last_mainline_tick = 0U;
     s_mainline_ticks = 0U;
+    s_start_tick = HAL_GetTick();
 }
 
 void
@@ -50,6 +65,12 @@ void
 CANopenReferenceWatchdog_Process(void) {
     uint32_t timer_ticks = __atomic_load_n(&s_timer_ticks, __ATOMIC_ACQUIRE);
 
+    if ((uint32_t)(HAL_GetTick() - s_start_tick) < CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS) {
+#if CANOPEN_REFERENCE_ENABLE_IWDG
+        (void)HAL_IWDG_Refresh(&s_iwdg);
+#endif
+        return;
+    }
     if (timer_ticks == s_last_mainline_tick) {
         return;
     }
@@ -65,4 +86,9 @@ CANopenReferenceWatchdog_Process(void) {
 uint32_t
 CANopenReferenceWatchdog_MainlineTicks(void) {
     return s_mainline_ticks;
+}
+
+uint32_t
+CANopenReferenceWatchdog_ResetFlags(void) {
+    return s_reset_flags;
 }

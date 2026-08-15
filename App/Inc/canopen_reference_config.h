@@ -78,6 +78,12 @@
 #ifndef CANOPEN_REFERENCE_IWDG_TIMEOUT_MS
 #define CANOPEN_REFERENCE_IWDG_TIMEOUT_MS        200U
 #endif
+#ifndef CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS
+#define CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS  100U
+#endif
+#if (CANOPEN_REFERENCE_IWDG_STARTUP_GRACE_MS >= CANOPEN_REFERENCE_IWDG_TIMEOUT_MS)
+#error "IWDG startup grace must be shorter than the watchdog timeout."
+#endif
 
 /* CiA 309-3 ASCII gateway support is disabled unless the product has an
  * authenticated/physical diagnostic access policy and a bounded UART bridge. */
