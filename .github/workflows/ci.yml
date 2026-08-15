@@ -82,10 +82,14 @@ jobs:
             tests/run_uds_isotp_contract.py \
             scripts/cia418_catalog.py \
             scripts/generate_cia418_od.py \
-            scripts/validate_cia418.py
+            scripts/validate_cia418.py \
+            middleware/gateway/nmea2000_gateway.py \
+            tests/test_nmea2000_gateway.py \
+            tests/run_nmea2000_gateway_contract.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/test_firmware_configuration.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/test_canopen_wire_contract.py
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_uds_isotp_contract.py
+          PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_nmea2000_gateway_contract.py
           mkdir -p build/tests
           gcc -std=c11 -Wall -Wextra -Werror \
             -DCANOPEN_REFERENCE_ENABLE_CIA401=1 \
