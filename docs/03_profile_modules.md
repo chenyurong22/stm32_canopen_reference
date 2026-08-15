@@ -1,6 +1,5 @@
 # CiA 401 and CiA 402 Reference Modules
 
-**Author:** Manus AI  
 **Status:** Tested application reference; incomplete device-profile implementation
 
 The repository contains two selectable profile bindings. The default build selects the CiA 401 I/O reference. The CiA 402 code is compiled as a reference state machine but is disabled by default. To prevent accidental product ambiguity, the configuration rejects a combined build unless it is explicitly authorized. This is a configuration policy, not a substitute for an EDS/XDD, device type, or conformance strategy.

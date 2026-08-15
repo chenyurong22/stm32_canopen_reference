@@ -68,6 +68,7 @@ jobs:
           fi
       - name: Validate Object Dictionary, firmware contracts, and host sources
         run: |
+          python3 scripts/validate_repository.py
           python3 scripts/validate_od.py
           python3 scripts/validate_cia418.py
           tools/import_objdict.sh Generated --stage
@@ -82,6 +83,7 @@ jobs:
             tests/run_uds_isotp_contract.py \
             scripts/cia418_catalog.py \
             scripts/generate_cia418_od.py \
+            scripts/validate_repository.py \
             scripts/validate_cia418.py \
             middleware/gateway/nmea2000_gateway.py \
             tests/test_nmea2000_gateway.py \

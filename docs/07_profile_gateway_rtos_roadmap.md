@@ -1,6 +1,5 @@
 # Profile, Gateway, FreeRTOS, and Product-Completion Roadmap
 
-**Author:** Manus AI  
 **Status:** The CANopen transport, Object Dictionary workflow, profile seams, gateway adapter, host protocol suite, and target build are implemented. The product-specific items in this document are intentionally not represented as completed conformance claims.
 
 ## 1. Current implementation status

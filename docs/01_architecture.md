@@ -1,6 +1,5 @@
 # STM32F767 CANopen Reference Architecture
 
-**Author:** Manus AI  
 **Status:** Engineering reference; not a conformance certificate
 
 This repository is a clean bare-metal reference for an STM32F767 node using the bxCAN peripheral, STM32 HAL, and the pinned CANopenNode STM32 port. The CANopenNode project provides the CiA 301 communication mechanisms, including SDO server/client, PDO, LSS, gateway, and safety modules as selectable components; each product must still provide its device-specific Object Dictionary, application behavior, and verification evidence.[1] The STM32 binding uses the HAL CAN driver and supports the legacy CAN controller used by STM32F767.[2]

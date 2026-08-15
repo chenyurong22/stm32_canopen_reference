@@ -1,6 +1,5 @@
 # Specification Audit — STM32F767 CANopen Reference
 
-**Author:** Manus AI  
 **Audit basis:** User-supplied `pasted_content.txt`, delivered source tree, and executed local validation  
 **Audit result:** **Partially aligned; not acceptable as a complete implementation of the attached M1/v0.1 specification without further work.**
 

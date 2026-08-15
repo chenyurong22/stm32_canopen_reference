@@ -1,6 +1,5 @@
 # Remediation Completion Record
 
-**Author:** Manus AI  
 **Date:** 13 August 2026  
 **Scope:** Completion record for the remediation sequence defined in `04_specification_audit.md`. The requested `feat/canopen` branch and five-commit history are explicitly excluded at the user’s direction.
 
