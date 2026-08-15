@@ -16,6 +16,8 @@ The firmware provides the communication and application boundaries needed to dev
 
 This repository is a **reference implementation**, not a device-profile or functional-safety certification. A product implementation must add its exact board support, electrical protection, production Object Dictionary, application behavior, HIL evidence, and applicable conformance testing.
 
+The project is released under the [Apache License 2.0](LICENSE). Third-party components retain their respective licenses, which are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+
 ## Hardware reference
 
 The current STM32F767 reference assumes the following interface:
@@ -201,7 +203,8 @@ The reference does not define a universal STM32F767 board pinout, external CAN t
 |---|---|
 | Reproducible build and flashing | [BUILD.md](BUILD.md) |
 | CubeMX ownership and board porting | [Build and CubeMX notes](docs/02_build_and_cubemx.md) |
-| CAN wiring and hardware bring-up | [Hardware integration guide](docs/hardware.md) |
+| CANopen wiring and hardware bring-up | [Hardware integration guide](docs/hardware.md) |
+| Protocol examples and frame sequences | [Examples guide](examples/README.md) |
 | UDS/CiA 302 acceptance | [Hardware procedure](docs/hardware/uds_cia302_test_procedure.md) and [test runner](tests/hardware/README.md) |
 | Object Dictionary | [EDS](ObjectDictionary/stm32f767_canopen_reference.eds) |
 | Dependencies and licenses | [THIRD_PARTY.md](THIRD_PARTY.md) and [LICENSE](LICENSE) |
