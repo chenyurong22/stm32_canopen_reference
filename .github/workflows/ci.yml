@@ -97,9 +97,12 @@ jobs:
             middleware/gateway/nmea2000_gateway.py \
             tests/test_nmea2000_gateway.py \
             tests/run_nmea2000_gateway_contract.py \
-            tests/hardware/run_uds_cia302_acceptance.py
+            tests/hardware/run_uds_cia302_acceptance.py \
+            tests/conformance/run_core_vectors.py \
+            scripts/validate_build_manifest.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/test_firmware_configuration.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/test_canopen_wire_contract.py
+          PYTHONDONTWRITEBYTECODE=1 python3 tests/conformance/run_core_vectors.py
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_uds_isotp_contract.py
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_nmea2000_gateway_contract.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/hardware/run_uds_cia302_acceptance.py --dry-run
