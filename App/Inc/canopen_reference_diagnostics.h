@@ -15,6 +15,15 @@ void CANopenReferenceDiagnostics_Write(const uint8_t *bytes, uint16_t length);
 void CANopenReferenceDiagnostics_Process(uint8_t node_id, uint16_t can_error_status, uint8_t led_green,
                                          uint8_t led_red, uint32_t now_ms);
 
+/** Record a HAL CAN fault from an interrupt callback without performing I/O. */
+void CANopenReferenceDiagnostics_ReportCanHardwareError(uint32_t hal_error_code);
+
+/** Return the number of HAL CAN fault callbacks observed since boot. */
+uint32_t CANopenReferenceDiagnostics_CanHardwareErrorCount(void);
+
+/** Return the most recent HAL CAN error bitmask. */
+uint32_t CANopenReferenceDiagnostics_LastCanHardwareError(void);
+
 #ifdef __cplusplus
 }
 #endif

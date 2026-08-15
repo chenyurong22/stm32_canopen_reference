@@ -96,6 +96,14 @@ canopen_app_resetCommunication(void) {
     if (error != CO_ERROR_NO) {
         return -2;
     }
+#if defined(CAN_IT_ERROR)
+    if (HAL_CAN_ActivateNotification(canopenNodeSTM32->CANHandle,
+                                     CAN_IT_ERROR | CAN_IT_ERROR_WARNING | CAN_IT_ERROR_PASSIVE | CAN_IT_BUSOFF
+                                         | CAN_IT_LAST_ERROR_CODE)
+        != HAL_OK) {
+        return -2;
+    }
+#endif
 
     lssAddress.identity.vendorID = OD_PERSIST_COMM.x1018_identity.vendor_ID;
     lssAddress.identity.productCode = OD_PERSIST_COMM.x1018_identity.productCode;
@@ -203,4 +211,31 @@ canopen_app_interrupt(void) {
     CO_process_TPDO(CO, syncWas, 1000U, NULL);
 #endif
     CO_UNLOCK_OD(CO->CANmodule);
+}
+
+
+void
+HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
+    uint32_t hal_error;
+
+    if (hcan == NULL || canopenNodeSTM32 == NULL || hcan != canopenNodeSTM32->CANHandle) {
+        return;
+    }
+
+    hal_error = HAL_CAN_GetError(hcan);
+    CANopenReferenceDiagnostics_ReportCanHardwareError(hal_error);
+    if (CO != NULL && CO->CANmodule != NULL) {
+        if ((hal_error & HAL_CAN_ERROR_BOF) != 0U) {
+            CO->CANmodule->CANerrorStatus |= CO_CAN_ERRTX_BUS_OFF;
+        }
+        if ((hal_error & (HAL_CAN_ERROR_ACK | HAL_CAN_ERROR_TIMEOUT)) != 0U) {
+            CO->CANmodule->CANerrorStatus |= CO_CAN_ERRTX_WARNING;
+        }
+        if ((hal_error & (HAL_CAN_ERROR_RX_FOV0 | HAL_CAN_ERROR_RX_FOV1)) != 0U) {
+            CO->CANmodule->CANerrorStatus |= CO_CAN_ERRRX_OVERFLOW;
+        }
+        if ((hal_error & (HAL_CAN_ERROR_STF | HAL_CAN_ERROR_FOR | HAL_CAN_ERROR_ACK)) != 0U) {
+            CO->CANmodule->CANerrorStatus |= CO_CAN_ERRRX_WARNING;
+        }
+    }
 }
