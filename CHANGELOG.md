@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The project follows sem
 - Hardened the opt-in IWDG path with startup grace, LSI readiness bounds, timer-progress deadlines, mainline-only refresh, and reset-cause capture.
 - Added deterministic recovery state-machine tests and source contracts for error mapping, Flash reservation, filters, transport deadlines, watchdog behavior, and lifecycle ordering.
 - Added `docs/final_status_remediation_2026.md`, which separates implemented reference controls from required HIL, electrical, endurance, and formal-conformance evidence.
+- Added `docs/feature_matrix.md` and expanded the profile documentation with explicit CiA 401 timing/debounce/scaling and CiA 402 mode boundaries.
+- Added six machine-readable core CANopen regression vectors with a deterministic software-only validator; these are not official conformance evidence.
+- Added JSON reproducibility manifests containing source, submodule, toolchain, personality, Object Dictionary, and linker hashes, with CI and local validation checks.
+- Added explicit storage slot-size/write-rate contracts, filter-capacity overflow checks, observable runtime lifecycle states, and corresponding source-contract coverage.
 
 The reference firmware remains a non-certified baseline. Production release still requires board-specific Flash endurance and power-loss testing, watchdog timing measurement, physical CAN/HIL validation, EMC testing, and applicable official conformance evidence.
 
