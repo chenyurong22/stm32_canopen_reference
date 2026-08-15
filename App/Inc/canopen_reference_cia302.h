@@ -13,21 +13,37 @@
 extern "C" {
 #endif
 
+/** Stable, bounded diagnostic view of the opt-in CiA 302 adapter. */
 typedef struct {
+    /** True when the compile-time CiA 302 personality is enabled. */
     bool enabled;
+    /** True after the adapter has entered active supervision. */
     bool running;
+    /** True after all configured mandatory nodes are ready. */
     bool network_ready;
+    /** Node-ID currently selected for the primary diagnostic view. */
     uint8_t monitored_node_id;
+    /** Last validated heartbeat state for the monitored node. */
     uint8_t monitored_node_state;
+    /** Number of accepted boot-up events. */
     uint32_t event_count_bootup;
+    /** Number of accepted heartbeat events. */
     uint32_t event_count_heartbeat;
+    /** Number of heartbeat-timeout events. */
     uint32_t event_count_heartbeat_timeout;
+    /** Number of mandatory-node boot-timeout events. */
     uint32_t event_count_boot_timeout;
+    /** Number of network-ready events. */
     uint32_t event_count_network_ready;
+    /** Number of rejected or malformed heartbeat events. */
     uint32_t event_count_invalid_frame;
+    /** Timestamp of the most recent event. */
     uint32_t last_event_timestamp_ms;
+    /** Type of the most recent event. */
     uint8_t last_event_type;
+    /** Node-ID associated with the most recent event. */
     uint8_t last_event_node_id;
+    /** Raw state byte associated with the most recent event. */
     uint8_t last_event_state;
 } CANopenReferenceCia302Snapshot;
 
