@@ -17,7 +17,7 @@ python3 tests/conformance/run_core_vectors.py
 make -C tests/host test-sanitize test-coverage
 ```
 
-The release candidate must also pass the tag-triggered mandatory SocketCAN job. A release tag is not considered validated when the runner cannot create `vcan0`; the release job must fail rather than skip runtime wire tests.
+The release candidate must run the tag-triggered SocketCAN job. The workflow executes native SocketCAN tests when the runner can create `vcan0`; when the hosted kernel lacks `CONFIG_CAN_VCAN`, it runs the deterministic release regression fallback and uploads an explicit `status=unavailable` artifact. This prevents runner infrastructure failures from masking software regressions, but the unavailable status remains a release-evidence blocker: a production label still requires native SocketCAN or hardware/HIL evidence.
 
 ## 2. Physical CAN and transceiver validation
 

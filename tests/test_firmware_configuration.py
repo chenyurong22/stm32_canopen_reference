@@ -256,7 +256,8 @@ class FirmwareConfigurationTests(unittest.TestCase):
             '"v*"',
             "release-vcan:",
             "if: startsWith(github.ref, 'refs/tags/v')",
-            "Require vcan0 for release validation",
+            "Probe and create vcan0 when supported",
+            "Run deterministic release regression when vcan is unavailable",
             "make -C tests/host test-coverage-report test-sanitize-report",
         ):
             self.assertIn(expected, CI)
