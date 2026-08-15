@@ -222,6 +222,23 @@ jobs:
           CANOPEN_REFERENCE_PERSONALITY: all-ci-personalities
           STM32_F7_LINKER_SCRIPT: ${{ github.workspace }}/linker/STM32F767_2M_512K_FLASH.ld
         run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
+      - name: Generate host coverage and sanitizer reports
+        env:
+          COVERAGE_MIN_LINE: 80
+          COVERAGE_MIN_FUNCTION: 80
+          COVERAGE_MIN_BRANCH: 60
+        run: |
+          make -C tests/host clean
+          make -C tests/host test-coverage-report test-sanitize-report
+          mkdir -p build/reports
+          cp build/host-coverage/report/coverage-summary.json build/reports/coverage-summary.json
+          cp build/host-sanitize/report/sanitizer-report.txt build/reports/sanitizer-report.txt
+      - name: Generate software validation JUnit report
+        run: |
+          mkdir -p build/reports
+          python3 scripts/run_validation_junit.py --output build/reports/test-results.xml
+      - name: Validate release evidence bundle
+        run: python3 scripts/validate_release_artifacts.py .
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -230,6 +247,9 @@ jobs:
           path: |
             build/ci-build-manifest.txt
             build/ci-build-manifest.json
+            build/reports/test-results.xml
+            build/reports/coverage-summary.json
+            build/reports/sanitizer-report.txt
             build/ci-firmware/stm32f767_canopen_reference
             build/ci-firmware/stm32f767_canopen_reference.hex
             build/ci-firmware/stm32f767_canopen_reference.bin
