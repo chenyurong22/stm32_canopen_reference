@@ -4,9 +4,9 @@ BUILD_DIR := $(ROOT)/build/host
 CC ?= cc
 CFLAGS := -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 
-.PHONY: all clean test test-stm32-facade test-gateway-default-deny test-cia302 check-vcan
+.PHONY: all clean test test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy check-vcan
 
-all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master
+all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy
 
 $(BUILD_DIR):
 	mkdir -p $@
@@ -17,11 +17,17 @@ $(BUILD_DIR)/test_can_port: $(ROOT)/tests/host/test_can_port.c $(ROOT)/middlewar
 $(BUILD_DIR)/test_cia302_nmt_master: $(ROOT)/tests/test_cia302_nmt_master.c $(ROOT)/middleware/canopen/core/cia302_nmt_master.c $(ROOT)/middleware/canopen/core/cia302_nmt_master.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/middleware/canopen/core $^ -o $@
 
+$(BUILD_DIR)/test_lss_policy: $(ROOT)/tests/test_lss_policy.c $(ROOT)/App/Src/canopen_reference_lss.c $(ROOT)/App/Inc/canopen_reference_lss.h $(ROOT)/tests/fakes/CANopen.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(ROOT)/tests/fakes -I$(ROOT)/App/Inc $^ -o $@
+
 $(BUILD_DIR)/test_can_port_stm32: $(ROOT)/tests/test_can_port_stm32.c $(ROOT)/middleware/canopen/port/can_port.c $(ROOT)/middleware/canopen/port/can_port.h $(ROOT)/tests/fakes/stm32f7xx_hal.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -DCAN_PORT_STM32 -I$(ROOT)/tests/fakes -I$(ROOT)/middleware/canopen/port $< $(ROOT)/middleware/canopen/port/can_port.c -o $@
 
 test-cia302: $(BUILD_DIR)/test_cia302_nmt_master
 	$(BUILD_DIR)/test_cia302_nmt_master
+
+test-lss-policy: $(BUILD_DIR)/test_lss_policy
+	$(BUILD_DIR)/test_lss_policy
 
 test-stm32-facade: $(BUILD_DIR)/test_can_port_stm32
 	$(BUILD_DIR)/test_can_port_stm32

@@ -13,6 +13,7 @@
 #include "canopen_reference_config.h"
 #include "canopen_reference_diagnostics.h"
 #include "canopen_reference_gateway.h"
+#include "canopen_reference_lss.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"
 
@@ -26,6 +27,7 @@ CANopenNodeSTM32 *canopenNodeSTM32 = NULL;
 CO_t *CO = NULL;
 
 static uint32_t canopenReferenceLastTick;
+static CANopenReferenceLssState canopenReferenceLssState;
 
 static void
 CANopenReference_ApplyIdentity(void) {
@@ -101,6 +103,7 @@ canopen_app_resetCommunication(void) {
     if (error != CO_ERROR_NO) {
         return -3;
     }
+    CANopenReferenceLss_Init(CO, &canopenReferenceLssState);
 
     canopenNodeSTM32->activeNodeID = canopenNodeSTM32->desiredNodeID;
     error = CO_CANopenInit(CO, NULL, NULL, OD, NULL, CANOPEN_REFERENCE_NMT_CONTROL,

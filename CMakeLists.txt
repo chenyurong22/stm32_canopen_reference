@@ -47,6 +47,7 @@ add_executable(${PROJECT_NAME}
     App/Src/canopen_reference_board.c
     App/Src/canopen_reference_diagnostics.c
     App/Src/canopen_reference_gateway.c
+    App/Src/canopen_reference_lss.c
     App/Src/cia401_reference.c
     App/Src/cia402_reference.c
     middleware/canopen/core/canopen_core.c
