@@ -17,6 +17,10 @@ MAIN = (ROOT / "Core" / "Src" / "main.c").read_text(encoding="utf-8")
 CLOCK = (ROOT / "Core" / "Src" / "system_clock_reference.c").read_text(encoding="utf-8")
 MSP = (ROOT / "Core" / "Src" / "stm32f7xx_hal_msp.c").read_text(encoding="utf-8")
 FEATURES = (ROOT / "App" / "Inc" / "CO_driver_custom.h").read_text(encoding="utf-8")
+STORAGE_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_storage.h").read_text(encoding="utf-8")
+STORAGE_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_storage.c").read_text(encoding="utf-8")
+WATCHDOG_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_watchdog.h").read_text(encoding="utf-8")
+WATCHDOG_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_watchdog.c").read_text(encoding="utf-8")
 PROFILE = (ROOT / "App" / "Inc" / "canopen_reference_config.h").read_text(encoding="utf-8")
 BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding="utf-8")
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
@@ -120,6 +124,24 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "#define CO_CONFIG_LEDS                0x01U",
         ):
             self.assertIn(expected, FEATURES)
+
+    def test_storage_is_enabled_and_initialized_before_canopen(self) -> None:
+        """OD 1010h/1011h persistence is enabled through project-owned code."""
+        self.assertIn("#define CO_CONFIG_STORAGE_ENABLE      0x01U", FEATURES)
+        self.assertIn("#define CO_CONFIG_STORAGE             CO_CONFIG_STORAGE_ENABLE", FEATURES)
+        self.assertIn("CO_storage_init", STORAGE_SOURCE)
+        self.assertIn("CANopenReferenceStorage_BoardStore", STORAGE_HEADER)
+        self.assertIn("CANopenReferenceStorage_BoardRestore", STORAGE_HEADER)
+        self.assertLess(APP_RUNTIME.index("CANopenReferenceStorage_Init(CO)"),
+                        APP_RUNTIME.index("CO_CANopenInit(CO"))
+
+    def test_watchdog_is_opt_in_and_dual_rate(self) -> None:
+        """Watchdog refresh requires progress from both TIM7 and mainline."""
+        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_IWDG "Enable dual-rate IWDG supervision" OFF)', CMAKE)
+        self.assertIn("#define CANOPEN_REFERENCE_ENABLE_IWDG            0U", PROFILE)
+        self.assertIn("CANopenReferenceWatchdog_TickISR", MAIN)
+        self.assertIn("CANopenReferenceWatchdog_Process", MAIN)
+        self.assertIn("HAL_IWDG_Refresh", WATCHDOG_SOURCE)
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""

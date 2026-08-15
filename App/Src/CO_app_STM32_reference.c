@@ -15,6 +15,7 @@
 #include "canopen_reference_diagnostics.h"
 #include "canopen_reference_gateway.h"
 #include "canopen_reference_lss.h"
+#include "canopen_reference_storage.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"
 
@@ -104,6 +105,9 @@ canopen_app_resetCommunication(void) {
         return -2;
     }
 #endif
+    if (CANopenReferenceStorage_Init(CO) != CO_ERROR_NO) {
+        return -2;
+    }
 
     lssAddress.identity.vendorID = OD_PERSIST_COMM.x1018_identity.vendor_ID;
     lssAddress.identity.productCode = OD_PERSIST_COMM.x1018_identity.productCode;

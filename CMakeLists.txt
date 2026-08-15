@@ -50,6 +50,7 @@ add_executable(${PROJECT_NAME}
     App/Src/canopen_reference_cia302.c
     App/Src/canopen_reference_diagnostics.c
     App/Src/canopen_reference_watchdog.c
+    App/Src/canopen_reference_storage.c
     App/Src/canopen_reference_gateway.c
     App/Src/canopen_reference_lss.c
     App/Src/cia401_reference.c

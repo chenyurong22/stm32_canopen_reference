@@ -51,6 +51,12 @@
  * the Object Dictionary before the LSS object is initialized. */
 #define CO_CONFIG_LSS                 (0x01U | 0x02U)
 
+/* The vendor STM32 target disables storage by default. Re-enable the public
+ * CANopenNode storage bit here so OD 1010h/1011h can use the project-owned,
+ * bounded persistence adapter. */
+#define CO_CONFIG_STORAGE_ENABLE      0x01U
+#define CO_CONFIG_STORAGE             CO_CONFIG_STORAGE_ENABLE
+
 /* CiA 303-3 status indications are calculated by the stack. */
 #define CO_CONFIG_LEDS                0x01U
 
