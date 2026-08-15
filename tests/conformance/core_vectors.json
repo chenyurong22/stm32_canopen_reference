@@ -1,0 +1,36 @@
+{
+  "schema": "canopen-reference-core-vector-v1",
+  "node_id": 10,
+  "vectors": [
+    {
+      "name": "nmt_start_node",
+      "request": {"cob_id": 0, "data": "010a"},
+      "expected": {"service": "nmt", "command": "start", "node_id": 10}
+    },
+    {
+      "name": "sync_frame",
+      "request": {"cob_id": 128, "data": ""},
+      "expected": {"service": "sync", "counter": null}
+    },
+    {
+      "name": "sdo_upload_identity_vendor",
+      "request": {"cob_id": 1546, "data": "4018100000000000"},
+      "expected": {"service": "sdo_upload_request", "server_node_id": 10, "index": 4120, "subindex": 0}
+    },
+    {
+      "name": "emcy_frame",
+      "request": {"cob_id": 138, "data": "0010010000000000"},
+      "expected": {"service": "emcy", "node_id": 10, "error_code": 4096}
+    },
+    {
+      "name": "heartbeat_operational",
+      "request": {"cob_id": 1802, "data": "05"},
+      "expected": {"service": "heartbeat", "node_id": 10, "nmt_state": "operational"}
+    },
+    {
+      "name": "lss_switch_state_global",
+      "request": {"cob_id": 2020, "data": "0401000000000000"},
+      "expected": {"service": "lss", "command": "switch_state_global", "mode": "waiting"}
+    }
+  ]
+}
