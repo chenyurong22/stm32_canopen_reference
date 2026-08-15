@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Release checklist gate. Production mode requires externally archived evidence;
+# it never treats host reports as substitutes for hardware or conformance tests.
+set -euo pipefail
+
+MODE=software
+EVIDENCE_DIR=
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --software) MODE=software; shift ;;
+        --production) MODE=production; shift ;;
+        --evidence-dir) EVIDENCE_DIR=${2:?--evidence-dir requires a path}; shift 2 ;;
+        -h|--help)
+            printf '%s\n' 'usage: check_production_release_gate.sh [--software|--production] [--evidence-dir DIR]'
+            exit 0
+            ;;
+        *) echo "unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+require_file() {
+    [[ -s "$1" ]] || { echo "release gate: missing or empty: $1" >&2; exit 1; }
+}
+
+require_file "$ROOT/build/ci-build-manifest.json"
+require_file "$ROOT/build/ci-build-manifest.txt"
+require_file "$ROOT/build/memory-budget.json"
+require_file "$ROOT/build/reports/test-results.xml"
+require_file "$ROOT/build/reports/coverage-summary.json"
+require_file "$ROOT/build/reports/sanitizer-report.txt"
+python3 "$ROOT/scripts/validate_release_artifacts.py" "$ROOT"
+
+if [[ "$MODE" = software ]]; then
+    printf '%s\n' 'software release gate: PASS (hardware and formal evidence intentionally not evaluated)'
+    exit 0
+fi
+
+[[ -n "$EVIDENCE_DIR" ]] || { echo 'production release gate: --evidence-dir is required' >&2; exit 1; }
+[[ -d "$EVIDENCE_DIR" ]] || { echo "production release gate: evidence directory does not exist: $EVIDENCE_DIR" >&2; exit 1; }
+
+required=(
+    board_electrical_review.md
+    physical_can_interoperability.md
+    bus_off_campaign.md
+    flash_power_loss_endurance.md
+    watchdog_timing.md
+    cia401_acceptance.md
+    cia402_acceptance.md
+    cia302_lss_commissioning.md
+    security_update_approval.md
+    formal_canopen_conformance.md
+)
+for record in "${required[@]}"; do
+    require_file "$EVIDENCE_DIR/$record"
+done
+
+printf '%s\n' 'production release gate: PASS (software and externally archived evidence records are present)'
