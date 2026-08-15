@@ -4,7 +4,17 @@ All notable changes to this project are documented here. The project follows sem
 
 ## [Unreleased]
 
-- Continue development on the `main` branch.
+### Audit remediation
+
+- Propagated STM32 HAL CAN errors into CANopenNode diagnostics and added bounded hardware-fault counters.
+- Added regression assertions for CAN1/TIM7 interrupt priorities and corrected the default 500 kbit/s sample point to 83.33%.
+- Added validated standalone-facade bitrate selection for common 54 MHz APB1 configurations.
+- Enabled OD 1010h/1011h storage through a project-owned, CRC-validated persistence seam with weak board hooks.
+- Added an opt-in dual-rate IWDG supervisor that requires both TIM7 and mainline progress.
+- Replaced the bxCAN accept-all filter with node-specific CANopen and LSS acceptance lists.
+- Documented the audit response and the requirement for a board-specific power-loss NVM backend.
+
+The reference firmware remains a non-certified baseline; board-level Flash reservation, watchdog timing validation, and physical HIL evidence are required before product release.
 
 ## [0.1.0] - 2026-08-15
 
