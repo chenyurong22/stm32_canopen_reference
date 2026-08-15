@@ -1,6 +1,5 @@
 # STM32F767 Board Integration and Hardware-in-the-Loop Plan
 
-**Author:** Manus AI  
 **Status:** Required product-port work; not completed by the board-agnostic reference.
 
 The source reference now has explicit board hooks, but it cannot select a real CAN transceiver, safe-output topology, drive feedback interface, or UART pin without the target schematic and safety architecture. The default implementation therefore starts with the transceiver disabled and all application hooks de-energized. This is intentional.

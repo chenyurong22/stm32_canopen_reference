@@ -1,6 +1,5 @@
 # Product Security Release Checklist
 
-**Author:** Manus AI
 **Scope:** Product teams deriving a deployable STM32F767 CANopen device from this reference firmware.
 
 ## Purpose

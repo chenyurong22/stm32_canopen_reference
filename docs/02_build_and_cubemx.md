@@ -1,6 +1,5 @@
 # STM32CubeMX and Build Integration
 
-**Author:** Manus AI  
 **Status:** Board-port procedure for the reference firmware
 
 This reference is intentionally not a complete `.ioc` project because **STM32F767 is a family, not a package or board definition**. Pin availability, flash/RAM map, HSE frequency, transceiver enable wiring, debug port, and production boot arrangement must be selected for the exact device and PCB. The STM32 CANopen integration expects the application to configure CAN/FDCAN bit rate, RX/TX interrupts, and a 1 ms timer before starting the stack.[1]
