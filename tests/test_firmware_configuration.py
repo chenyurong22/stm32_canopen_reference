@@ -357,6 +357,18 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_linker_memory_contract_fails_closed(self) -> None:
+        """The linker must reject application/NVM overlap and RAM exhaustion."""
+        linker = (ROOT / "linker" / "STM32F767_2M_512K_FLASH.ld").read_text(encoding="utf-8")
+        for expected in (
+            "FLASH application region must end at FLASH_NVM origin",
+            "FLASH_NVM must reserve exactly 512 KiB",
+            "FLASH_NVM must end at the STM32F7 2 MiB Flash boundary",
+            "application load image overlaps reserved FLASH_NVM",
+            "RAM image exceeds configured heap/stack headroom",
+        ):
+            self.assertIn(expected, linker)
+
     def test_release_readiness_gate_preserves_lineage_and_claim_boundary(self) -> None:
         """Release tags and production claims remain tied to external evidence."""
         release = (ROOT / "docs" / "v1_release_readiness_gate.md").read_text(encoding="utf-8")

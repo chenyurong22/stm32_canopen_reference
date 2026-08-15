@@ -107,4 +107,16 @@ SECTIONS
   }
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
+
+  /* Fail closed if the production memory contract is changed accidentally. */
+  ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) == ORIGIN(FLASH_NVM),
+         "FLASH application region must end at FLASH_NVM origin")
+  ASSERT(LENGTH(FLASH_NVM) == 0x80000,
+         "FLASH_NVM must reserve exactly 512 KiB")
+  ASSERT(ORIGIN(FLASH_NVM) + LENGTH(FLASH_NVM) == 0x08200000,
+         "FLASH_NVM must end at the STM32F7 2 MiB Flash boundary")
+  ASSERT(LOADADDR(.data) + SIZEOF(.data) <= ORIGIN(FLASH_NVM),
+         "application load image overlaps reserved FLASH_NVM")
+  ASSERT(_ebss + _Min_Heap_Size + _Min_Stack_Size <= ORIGIN(RAM) + LENGTH(RAM),
+         "RAM image exceeds configured heap/stack headroom")
 }
