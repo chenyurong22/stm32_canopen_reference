@@ -12,8 +12,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** Maximum valid CANopen node-ID supported by the bounded master. */
 #define CIA302_MAX_NODES 127U
+/** CAN-ID used for NMT command frames. */
 #define CIA302_NMT_CAN_ID 0x000U
+/** Base CAN-ID for heartbeat frames; add the node-ID. */
 #define CIA302_HEARTBEAT_BASE 0x700U
 
 #define CIA302_NMT_START 0x01U
@@ -27,6 +30,7 @@
 #define CIA302_HEARTBEAT_OPERATIONAL 0x05U
 #define CIA302_HEARTBEAT_PREOP 0x7FU
 
+/** Tracked state of an assigned remote node. */
 typedef enum {
     CIA302_NODE_UNASSIGNED = 0,
     CIA302_NODE_WAITING_BOOTUP,
@@ -45,12 +49,14 @@ typedef enum {
     CIA302_EVENT_INVALID_FRAME,
 } cia302_event_type_t;
 
+/** Transport-neutral classic-CAN frame passed to the send callback. */
 typedef struct {
     uint16_t can_id;
     uint8_t dlc;
     uint8_t data[8];
 } cia302_frame_t;
 
+/** Bounded event emitted from mainline processing. */
 typedef struct {
     cia302_event_type_t type;
     uint8_t node_id;
@@ -58,7 +64,9 @@ typedef struct {
     uint32_t timestamp_ms;
 } cia302_event_t;
 
+/** Send one NMT frame; return false when the transport cannot queue it. */
 typedef bool (*cia302_send_fn)(void *context, const cia302_frame_t *frame);
+/** Receive one bounded event; the callback must not block. */
 typedef void (*cia302_event_fn)(void *context, const cia302_event_t *event);
 
 typedef struct {
@@ -85,28 +93,34 @@ typedef struct {
     void *callback_context;
 } cia302_nmt_master_t;
 
+/** Initialize a zeroed master and bind non-blocking transport callbacks. */
 void cia302_nmt_master_init(cia302_nmt_master_t *master,
                             uint8_t master_node_id,
                             cia302_send_fn send,
                             cia302_event_fn event,
                             void *callback_context);
 
+/** Assign a node and configure mandatory, auto-start, and heartbeat policy. */
 bool cia302_nmt_master_configure(cia302_nmt_master_t *master,
                                  uint8_t node_id,
                                  bool mandatory,
                                  bool auto_start,
                                  uint16_t heartbeat_timeout_ms);
 
+/** Queue a targeted or broadcast NMT command; returns false for invalid input. */
 bool cia302_nmt_master_request(cia302_nmt_master_t *master,
                                uint8_t command,
                                uint8_t node_id);
 
+/** Start supervision at the supplied monotonic millisecond timestamp. */
 bool cia302_nmt_master_start(cia302_nmt_master_t *master, uint32_t now_ms);
+/** Validate and consume one received heartbeat in mainline context. */
 void cia302_nmt_master_receive(cia302_nmt_master_t *master,
                                uint16_t can_id,
                                const uint8_t *data,
                                uint8_t dlc,
                                uint32_t now_ms);
+/** Advance boot, heartbeat, readiness, and auto-start supervision. */
 void cia302_nmt_master_process(cia302_nmt_master_t *master, uint32_t now_ms);
 
 #endif /* CIA302_NMT_MASTER_H */
