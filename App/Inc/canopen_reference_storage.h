@@ -8,6 +8,14 @@
 
 #include "CANopen.h"
 
+#ifndef CANOPEN_REFERENCE_STORAGE_SLOT_SIZE
+#define CANOPEN_REFERENCE_STORAGE_SLOT_SIZE (256U * 1024U)
+#endif
+
+#ifndef CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS
+#define CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS 0U
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,6 +34,9 @@ CO_ReturnError_t CANopenReferenceStorage_Init(CO_t *co);
  */
 bool CANopenReferenceStorage_BoardStore(const void *data, size_t length);
 bool CANopenReferenceStorage_BoardRestore(void *data, size_t length);
+
+/** Number of successful 0x1010 store operations since startup. */
+uint32_t CANopenReferenceStorage_StoreCount(void);
 
 #ifdef __cplusplus
 }

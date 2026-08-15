@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "canopen_reference_storage.h"
 
+#include "canopen_reference_config.h"
+
 #include <string.h>
 
 #include "OD.h"
@@ -29,12 +31,19 @@ typedef struct {
 
 _Static_assert((sizeof(canopen_reference_storage_image_t) % sizeof(uint32_t)) == 0U,
                "storage image must be word-aligned for STM32F7 Flash programming");
+_Static_assert(sizeof(canopen_reference_storage_image_t) <= CANOPEN_REFERENCE_STORAGE_SLOT_SIZE,
+               "storage image must fit inside one reserved Flash sector");
 
 static canopen_reference_storage_image_t s_ram_image;
 static OD_PERSIST_COMM_t s_factory_defaults;
 static bool s_factory_defaults_valid;
 static CO_storage_t s_storage;
 static CO_storage_entry_t s_entries[1];
+static uint32_t s_store_count;
+#if defined(STM32F767xx)
+static uint32_t s_last_store_tick;
+static bool s_store_tick_valid;
+#endif
 
 static uint32_t
 storage_crc32(const uint8_t *data, size_t length) {
@@ -194,13 +203,42 @@ CANopenReferenceStorage_BoardRestore(void *data, size_t length) {
 #endif
 }
 
+static bool
+storage_store_rate_allowed(void) {
+#if defined(STM32F767xx)
+    uint32_t now;
+
+    if (CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS == 0U || !s_store_tick_valid) {
+        return true;
+    }
+    now = HAL_GetTick();
+    return (uint32_t)(now - s_last_store_tick) >= CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS;
+#else
+    return true;
+#endif
+}
+
 static ODR_t
 storage_store(CO_storage_entry_t *entry, CO_CANmodule_t *can_module) {
+    bool stored;
+
     (void)can_module;
     if (entry == NULL || entry->addr == NULL || entry->len != sizeof(OD_PERSIST_COMM_t)) {
         return ODR_DEV_INCOMPAT;
     }
-    return CANopenReferenceStorage_BoardStore(entry->addr, entry->len) ? ODR_OK : ODR_HW;
+    if (!storage_store_rate_allowed()) {
+        return ODR_HW;
+    }
+    stored = CANopenReferenceStorage_BoardStore(entry->addr, entry->len);
+    if (!stored) {
+        return ODR_HW;
+    }
+    ++s_store_count;
+#if defined(STM32F767xx)
+    s_last_store_tick = HAL_GetTick();
+    s_store_tick_valid = true;
+#endif
+    return ODR_OK;
 }
 
 static ODR_t
@@ -216,6 +254,11 @@ storage_restore(CO_storage_entry_t *entry, CO_CANmodule_t *can_module) {
         (void)memcpy(entry->addr, &s_factory_defaults, entry->len);
     }
     return ODR_OK;
+}
+
+uint32_t
+CANopenReferenceStorage_StoreCount(void) {
+    return s_store_count;
 }
 
 CO_ReturnError_t
