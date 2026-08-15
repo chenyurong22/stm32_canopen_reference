@@ -46,7 +46,11 @@ def main() -> None:
     if not SEMVER_RE.fullmatch(version):
         fail(f"VERSION is not a supported pre-1.0 semantic version: {version!r}")
 
-    markdown_files = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
+    markdown_files = [
+        ROOT / "README.md",
+        *sorted((ROOT / "docs").rglob("*.md")),
+        *sorted((ROOT / "examples").rglob("*.md")),
+    ]
     for path in markdown_files:
         text = path.read_text(encoding="utf-8")
         if "Manus AI" in text or "**Author:**" in text:
