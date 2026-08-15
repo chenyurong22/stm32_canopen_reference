@@ -357,6 +357,20 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_flash_qualification_covers_power_loss_and_endurance(self) -> None:
+        """Flash persistence requires exact-MCU and power-loss evidence."""
+        flash = (ROOT / "docs" / "flash_qualification.md").read_text(encoding="utf-8")
+        for expected in (
+            "dual-slot validation",
+            "0x08180000",
+            "During sector erase",
+            "During payload write",
+            "Both slots invalid",
+            "expected writes/year × expected service life",
+            "PENDING hardware",
+        ):
+            self.assertIn(expected, flash)
+
     def test_bus_off_qualification_is_external_and_trial_counted(self) -> None:
         """Bus-off software tests do not replace the physical fault campaign."""
         bus_off = (ROOT / "docs" / "bus_off_qualification.md").read_text(encoding="utf-8")
