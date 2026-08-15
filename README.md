@@ -128,10 +128,11 @@ python3 tests/test_canopen_wire_contract.py
 PYTHONPATH=.:tests python3 tests/run_uds_isotp_contract.py
 PYTHONPATH=.:tests python3 tests/run_nmea2000_gateway_contract.py
 make -C tests/host all test-stm32-facade test-gateway-default-deny
+make -C tests/host test-sanitize test-coverage
 python3 tests/conformance/run_core_vectors.py
 ```
 
-For the hardware acceptance runner, see [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/hardware/uds_cia302_test_procedure.md`](docs/hardware/uds_cia302_test_procedure.md).
+For the hardware acceptance runner, see [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/hardware/uds_cia302_test_procedure.md`](docs/hardware/uds_cia302_test_procedure.md). The complete board, Flash, watchdog, profile, security, and formal-evidence release procedure is [`docs/production_validation_plan.md`](docs/production_validation_plan.md). Release tags additionally require the mandatory SocketCAN job in GitHub Actions; a missing `vcan0` fails that release gate rather than being skipped.
 
 ## Brief source structure
 
