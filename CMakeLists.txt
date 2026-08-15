@@ -11,6 +11,7 @@ set(STM32_F7_LINKER_SCRIPT "" CACHE FILEPATH "Board/package-specific GNU LD scri
 option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)
 option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 adapter/model personality" OFF)
 option(CANOPEN_REFERENCE_ENABLE_IWDG "Enable dual-rate IWDG supervision" OFF)
+option(CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION "Enable DWT timing instrumentation" OFF)
 option(CANOPEN_REFERENCE_PRODUCTION_PROFILE "Enable production optimization and compiler hardening" OFF)
 
 if(NOT STM32_CUBE_F7_DIR)
@@ -52,6 +53,7 @@ add_executable(${PROJECT_NAME}
     App/Src/canopen_reference_cia302.c
     App/Src/canopen_reference_diagnostics.c
     App/Src/canopen_reference_watchdog.c
+    App/Src/canopen_reference_timing.c
     App/Src/canopen_reference_storage.c
     App/Src/canopen_reference_can_recovery.c
     App/Src/canopen_reference_gateway.c
@@ -78,6 +80,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA418}>:CANOPEN_REFERENCE_ENABLE_CIA401=0>
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA418}>:CANOPEN_REFERENCE_ENABLE_CIA402=0>
     CANOPEN_REFERENCE_ENABLE_IWDG=$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>
+    CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=$<BOOL:${CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION}>
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>:HAL_IWDG_MODULE_ENABLED>
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.

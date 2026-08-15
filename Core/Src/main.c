@@ -4,6 +4,7 @@
 #include "CO_app_STM32.h"
 #include "canopen_reference_board.h"
 #include "canopen_reference_config.h"
+#include "canopen_reference_timing.h"
 #include "canopen_reference_watchdog.h"
 
 CAN_HandleTypeDef hcan1;
@@ -25,6 +26,7 @@ main(void) {
 
     HAL_Init();
     SystemClock_Config();
+    CANopenReferenceTiming_Init();
     MX_GPIO_Init();
     CANopenReferenceBoard_InitSafe();
     MX_CAN1_Init();

@@ -32,6 +32,9 @@ CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(
 CIA418_HEADER = (ROOT / "App" / "Inc" / "cia418_reference.h").read_text(encoding="utf-8")
 CIA418_SOURCE = (ROOT / "App" / "Src" / "cia418_reference.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
+TIMING_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_timing.h").read_text(encoding="utf-8")
+TIMING_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_timing.c").read_text(encoding="utf-8")
+IRQ_SOURCE = (ROOT / "Core" / "Src" / "stm32f7xx_it.c").read_text(encoding="utf-8")
 LIFECYCLE = (ROOT / "App" / "Inc" / "canopen_reference_lifecycle.h").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
@@ -520,6 +523,33 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "Do not assign a production or conformance status",
         ):
             self.assertIn(expected, reconciliation)
+
+    def test_timing_instrumentation_is_opt_in_and_covers_required_contexts(self) -> None:
+        """Timing measurements are disabled by default and cover ISR/mainline contexts."""
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION 0U", PROFILE)
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION", CMAKE)
+        self.assertIn("App/Src/canopen_reference_timing.c", CMAKE)
+        for expected in (
+            "CANopenReferenceTiming_Tim7Enter",
+            "CANopenReferenceTiming_Tim7Exit",
+            "CANopenReferenceTiming_CanEnter",
+            "CANopenReferenceTiming_CanExit",
+            "CANopenReferenceTiming_MainlineEnter",
+            "CANopenReferenceTiming_MainlineExit",
+            "CANopenReferenceTiming_GetStats",
+        ):
+            self.assertIn(expected, TIMING_HEADER)
+            self.assertIn(expected, TIMING_SOURCE)
+        for expected in (
+            "CANopenReferenceTiming_Tim7Enter",
+            "CANopenReferenceTiming_Tim7Exit",
+            "CANopenReferenceTiming_CanEnter(CANOPEN_REFERENCE_TIMING_CAN_RX0)",
+            "CANopenReferenceTiming_CanExit(CANOPEN_REFERENCE_TIMING_CAN_RX0",
+        ):
+            self.assertIn(expected, IRQ_SOURCE)
+        self.assertIn("CANopenReferenceTiming_MainlineEnter", APP_RUNTIME)
+        self.assertIn("CANopenReferenceTiming_MainlineExit", APP_RUNTIME)
+        self.assertIn("DWT_CTRL_CYCCNTENA_Msk", TIMING_SOURCE)
 
     def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""

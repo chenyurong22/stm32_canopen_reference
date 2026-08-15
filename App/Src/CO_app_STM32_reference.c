@@ -18,6 +18,7 @@
 #include "canopen_reference_lss.h"
 #include "canopen_reference_lifecycle.h"
 #include "canopen_reference_storage.h"
+#include "canopen_reference_timing.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"
 #include "cia418_reference.h"
@@ -338,17 +339,20 @@ canopen_app_resetCommunication(void) {
 
 void
 canopen_app_process(void) {
+    uint32_t timing_start = CANopenReferenceTiming_MainlineEnter();
     uint32_t now;
     uint32_t elapsedUs;
     CO_NMT_reset_cmd_t resetCommand;
 
     if (CO == NULL || canopenNodeSTM32 == NULL || canopenReferenceSafeFault) {
+        CANopenReferenceTiming_MainlineExit(timing_start);
         return;
     }
 
     now = HAL_GetTick();
     CANopenReference_ProcessCanRecovery(now);
     if (now == canopenReferenceLastTick) {
+        CANopenReferenceTiming_MainlineExit(timing_start);
         return;
     }
     elapsedUs = (now - canopenReferenceLastTick) * 1000U;
@@ -376,6 +380,7 @@ canopen_app_process(void) {
         CANopenReference_ForceSafeApplication();
         HAL_NVIC_SystemReset();
     }
+    CANopenReferenceTiming_MainlineExit(timing_start);
 }
 
 void

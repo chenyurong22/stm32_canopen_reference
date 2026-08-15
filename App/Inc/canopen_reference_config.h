@@ -94,6 +94,15 @@
 #ifndef CANOPEN_REFERENCE_ENABLE_IWDG
 #define CANOPEN_REFERENCE_ENABLE_IWDG            0U
 #endif
+
+/* DWT timing instrumentation is opt-in for board qualification. It records
+ * cycle-counter maxima and overrun counts without changing the default image. */
+#ifndef CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION
+#define CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION 0U
+#endif
+#ifndef CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US
+#define CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US 1000U
+#endif
 #ifndef CANOPEN_REFERENCE_IWDG_TIMEOUT_MS
 #define CANOPEN_REFERENCE_IWDG_TIMEOUT_MS        200U
 #endif
