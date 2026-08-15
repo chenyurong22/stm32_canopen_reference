@@ -357,6 +357,20 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_watchdog_qualification_remains_external_and_explicit(self) -> None:
+        """Watchdog timing and reset behavior remain board-level evidence gates."""
+        watchdog = (ROOT / "docs" / "watchdog_qualification.md").read_text(encoding="utf-8")
+        for expected in (
+            "opt-in IWDG personality",
+            "CANOPEN_REFERENCE_ENABLE_IWDG=ON",
+            "PENDING hardware",
+            "PENDING laboratory",
+            "reset-cause",
+            "safe outputs",
+            "Host tests prove configuration",
+        ):
+            self.assertIn(expected, watchdog)
+
     def test_external_evidence_handoff_is_pending_and_fail_closed(self) -> None:
         """Evidence templates are explicit handoff artifacts and never fabricate PASS results."""
         for expected in (
