@@ -505,6 +505,22 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("host-side validation code only", UDS_MODEL)
         self.assertIn("host-side gateway contract code only", NMEA_MODEL)
 
+    def test_audit_reconciliation_matches_current_architecture(self) -> None:
+        """The audit status records current fixes and separates external gates."""
+        reconciliation = (ROOT / "docs" / "audit_2026-08_reconciliation.md").read_text(encoding="utf-8")
+        for expected in (
+            "bare-metal HAL firmware",
+            "not FreeRTOS",
+            "83.33% nominal sample point",
+            "Resolved in source; hardware timing still pending",
+            "Implemented as opt-in; production qualification pending",
+            "No source or host test proves a universal less-than-10-us ISR duration",
+            "Embedded UDS/ISO-TP server",
+            "CiA 304 SRDO",
+            "Do not assign a production or conformance status",
+        ):
+            self.assertIn(expected, reconciliation)
+
     def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""
         self.assertIn("option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER", CMAKE)
