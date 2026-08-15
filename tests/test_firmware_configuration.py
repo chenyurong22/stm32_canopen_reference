@@ -338,6 +338,25 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("Generated/OD.c", validator)
         self.assertIn("Generated/OD.h", validator)
 
+    def test_cia401_hil_campaign_is_pending_and_fail_closed(self) -> None:
+        """Physical validation has a complete plan but cannot be claimed from the sandbox."""
+        plan = (ROOT / "tests" / "hardware" / "cia401_hil_plan.json").read_text(encoding="utf-8")
+        initializer = (ROOT / "tests" / "hardware" / "run_cia401_hil_campaign.py").read_text(encoding="utf-8")
+        procedure = (ROOT / "docs" / "cia401_hil_validation.md").read_text(encoding="utf-8")
+        for expected in (
+            '"schema": "stm32-canopen-cia401-hil-v1"',
+            '"status": "hardware-execution-pending"',
+            '"id": "startup"',
+            '"id": "bus_off"',
+            '"id": "flash"',
+            '"id": "watchdog"',
+        ):
+            self.assertIn(expected, plan)
+        for expected in ("--dry-run", '"status": "PENDING"', '"pass_claim_allowed": False', "physical execution"):
+            self.assertIn(expected, initializer)
+        for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
+            self.assertIn(expected, procedure)
+
     def test_external_evidence_handoff_is_pending_and_fail_closed(self) -> None:
         """Evidence templates are explicit handoff artifacts and never fabricate PASS results."""
         for expected in (

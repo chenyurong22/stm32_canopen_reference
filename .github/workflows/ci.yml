@@ -126,6 +126,7 @@ jobs:
             tests/test_nmea2000_gateway.py \
             tests/run_nmea2000_gateway_contract.py \
             tests/hardware/run_uds_cia302_acceptance.py \
+            tests/hardware/run_cia401_hil_campaign.py \
             tests/conformance/run_core_vectors.py \
             scripts/validate_build_manifest.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/test_firmware_configuration.py
@@ -134,6 +135,15 @@ jobs:
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_uds_isotp_contract.py
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_nmea2000_gateway_contract.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/hardware/run_uds_cia302_acceptance.py --dry-run
+          python3 tests/hardware/run_cia401_hil_campaign.py \
+            --dry-run \
+            --output build/hil/cia401-hil-pending.json \
+            --release-commit "${GITHUB_SHA:-local}" \
+            --firmware-sha "not-built-in-host-validation" \
+            --board-serial "TBD-HARDWARE" \
+            --board-revision "TBD-HARDWARE" \
+            --operator "github-actions" \
+            --equipment runner=hosted
           mkdir -p build/tests
           gcc -std=c11 -Wall -Wextra -Werror \
             -DCANOPEN_REFERENCE_ENABLE_CIA401=1 \
