@@ -183,6 +183,9 @@ jobs:
           cmake --build build/ci-gateway --parallel 2
           arm-none-eabi-size build/ci-gateway/stm32f767_canopen_reference
       - name: Record reproducibility manifest
+        env:
+          CANOPEN_REFERENCE_PERSONALITY: all-ci-personalities
+          STM32_F7_LINKER_SCRIPT: ${{ github.workspace }}/linker/STM32F767_2M_512K_FLASH.ld
         run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
@@ -191,6 +194,7 @@ jobs:
           if-no-files-found: error
           path: |
             build/ci-build-manifest.txt
+            build/ci-build-manifest.json
             build/ci-firmware/stm32f767_canopen_reference
             build/ci-firmware/stm32f767_canopen_reference.hex
             build/ci-firmware/stm32f767_canopen_reference.bin

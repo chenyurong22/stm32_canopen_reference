@@ -32,6 +32,7 @@ gcc -std=c11 -Wall -Wextra -Werror \
 "$ROOT/build/tests/test_profiles"
 make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_canopen_wire_contract.py"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/conformance/run_core_vectors.py"
 
 cmake -S "$ROOT" -B "$BUILD_DIR" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
@@ -41,7 +42,8 @@ cmake --build "$BUILD_DIR" --parallel 2
 arm-none-eabi-size "$BUILD_DIR/stm32f767_canopen_reference"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$BUILD_DIR/stm32f767_canopen_reference.bin"
-"$ROOT/scripts/write_build_manifest.sh" "$BUILD_DIR/build-manifest.txt" "$CUBE_DIR"
+CANOPEN_REFERENCE_PERSONALITY=default "$ROOT/scripts/write_build_manifest.sh" "$BUILD_DIR/build-manifest.txt" "$CUBE_DIR"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/validate_build_manifest.py" "$BUILD_DIR/build-manifest.json"
 
 # Compile optional personalities independently. The reference avoids a default
 # combined 401/402 product personality because those profiles have different
