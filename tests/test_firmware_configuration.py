@@ -357,6 +357,20 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_cia302_peer_supervision_scope_is_bounded(self) -> None:
+        """The v1 CiA 302 claim is peer supervision, not configuration management."""
+        cia302 = (ROOT / "docs" / "cia302_peer_supervision_qualification.md").read_text(encoding="utf-8")
+        for expected in (
+            "configured peer-heartbeat supervision",
+            "0x1F80–0x1F89",
+            "Node A",
+            "Node B",
+            "Heartbeat loss",
+            "Multi-node behavior",
+            "does not expand the product claim",
+        ):
+            self.assertIn(expected, cia302)
+
     def test_can_physical_layer_qualification_remains_external(self) -> None:
         """Electrical CAN behavior requires calibrated board-level evidence."""
         can_phy = (ROOT / "docs" / "can_physical_layer_qualification.md").read_text(encoding="utf-8")
