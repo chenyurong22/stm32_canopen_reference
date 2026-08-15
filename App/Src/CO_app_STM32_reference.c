@@ -108,6 +108,10 @@ CANopenReference_ConfigureCanFilter(uint8_t node_id) {
         }
     }
     if (!CANopenReference_FilterAdd(ids, &count, (uint16_t)(0x700U + node_id)) /* heartbeat */
+#if CANOPEN_REFERENCE_ENABLE_CIA302_MASTER
+        || !CANopenReference_FilterAdd(ids, &count,
+                                       (uint16_t)(0x700U + CANOPEN_REFERENCE_CIA302_PEER_NODE_ID))
+#endif
         || !CANopenReference_FilterAdd(ids, &count, 0x7E4U) /* LSS master -> slave */
         || !CANopenReference_FilterAdd(ids, &count, 0x7E5U)) { /* LSS slave -> master */
         return false;

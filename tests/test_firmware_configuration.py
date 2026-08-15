@@ -155,6 +155,7 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "CANopenReference_FilterAdd(ids, &count, 0x7E4U)",
             "CANopenReference_FilterAdd(ids, &count, 0x7E5U)",
             "OD_PERSIST_COMM.x1280_SDOClientParameter.COB_IDServerToClientRx",
+            "CANOPEN_REFERENCE_CIA302_PEER_NODE_ID",
             "for (uint32_t bank = 0U; bank < ((count + 3U) / 4U); ++bank)",
         ):
             self.assertIn(expected, FILTER_SOURCE)
