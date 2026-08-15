@@ -71,3 +71,23 @@ The planned bus-off campaign contains 250 trials: 30 normal, 30 with PDO traffic
 ## Flash and watchdog safety
 
 Power interruption must be injected only through the approved fixture and within the board owner’s voltage and current limits. Interruptions must cover erase, data programming, CRC/metadata handling, commit, and the immediate post-commit window. Watchdog tests must verify both the progress contract and the board-level result, including reset cause and safe outputs. Host tests and a successful cross-build do not close either campaign.
+
+## Timing and load measurements
+
+The instrumented qualification image is built with `CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=ON`. The operator must export the `CANopenReferenceTiming_GetStats()` snapshot at the end of each relevant campaign and retain the raw snapshot with the firmware SHA. The snapshot must include maximum TIM7 ISR cycles, maximum TIM7 period spacing, TIM7 budget-overrun count, mainline duration, and per-source CAN IRQ duration/counts.
+
+The external campaign record must additionally contain the measured core clock, nominal CAN bitrate and sample point, timestamped bus-load percentage, CAN FIFO overflow count, DUT temperature, and supply voltage. The timing counters are evidence inputs only; they do not automatically determine PASS. Acceptance limits must be approved for the selected board, transceiver, clock tolerance, CAN load, and product profile before execution.
+
+At minimum, the operator should correlate the following values:
+
+| Measurement | Required evidence | Reason |
+|---|---|---|
+| TIM7 ISR maximum | DWT snapshot plus campaign duration | Demonstrates margin against the 1 ms service period. |
+| TIM7 period and overrun count | DWT snapshot and GPIO/analyzer trace where available | Detects jitter and missed/late service. |
+| CAN IRQ occupancy | Per-source counters and maximum cycles | Quantifies RX/TX/error interrupt pressure. |
+| FIFO overflow | Target diagnostic counter and raw CAN trace | Detects loss under legitimate and invalid traffic. |
+| Mainline duration | DWT snapshot and watchdog trace | Shows whether synchronous work can starve the superloop. |
+| Bus load and physical timing | Independent timestamped CAN capture | Separates wire-time limits from firmware latency. |
+| Temperature and supply | Calibrated instrument record | Makes timing and Flash/watchdog results reproducible. |
+
+The pending initializer writes these fields as `null` or empty maps and continues to set `status` to `PENDING` and `pass_claim_allowed` to `false`. No empty field may be replaced with a guessed value.

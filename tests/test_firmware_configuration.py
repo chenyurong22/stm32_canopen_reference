@@ -35,6 +35,9 @@ APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(enco
 TIMING_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_timing.h").read_text(encoding="utf-8")
 TIMING_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_timing.c").read_text(encoding="utf-8")
 IRQ_SOURCE = (ROOT / "Core" / "Src" / "stm32f7xx_it.c").read_text(encoding="utf-8")
+HIL_PLAN = (ROOT / "tests" / "hardware" / "cia401_hil_plan.json").read_text(encoding="utf-8")
+HIL_RUNNER = (ROOT / "tests" / "hardware" / "run_cia401_hil_campaign.py").read_text(encoding="utf-8")
+HIL_DOC = (ROOT / "docs" / "cia401_hil_validation.md").read_text(encoding="utf-8")
 LIFECYCLE = (ROOT / "App" / "Inc" / "canopen_reference_lifecycle.h").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
@@ -550,6 +553,25 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceTiming_MainlineEnter", APP_RUNTIME)
         self.assertIn("CANopenReferenceTiming_MainlineExit", APP_RUNTIME)
         self.assertIn("DWT_CTRL_CYCCNTENA_Msk", TIMING_SOURCE)
+
+    def test_hil_timing_measurement_schema_is_pending_and_non_claimable(self) -> None:
+        """HIL evidence has fixed timing fields but no fabricated measurement values."""
+        for expected in (
+            '"tim7_isr_cycles_max"',
+            '"tim7_period_cycles_max"',
+            '"tim7_overrun_count"',
+            '"can_irq_cycles_max"',
+            '"can_fifo_overflow_count"',
+            '"bus_load_percent"',
+            '"temperature_c"',
+            '"supply_voltage_v"',
+        ):
+            self.assertIn(expected, HIL_PLAN)
+            self.assertIn(expected, HIL_RUNNER)
+        self.assertIn('"measurement_capture"', HIL_RUNNER)
+        self.assertIn('"pass_claim_allowed": False', HIL_RUNNER)
+        self.assertIn("CANopenReferenceTiming_GetStats()", HIL_DOC)
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=ON", HIL_DOC)
 
     def test_cia302_master_is_explicitly_opt_in_and_mainline_ordered(self) -> None:
         """The CiA 302 master is disabled by default and receives every heartbeat before stack processing."""

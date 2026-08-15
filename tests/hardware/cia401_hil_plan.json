@@ -20,8 +20,28 @@
     "operator and UTC timestamps",
     "raw CAN trace",
     "power-cycle and serial/debug log",
-    "case-level result with measured values"
+    "case-level result with measured values",
+    "TIM7 ISR cycle-count maxima and period-jitter summary",
+    "mainline and CO_process duration summary",
+    "CAN IRQ occupancy by TX/RX0/RX1/error source",
+    "CAN FIFO occupancy/overflow counters",
+    "captured bus-load percentage and timestamped CAN trace"
   ],
+  "measurement_schema": {
+    "firmware_sha": "exact tested image source SHA",
+    "core_clock_hz": "measured or independently verified target clock",
+    "can_bitrate": "measured nominal bitrate",
+    "can_sample_point": "measured/configured sample point",
+    "bus_load_percent": "timestamped analyzer result",
+    "tim7_isr_cycles_max": "DWT or equivalent maximum",
+    "tim7_period_cycles_max": "DWT or equivalent maximum inter-entry interval",
+    "tim7_overrun_count": "count over the campaign interval",
+    "mainline_cycles_max": "DWT or equivalent maximum",
+    "can_irq_cycles_max": "per-source IRQ maximum",
+    "can_fifo_overflow_count": "target diagnostic counter",
+    "temperature_c": "measured DUT temperature",
+    "supply_voltage_v": "measured DUT supply voltage"
+  },
   "campaigns": [
     {"id": "startup", "title": "Startup and safe-state", "cases": ["power_on", "reset", "boot_time", "initial_nmt_state", "initial_heartbeat", "safe_outputs"]},
     {"id": "nmt", "title": "NMT state machine", "cases": ["pre_operational", "operational", "stopped", "reset_node", "reset_communication", "invalid_commands"]},
