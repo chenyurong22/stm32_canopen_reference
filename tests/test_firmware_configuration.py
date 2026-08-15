@@ -557,6 +557,22 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANOPEN_REFERENCE_TIMING_ISR_WARNING_US >= CANOPEN_REFERENCE_TIMING_ISR_BUDGET_US", PROFILE)
         self.assertIn("tim7_warning_count", TIMING_HEADER)
         self.assertIn("CANOPEN_REFERENCE_TIMING_ISR_WARNING_US", TIMING_SOURCE)
+        for expected in (
+            "app_interrupt_cycles_max",
+            "sync_cycles_max",
+            "rpdo_cycles_max",
+            "cia401_cycles_max",
+            "cia402_cycles_max",
+            "cia418_cycles_max",
+            "tpdo_cycles_max",
+            "CANopenReferenceTiming_PhaseEnter",
+            "CANopenReferenceTiming_PhaseExit",
+        ):
+            self.assertIn(expected, TIMING_HEADER)
+            self.assertIn(expected, TIMING_SOURCE + APP_RUNTIME)
+        self.assertIn("CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.app_interrupt_cycles_max", APP_RUNTIME)
+        self.assertIn("CO_LOCK_OD(CO->CANmodule);", APP_RUNTIME)
+        self.assertIn("CO_UNLOCK_OD(CO->CANmodule);", APP_RUNTIME)
 
     def test_hil_timing_measurement_schema_is_pending_and_non_claimable(self) -> None:
         """HIL evidence has fixed timing fields but no fabricated measurement values."""

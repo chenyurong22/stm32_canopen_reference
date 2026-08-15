@@ -15,6 +15,15 @@ typedef enum {
     CANOPEN_REFERENCE_TIMING_CAN_CONTEXT_COUNT
 } CANopenReferenceTimingCanContext;
 
+typedef enum {
+    CANOPEN_REFERENCE_TIMING_APP_SYNC = 0,
+    CANOPEN_REFERENCE_TIMING_APP_RPDO,
+    CANOPEN_REFERENCE_TIMING_APP_CIA401,
+    CANOPEN_REFERENCE_TIMING_APP_CIA402,
+    CANOPEN_REFERENCE_TIMING_APP_CIA418,
+    CANOPEN_REFERENCE_TIMING_APP_TPDO
+} CANopenReferenceTimingAppPhase;
+
 typedef struct {
     uint32_t core_clock_hz;
     uint32_t tim7_irq_count;
@@ -26,6 +35,13 @@ typedef struct {
     uint32_t can_irq_cycles_max[CANOPEN_REFERENCE_TIMING_CAN_CONTEXT_COUNT];
     uint32_t mainline_sample_count;
     uint32_t mainline_cycles_max;
+    uint32_t app_interrupt_cycles_max;
+    uint32_t sync_cycles_max;
+    uint32_t rpdo_cycles_max;
+    uint32_t cia401_cycles_max;
+    uint32_t cia402_cycles_max;
+    uint32_t cia418_cycles_max;
+    uint32_t tpdo_cycles_max;
 } CANopenReferenceTimingStats;
 
 /** Initialize the optional DWT cycle-counter measurement path. */
@@ -38,6 +54,15 @@ void CANopenReferenceTiming_Tim7Exit(uint32_t start_cycles);
 /** Record entry/exit around a complete CAN interrupt handler. */
 uint32_t CANopenReferenceTiming_CanEnter(CANopenReferenceTimingCanContext context);
 void CANopenReferenceTiming_CanExit(CANopenReferenceTimingCanContext context, uint32_t start_cycles);
+
+/** Return the cycle count at the start of a bounded application interval. */
+uint32_t CANopenReferenceTiming_PhaseEnter(void);
+
+/** Update a phase maximum from a cycle-count interval. */
+void CANopenReferenceTiming_PhaseExit(volatile uint32_t *max_cycles, uint32_t start_cycles);
+
+/** Project-owned statistics object used by the timing hooks. */
+extern volatile CANopenReferenceTimingStats canopenReferenceTimingStats;
 
 /** Record one mainline canopen_app_process() interval. */
 uint32_t CANopenReferenceTiming_MainlineEnter(void);

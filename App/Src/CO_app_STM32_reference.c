@@ -386,32 +386,77 @@ canopen_app_process(void) {
 void
 canopen_app_interrupt(void) {
     bool_t syncWas = false;
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t app_interrupt_start = CANopenReferenceTiming_PhaseEnter();
+#endif
 
     if (CO == NULL || canopenNodeSTM32 == NULL || CO->nodeIdUnconfigured || !CO->CANmodule->CANnormal) {
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+        CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.app_interrupt_cycles_max,
+                                         app_interrupt_start);
+#endif
         return;
     }
 
     CO_LOCK_OD(CO->CANmodule);
 #if (CO_CONFIG_SYNC) & CO_CONFIG_SYNC_ENABLE
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t sync_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     syncWas = CO_process_SYNC(CO, 1000U, NULL);
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.sync_cycles_max, sync_start);
+#endif
 #endif
 #if (CO_CONFIG_PDO) & CO_CONFIG_RPDO_ENABLE
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t rpdo_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     CO_process_RPDO(CO, syncWas, 1000U, NULL);
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.rpdo_cycles_max, rpdo_start);
+#endif
 #endif
 
     /* Bounded application work occurs after commands enter the OD and before
      * status/inputs are packed into TPDOs. No blocking driver, flash, or
      * printf operation is permitted in this interrupt context. */
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t cia401_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     Cia401Reference_Process1ms();
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.cia401_cycles_max, cia401_start);
+    uint32_t cia402_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     Cia402Reference_Process1ms();
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.cia402_cycles_max, cia402_start);
+#endif
 #if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t cia418_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.cia418_cycles_max, cia418_start);
+#endif
 #endif
 
 #if (CO_CONFIG_PDO) & CO_CONFIG_TPDO_ENABLE
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    uint32_t tpdo_start = CANopenReferenceTiming_PhaseEnter();
+#endif
     CO_process_TPDO(CO, syncWas, 1000U, NULL);
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.tpdo_cycles_max, tpdo_start);
+#endif
 #endif
     CO_UNLOCK_OD(CO->CANmodule);
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.app_interrupt_cycles_max,
+                                     app_interrupt_start);
+#endif
 }
 
 

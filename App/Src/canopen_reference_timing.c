@@ -17,7 +17,7 @@
 #define CANOPEN_REFERENCE_TIMING_ISR_WARNING_US 500U
 #endif
 
-static volatile CANopenReferenceTimingStats canopenReferenceTimingStats;
+volatile CANopenReferenceTimingStats canopenReferenceTimingStats;
 static volatile uint32_t canopenReferenceTimingLastTim7Cycle;
 static volatile uint8_t canopenReferenceTimingTim7Primed;
 
@@ -116,6 +116,28 @@ CANopenReferenceTiming_CanExit(CANopenReferenceTimingCanContext context, uint32_
     }
 #else
     (void)context;
+    (void)start_cycles;
+#endif
+}
+
+uint32_t
+CANopenReferenceTiming_PhaseEnter(void) {
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    return CANopenReferenceTiming_ReadCycles();
+#else
+    return 0U;
+#endif
+}
+
+void
+CANopenReferenceTiming_PhaseExit(volatile uint32_t *max_cycles, uint32_t start_cycles) {
+#if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
+    if (max_cycles != NULL) {
+        uint32_t elapsed = CANopenReferenceTiming_ReadCycles() - start_cycles;
+        CANopenReferenceTiming_SaturatingMax(max_cycles, elapsed);
+    }
+#else
+    (void)max_cycles;
     (void)start_cycles;
 #endif
 }
