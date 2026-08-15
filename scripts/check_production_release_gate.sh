@@ -40,20 +40,6 @@ fi
 [[ -n "$EVIDENCE_DIR" ]] || { echo 'production release gate: --evidence-dir is required' >&2; exit 1; }
 [[ -d "$EVIDENCE_DIR" ]] || { echo "production release gate: evidence directory does not exist: $EVIDENCE_DIR" >&2; exit 1; }
 
-required=(
-    board_electrical_review.md
-    physical_can_interoperability.md
-    bus_off_campaign.md
-    flash_power_loss_endurance.md
-    watchdog_timing.md
-    cia401_acceptance.md
-    cia402_acceptance.md
-    cia302_lss_commissioning.md
-    security_update_approval.md
-    formal_canopen_conformance.md
-)
-for record in "${required[@]}"; do
-    require_file "$EVIDENCE_DIR/$record"
-done
-
-printf '%s\n' 'production release gate: PASS (software and externally archived evidence records are present)'
+release_commit=$(git -C "$ROOT" rev-parse HEAD)
+python3 "$ROOT/scripts/validate_external_evidence.py" "$EVIDENCE_DIR" --release-commit "$release_commit"
+printf '%s\n' 'production release gate: PASS (software artifacts and machine-validated external evidence are complete)'
