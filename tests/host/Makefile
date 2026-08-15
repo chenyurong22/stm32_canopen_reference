@@ -4,9 +4,9 @@ BUILD_DIR := $(ROOT)/build/host
 CC ?= cc
 CFLAGS := -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 
-.PHONY: all clean test test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 check-vcan
+.PHONY: all clean test test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-recovery check-vcan
 
-all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference
+all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_can_recovery
 
 $(BUILD_DIR):
 	mkdir -p $@
@@ -23,6 +23,9 @@ $(BUILD_DIR)/test_lss_policy: $(ROOT)/tests/test_lss_policy.c $(ROOT)/App/Src/ca
 $(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@
 
+$(BUILD_DIR)/test_can_recovery: $(ROOT)/tests/test_can_recovery.c $(ROOT)/App/Src/canopen_reference_can_recovery.c $(ROOT)/App/Inc/canopen_reference_can_recovery.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@
+
 $(BUILD_DIR)/test_can_port_stm32: $(ROOT)/tests/test_can_port_stm32.c $(ROOT)/middleware/canopen/port/can_port.c $(ROOT)/middleware/canopen/port/can_port.h $(ROOT)/tests/fakes/stm32f7xx_hal.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -DCAN_PORT_STM32 -DCAN_PORT_FAKE_F767 -I$(ROOT)/tests/fakes -I$(ROOT)/middleware/canopen/port $< $(ROOT)/middleware/canopen/port/can_port.c -o $@
 
@@ -34,6 +37,9 @@ test-lss-policy: $(BUILD_DIR)/test_lss_policy
 
 test-cia418: $(BUILD_DIR)/test_cia418_reference
 	$(BUILD_DIR)/test_cia418_reference
+
+test-recovery: $(BUILD_DIR)/test_can_recovery
+	$(BUILD_DIR)/test_can_recovery
 
 test-stm32-facade: $(BUILD_DIR)/test_can_port_stm32
 	$(BUILD_DIR)/test_can_port_stm32

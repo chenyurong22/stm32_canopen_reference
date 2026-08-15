@@ -25,8 +25,6 @@
 #define CANOPEN_REFERENCE_FIRST_HB_MS        500U
 #define CANOPEN_REFERENCE_SDO_SRV_TIMEOUT_MS 1000U
 #define CANOPEN_REFERENCE_SDO_CLI_TIMEOUT_MS 1000U
-#define CANOPEN_REFERENCE_CAN_RECOVERY_WAIT_MS 100U
-
 CANopenNodeSTM32 *canopenNodeSTM32 = NULL;
 CO_t *CO = NULL;
 
@@ -34,6 +32,7 @@ static uint32_t canopenReferenceLastTick;
 static CANopenReferenceLssState canopenReferenceLssState;
 static volatile bool canopenReferenceCanRecoveryPending;
 static volatile bool canopenReferenceSafeFault;
+static volatile bool canopenReferenceRecoveryAttemptActive;
 static CANopenReferenceCanRecovery canopenReferenceCanRecovery;
 
 static void
@@ -129,7 +128,7 @@ CANopenReference_ForceSafeApplication(void) {
 
 static int
 CANopenReference_FailRuntime(uint32_t fault_code) {
-    canopenReferenceSafeFault = true;
+    canopenReferenceSafeFault = !canopenReferenceRecoveryAttemptActive;
     CANopenReferenceDiagnostics_ReportRuntimeFault(fault_code);
     CANopenReference_ForceSafeApplication();
     if (canopenNodeSTM32 != NULL) {
@@ -153,7 +152,9 @@ CANopenReference_ProcessCanRecovery(uint32_t now) {
     if (!CANopenReferenceCanRecovery_Ready(&canopenReferenceCanRecovery, now)) {
         return;
     }
+    canopenReferenceRecoveryAttemptActive = true;
     result = canopen_app_resetCommunication();
+    canopenReferenceRecoveryAttemptActive = false;
     CANopenReferenceDiagnostics_ReportCanRecovery(result == 0);
     CANopenReferenceCanRecovery_Complete(&canopenReferenceCanRecovery, result == 0, now);
     if (result == 0) {
@@ -177,6 +178,7 @@ canopen_app_init(CANopenNodeSTM32 *instance) {
     canopenNodeSTM32 = instance;
     canopenReferenceSafeFault = false;
     canopenReferenceCanRecoveryPending = false;
+    canopenReferenceRecoveryAttemptActive = false;
     CANopenReferenceCanRecovery_Init(&canopenReferenceCanRecovery,
                                      CANOPEN_REFERENCE_CAN_RECOVERY_WAIT_MS,
                                      CANOPEN_REFERENCE_CAN_RECOVERY_MAX_ATTEMPTS);
