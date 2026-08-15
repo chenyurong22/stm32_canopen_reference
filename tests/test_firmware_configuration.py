@@ -29,8 +29,10 @@ BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding=
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
 CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
+LIFECYCLE = (ROOT / "App" / "Inc" / "canopen_reference_lifecycle.h").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+MANIFEST_SCRIPT = (ROOT / "scripts" / "write_build_manifest.sh").read_text(encoding="utf-8")
 HAL_CONF = (ROOT / "Core" / "Inc" / "stm32f7xx_hal_conf.h").read_text(encoding="utf-8")
 CAN_PORT = (ROOT / "middleware" / "canopen" / "port" / "can_port.c").read_text(encoding="utf-8")
 
@@ -176,6 +178,26 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("FLASH (rx)    : ORIGIN = 0x08000000, LENGTH = 1536K", LINKER)
         self.assertIn("FLASH_NVM (r) : ORIGIN = 0x08180000, LENGTH = 512K", LINKER)
 
+    def test_storage_size_and_write_rate_policy_are_explicit(self) -> None:
+        """Flash image size and optional write-rate policy are compile-time visible."""
+        self.assertIn("CANOPEN_REFERENCE_STORAGE_SLOT_SIZE", STORAGE_HEADER)
+        self.assertIn("CANOPEN_REFERENCE_STORAGE_MIN_STORE_INTERVAL_MS", STORAGE_HEADER)
+        self.assertIn("sizeof(canopen_reference_storage_image_t) <= CANOPEN_REFERENCE_STORAGE_SLOT_SIZE", STORAGE_SOURCE)
+        self.assertIn("storage_store_rate_allowed", STORAGE_SOURCE)
+        self.assertIn("CANopenReferenceStorage_StoreCount", STORAGE_SOURCE + STORAGE_HEADER)
+
+    def test_filter_overflow_and_runtime_lifecycle_are_explicit(self) -> None:
+        """Active COB-ID overflow fails closed and runtime phases are observable."""
+        self.assertIn("CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS", PROFILE)
+        self.assertIn("if (*count >= CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS)", FILTER_SOURCE)
+        self.assertIn("return false;", FILTER_SOURCE)
+        for state in ("CANOPEN_REFERENCE_RUNTIME_INIT", "CANOPEN_REFERENCE_RUNTIME_RUNNING",
+                      "CANOPEN_REFERENCE_RUNTIME_RESET_REQUESTED",
+                      "CANOPEN_REFERENCE_RUNTIME_REINITIALIZING",
+                      "CANOPEN_REFERENCE_RUNTIME_SAFE_FAULT"):
+            self.assertIn(state, LIFECYCLE + APP_RUNTIME)
+        self.assertIn("CANopenReference_RuntimeState", LIFECYCLE + APP_RUNTIME)
+
     def test_transport_deadline_and_unsupported_target_contract(self) -> None:
         """The standalone facade no longer ignores timeout or starts an unknown target."""
         self.assertIn("HAL_GetTick()", CAN_PORT)
@@ -206,6 +228,14 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("__HAL_RCC_CLEAR_RESET_FLAGS", WATCHDOG_SOURCE)
         self.assertIn("CANopenReferenceWatchdog_ResetFlags", WATCHDOG_SOURCE + WATCHDOG_HEADER)
         self.assertIn("HAL_GetTick() - s_start_tick", WATCHDOG_SOURCE)
+
+    def test_build_manifest_and_vector_contracts_are_present(self) -> None:
+        """Reproducibility and protocol vector artifacts are checked in and executable."""
+        self.assertIn("stm32-canopen-build-manifest-v2", MANIFEST_SCRIPT)
+        self.assertIn("BUILD_MANIFEST_JSON", MANIFEST_SCRIPT)
+        self.assertTrue((ROOT / "tests" / "conformance" / "core_vectors.json").is_file())
+        self.assertTrue((ROOT / "tests" / "conformance" / "run_core_vectors.py").is_file())
+        self.assertTrue((ROOT / "docs" / "feature_matrix.md").is_file())
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
