@@ -31,6 +31,8 @@ The initializer creates templates with `status: PENDING`. It refuses to overwrit
 | `cia302_lss_commissioning.md` | Network/product owner | Independent peer, LSS persistence, heartbeat loss, reset/recovery, and commissioning results |
 | `security_update_approval.md` | Security owner | Threat model, update design, key custody, anti-rollback, debug lifecycle, and approval |
 | `formal_canopen_conformance.md` | Conformance owner | Applicable test plan/tool version, released OD/EDS/XDD, exact image hash, and archived result |
+| `manufacturing_production_record.md` | Manufacturing owner | Per-board production traveler, calibration, identity, configuration, and security settings |
+| `emc_environmental_report.md` | Laboratory owner | Applicable EMC/environmental standard, setup, calibration, limits, and report |
 | `release-socketcan-status.txt` | CI/release owner | Native SocketCAN result or explicit unavailable status tied to physical CAN evidence |
 
 Every record must contain machine-readable `status: PASS`, the exact `release_commit`, an `evidence_id`, and a named `reviewer` before it can satisfy `scripts/check_production_release_gate.sh --production`.
@@ -39,4 +41,4 @@ Every record must contain machine-readable `status: PASS`, the exact `release_co
 
 The evidence package must be archived outside generated build output under controlled revision and access procedures. Test records must identify the exact board revision, hardware serial, firmware image hash, Object Dictionary/EDS/XDD hash, tool versions, environmental conditions, and date. If a procedure is not applicable, the responsible owner must record a formal approval rather than changing `PENDING` to `PASS`.
 
-The package initializer is a handoff aid only. It never creates evidence and never changes the production release decision. The machine validator in `scripts/validate_external_evidence.py` remains fail-closed.
+The package initializer is a handoff aid only. It never creates evidence and never changes the production release decision. The machine validator in `scripts/validate_external_evidence.py` remains fail-closed. The ordered release sequence and claim policy are summarized in [`v1_release_readiness_gate.md`](v1_release_readiness_gate.md).

@@ -357,6 +357,23 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_release_readiness_gate_preserves_lineage_and_claim_boundary(self) -> None:
+        """Release tags and production claims remain tied to external evidence."""
+        release = (ROOT / "docs" / "v1_release_readiness_gate.md").read_text(encoding="utf-8")
+        evidence = (ROOT / "docs" / "external_evidence_package.md").read_text(encoding="utf-8")
+        for expected in (
+            "v0.9.0-rc1",
+            "v0.9.0-rc2",
+            "v1.0.0",
+            "Pending hardware",
+            "Pending laboratory",
+            "software-validated CANopen reference integration",
+            "must not claim **hardware-validated**",
+        ):
+            self.assertIn(expected, release)
+        for expected in ("manufacturing_production_record.md", "emc_environmental_report.md", "v1_release_readiness_gate.md"):
+            self.assertIn(expected, evidence)
+
     def test_flash_qualification_covers_power_loss_and_endurance(self) -> None:
         """Flash persistence requires exact-MCU and power-loss evidence."""
         flash = (ROOT / "docs" / "flash_qualification.md").read_text(encoding="utf-8")
