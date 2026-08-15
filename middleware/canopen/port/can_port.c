@@ -34,6 +34,38 @@ static uint32_t s_rx_head;
 static uint32_t s_rx_tail;
 static uint32_t s_rx_dropped;
 
+typedef struct {
+    uint32_t bitrate;
+    uint32_t prescaler;
+    uint32_t time_seg1;
+    uint32_t time_seg2;
+} can_port_timing_t;
+
+/* APB1 is 54 MHz on the reference STM32F767 clock tree. The 800 kbit/s
+ * entry is the closest legal bxCAN divisor (794.1 kbit/s, -0.74%), while all
+ * other entries are exact. Applications requiring a different clock tree must
+ * provide a board-specific facade. */
+static const can_port_timing_t s_timing_table[] = {
+    {10000U, 216U, CAN_BS1_16TQ, CAN_BS2_8TQ},
+    {20000U, 108U, CAN_BS1_16TQ, CAN_BS2_8TQ},
+    {50000U,  60U, CAN_BS1_14TQ, CAN_BS2_3TQ},
+    {125000U, 27U, CAN_BS1_12TQ, CAN_BS2_3TQ},
+    {250000U, 12U, CAN_BS1_14TQ, CAN_BS2_3TQ},
+    {500000U,  6U, CAN_BS1_14TQ, CAN_BS2_3TQ},
+    {800000U,  4U, CAN_BS1_13TQ, CAN_BS2_3TQ},
+    {1000000U, 3U, CAN_BS1_14TQ, CAN_BS2_3TQ},
+};
+
+static const can_port_timing_t *
+can_port_find_timing(uint32_t bitrate) {
+    for (size_t i = 0U; i < (sizeof(s_timing_table) / sizeof(s_timing_table[0])); ++i) {
+        if (s_timing_table[i].bitrate == bitrate) {
+            return &s_timing_table[i];
+        }
+    }
+    return NULL;
+}
+
 static uint32_t
 can_port_next_index(uint32_t index) {
     return (index + 1U) % CAN_PORT_RX_QUEUE_CAPACITY;
@@ -60,13 +92,22 @@ can_port_stm32_bind(CAN_HandleTypeDef *hcan) {
 
 int
 can_port_init(uint32_t bitrate) {
-    (void)bitrate;
+    const can_port_timing_t *timing = can_port_find_timing(bitrate);
+
     if (s_hcan == NULL) {
         return -ENODEV;
     }
+    if (timing == NULL) {
+        return -EINVAL;
+    }
 
+    s_hcan->Init.Prescaler = timing->prescaler;
+    s_hcan->Init.TimeSeg1 = timing->time_seg1;
+    s_hcan->Init.TimeSeg2 = timing->time_seg2;
+    if (HAL_CAN_Init(s_hcan) != HAL_OK) {
+        return -EIO;
+    }
     can_port_reset_rx_queue();
-    /* Bit timing is CubeMX/board-owned. The caller must set it before binding. */
     if (HAL_CAN_Start(s_hcan) != HAL_OK) {
         return -EIO;
     }

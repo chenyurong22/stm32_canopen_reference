@@ -23,6 +23,7 @@ CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(
 CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+CAN_PORT = (ROOT / "middleware" / "canopen" / "port" / "can_port.c").read_text(encoding="utf-8")
 
 
 def source_integer(name: str) -> int:
@@ -65,6 +66,14 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertEqual(pclk1_hz // (6 * time_quanta), 500_000)
         self.assertEqual(pclk1_hz % (6 * time_quanta), 0)
         self.assertAlmostEqual((1 + 14) / time_quanta, 15.0 / 18.0)
+
+    def test_standalone_can_port_validates_common_bitrates(self) -> None:
+        """The STM32 facade applies a bounded 54 MHz APB1 timing table."""
+        for bitrate in (10000, 20000, 50000, 125000, 250000, 500000, 800000, 1000000):
+            self.assertIn(f"{{{bitrate}U,", CAN_PORT)
+        self.assertIn("const can_port_timing_t *timing = can_port_find_timing(bitrate);", CAN_PORT)
+        self.assertIn("if (timing == NULL)", CAN_PORT)
+        self.assertNotIn("(void)bitrate;", CAN_PORT)
 
     def test_tim7_is_exactly_one_millisecond(self) -> None:
         """TIM7 runs from the doubled APB1 timer clock when APB1 is divided by four."""
