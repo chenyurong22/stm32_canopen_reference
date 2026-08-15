@@ -30,9 +30,11 @@ gcc -std=c11 -Wall -Wextra -Werror \
     "$ROOT/App/Src/cia402_reference.c" \
     -o "$ROOT/build/tests/test_profiles"
 "$ROOT/build/tests/test_profiles"
-make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny
+make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny test-sanitize test-coverage
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_canopen_wire_contract.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/conformance/run_core_vectors.py"
+PYTHONPATH="$ROOT:$ROOT/tests" PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/run_uds_isotp_contract.py"
+PYTHONPATH="$ROOT:$ROOT/tests" PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/run_nmea2000_gateway_contract.py"
 
 cmake -S "$ROOT" -B "$BUILD_DIR" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
