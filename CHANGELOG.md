@@ -32,7 +32,7 @@ All notable changes to this project are documented here. The project follows sem
 - Added explicit host coverage thresholds of 90% line, 95% function, and 85% branch, raised by real CiA 302 and CAN-recovery boundary tests; the measured baseline is 97.97%/100%/87.32%.
 - Added a structured libFuzzer-compatible CAN-frame harness and a build-only `test-fuzz` target with truthful toolchain boundaries.
 - Added pinned clang-tidy analysis for project-owned protocol sources and a compiler-hardening flag evaluation report; target firmware adoption remains a separate build review.
-- Defined the `v0.9.0` Hardware Validation Candidate milestone, a fail-closed production release gate requiring archived board, HIL, security, and formal-conformance evidence, and a pending-only external evidence package initializer.
+- Recorded `v0.9.0` as an immutable historical hardware-validation candidate; current qualification work must reference the superseding `v0.9.0-rc2` lineage and remain blocked on external evidence gates. See [`docs/release_v0.9.0_historical.md`](docs/release_v0.9.0_historical.md) and [`docs/v1_release_readiness_gate.md`](docs/v1_release_readiness_gate.md).
 
 The reference firmware remains a non-certified baseline. Production release still requires board-specific Flash endurance and power-loss testing, watchdog timing measurement, physical CAN/HIL validation, EMC testing, and applicable official conformance evidence.
 
