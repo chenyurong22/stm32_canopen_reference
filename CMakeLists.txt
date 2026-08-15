@@ -113,7 +113,7 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
         ${CANOPEN_NODE_SOURCES}
         ${HAL_SOURCES}
         "${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c"
-        PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
+        PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=format;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
     target_compile_options(${PROJECT_NAME} PRIVATE
         -O2
         -fstack-protector-strong
