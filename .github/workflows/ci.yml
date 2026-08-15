@@ -290,8 +290,8 @@ jobs:
         run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
       - name: Check target memory budget
         env:
-          # 80% application Flash/RAM budgets retain explicit headroom for
-          # boot-time growth, diagnostics, and board-specific integration.
+          # Explicit application Flash/RAM budgets retain approximately 20%
+          # headroom for boot-time growth, diagnostics, and board integration.
           MAX_TEXT_BYTES: 1228800
           MAX_DATA_BYTES: 262144
           MAX_BSS_BYTES: 262144
@@ -300,9 +300,9 @@ jobs:
         run: scripts/check_memory_budget.sh build/ci-firmware/stm32f767_canopen_reference.map build/memory-budget.json
       - name: Generate host coverage and sanitizer reports
         env:
-          COVERAGE_MIN_LINE: 80
-          COVERAGE_MIN_FUNCTION: 80
-          COVERAGE_MIN_BRANCH: 60
+          COVERAGE_MIN_LINE: 90
+          COVERAGE_MIN_FUNCTION: 95
+          COVERAGE_MIN_BRANCH: 85
         run: |
           make -C tests/host clean
           make -C tests/host test-coverage-report test-sanitize-report
