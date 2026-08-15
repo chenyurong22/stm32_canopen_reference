@@ -1,0 +1,35 @@
+[FileInfo]
+FileName=stm32f767_cia418_reference.eds
+FileVersion=1
+EDSVersion=4.0
+
+[DeviceInfo]
+VendorName=STM32F767 CANopen Reference
+ProductName=CiA 418 Battery Module Personality
+
+[MandatoryObjects]
+SupportedObjects=7
+1=0x1000
+2=0x1001
+3=0x1018
+4=0x6000
+5=0x6001
+6=0x6010
+7=0x6020
+
+[OptionalObjects]
+SupportedObjects=14
+1=0x6050
+2=0x6051
+3=0x6052
+4=0x6053
+5=0x6060
+6=0x6070
+7=0x6080
+8=0x6081
+9=0x6090
+10=0x6030
+11=0x6031
+12=0x6040
+13=0x6041
+14=0x6054
