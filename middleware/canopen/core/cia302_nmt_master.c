@@ -15,9 +15,7 @@ static bool command_valid(uint8_t command) {
            command == CIA302_NMT_RESET_COMMUNICATION;
 }
 
-static void emit_event(cia302_nmt_master_t *master,
-                       cia302_event_type_t type,
-                       uint8_t node_id,
+static void emit_event(cia302_nmt_master_t *master, cia302_event_type_t type, uint8_t node_id,
                        uint8_t state) {
     if (master->event != NULL) {
         cia302_event_t event = {
@@ -30,11 +28,8 @@ static void emit_event(cia302_nmt_master_t *master,
     }
 }
 
-void cia302_nmt_master_init(cia302_nmt_master_t *master,
-                            uint8_t master_node_id,
-                            cia302_send_fn send,
-                            cia302_event_fn event,
-                            void *callback_context) {
+void cia302_nmt_master_init(cia302_nmt_master_t *master, uint8_t master_node_id,
+                            cia302_send_fn send, cia302_event_fn event, void *callback_context) {
     (void)memset(master, 0, sizeof(*master));
     master->master_node_id = master_node_id;
     master->send = send;
@@ -43,11 +38,8 @@ void cia302_nmt_master_init(cia302_nmt_master_t *master,
     master->boot_time_ms = 10000U;
 }
 
-bool cia302_nmt_master_configure(cia302_nmt_master_t *master,
-                                 uint8_t node_id,
-                                 bool mandatory,
-                                 bool auto_start,
-                                 uint16_t heartbeat_timeout_ms) {
+bool cia302_nmt_master_configure(cia302_nmt_master_t *master, uint8_t node_id, bool mandatory,
+                                 bool auto_start, uint16_t heartbeat_timeout_ms) {
     if (master == NULL || !node_id_valid(node_id) || node_id == master->master_node_id) {
         return false;
     }
@@ -59,9 +51,7 @@ bool cia302_nmt_master_configure(cia302_nmt_master_t *master,
     return true;
 }
 
-bool cia302_nmt_master_request(cia302_nmt_master_t *master,
-                               uint8_t command,
-                               uint8_t node_id) {
+bool cia302_nmt_master_request(cia302_nmt_master_t *master, uint8_t command, uint8_t node_id) {
     if (master == NULL || master->send == NULL || !command_valid(command) ||
         node_id > CIA302_MAX_NODES) {
         return false;
@@ -92,11 +82,8 @@ bool cia302_nmt_master_start(cia302_nmt_master_t *master, uint32_t now_ms) {
     return true;
 }
 
-void cia302_nmt_master_receive(cia302_nmt_master_t *master,
-                               uint16_t can_id,
-                               const uint8_t *data,
-                               uint8_t dlc,
-                               uint32_t now_ms) {
+void cia302_nmt_master_receive(cia302_nmt_master_t *master, uint16_t can_id, const uint8_t *data,
+                               uint8_t dlc, uint32_t now_ms) {
     if (master == NULL || data == NULL || !master->running) {
         return;
     }
@@ -133,8 +120,7 @@ static bool mandatory_nodes_ready(const cia302_nmt_master_t *master) {
     for (uint8_t node_id = 1U; node_id <= CIA302_MAX_NODES; ++node_id) {
         const cia302_node_t *node = &master->nodes[node_id];
         if (node->assigned && node->mandatory &&
-            (node->state == CIA302_NODE_WAITING_BOOTUP ||
-             node->state == CIA302_NODE_TIMED_OUT)) {
+            (node->state == CIA302_NODE_WAITING_BOOTUP || node->state == CIA302_NODE_TIMED_OUT)) {
             return false;
         }
     }
@@ -169,8 +155,7 @@ void cia302_nmt_master_process(cia302_nmt_master_t *master, uint32_t now_ms) {
     }
 
     bool ready = mandatory_nodes_ready(master);
-    if (!ready && master->boot_time_ms != 0U &&
-        !master->boot_timeout_reported &&
+    if (!ready && master->boot_time_ms != 0U && !master->boot_timeout_reported &&
         (uint32_t)(now_ms - master->started_at_ms) > master->boot_time_ms) {
         for (uint8_t node_id = 1U; node_id <= CIA302_MAX_NODES; ++node_id) {
             const cia302_node_t *node = &master->nodes[node_id];

@@ -94,32 +94,21 @@ typedef struct {
 } cia302_nmt_master_t;
 
 /** Initialize a zeroed master and bind non-blocking transport callbacks. */
-void cia302_nmt_master_init(cia302_nmt_master_t *master,
-                            uint8_t master_node_id,
-                            cia302_send_fn send,
-                            cia302_event_fn event,
-                            void *callback_context);
+void cia302_nmt_master_init(cia302_nmt_master_t *master, uint8_t master_node_id,
+                            cia302_send_fn send, cia302_event_fn event, void *callback_context);
 
 /** Assign a node and configure mandatory, auto-start, and heartbeat policy. */
-bool cia302_nmt_master_configure(cia302_nmt_master_t *master,
-                                 uint8_t node_id,
-                                 bool mandatory,
-                                 bool auto_start,
-                                 uint16_t heartbeat_timeout_ms);
+bool cia302_nmt_master_configure(cia302_nmt_master_t *master, uint8_t node_id, bool mandatory,
+                                 bool auto_start, uint16_t heartbeat_timeout_ms);
 
 /** Queue a targeted or broadcast NMT command; returns false for invalid input. */
-bool cia302_nmt_master_request(cia302_nmt_master_t *master,
-                               uint8_t command,
-                               uint8_t node_id);
+bool cia302_nmt_master_request(cia302_nmt_master_t *master, uint8_t command, uint8_t node_id);
 
 /** Start supervision at the supplied monotonic millisecond timestamp. */
 bool cia302_nmt_master_start(cia302_nmt_master_t *master, uint32_t now_ms);
 /** Validate and consume one received heartbeat in mainline context. */
-void cia302_nmt_master_receive(cia302_nmt_master_t *master,
-                               uint16_t can_id,
-                               const uint8_t *data,
-                               uint8_t dlc,
-                               uint32_t now_ms);
+void cia302_nmt_master_receive(cia302_nmt_master_t *master, uint16_t can_id, const uint8_t *data,
+                               uint8_t dlc, uint32_t now_ms);
 /** Advance boot, heartbeat, readiness, and auto-start supervision. */
 void cia302_nmt_master_process(cia302_nmt_master_t *master, uint32_t now_ms);
 
