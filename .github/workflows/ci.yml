@@ -54,6 +54,14 @@ jobs:
             --warnings-as-errors='' \
             -- \
             -std=c11 -Itests/fakes -IApp/Inc -Imiddleware/canopen/core
+      - name: Evaluate compiler hardening flags
+        run: scripts/check_compiler_hardening.sh build/hardening/compiler-hardening.json
+      - name: Upload static-analysis evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-evidence
+          if-no-files-found: error
+          path: build/hardening/compiler-hardening.json
       - name: Analyze project-owned C sources
         run: |
           cppcheck \
