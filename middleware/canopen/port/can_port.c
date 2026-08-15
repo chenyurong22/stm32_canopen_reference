@@ -37,8 +37,8 @@ static uint32_t s_rx_dropped;
 typedef struct {
     uint32_t bitrate;
     uint32_t prescaler;
-    uint32_t time_seg1;
-    uint32_t time_seg2;
+    uint32_t time_seg1_tq;
+    uint32_t time_seg2_tq;
 } can_port_timing_t;
 
 /* APB1 is 54 MHz on the reference STM32F767 clock tree. The 800 kbit/s
@@ -46,14 +46,14 @@ typedef struct {
  * other entries are exact. Applications requiring a different clock tree must
  * provide a board-specific facade. */
 static const can_port_timing_t s_timing_table[] = {
-    {10000U, 216U, CAN_BS1_16TQ, CAN_BS2_8TQ},
-    {20000U, 108U, CAN_BS1_16TQ, CAN_BS2_8TQ},
-    {50000U,  60U, CAN_BS1_14TQ, CAN_BS2_3TQ},
-    {125000U, 27U, CAN_BS1_12TQ, CAN_BS2_3TQ},
-    {250000U, 12U, CAN_BS1_14TQ, CAN_BS2_3TQ},
-    {500000U,  6U, CAN_BS1_14TQ, CAN_BS2_3TQ},
-    {800000U,  4U, CAN_BS1_13TQ, CAN_BS2_3TQ},
-    {1000000U, 3U, CAN_BS1_14TQ, CAN_BS2_3TQ},
+    {10000U, 216U, 16U, 8U},
+    {20000U, 108U, 16U, 8U},
+    {50000U,  60U, 14U, 3U},
+    {125000U, 27U, 12U, 3U},
+    {250000U, 12U, 14U, 3U},
+    {500000U,  6U, 14U, 3U},
+    {800000U,  4U, 13U, 3U},
+    {1000000U, 3U, 14U, 3U},
 };
 
 static const can_port_timing_t *
@@ -101,12 +101,19 @@ can_port_init(uint32_t bitrate) {
         return -EINVAL;
     }
 
+#if defined(STM32F767xx)
     s_hcan->Init.Prescaler = timing->prescaler;
-    s_hcan->Init.TimeSeg1 = timing->time_seg1;
-    s_hcan->Init.TimeSeg2 = timing->time_seg2;
+    s_hcan->Init.TimeSeg1 = (timing->time_seg1_tq == 12U) ? CAN_BS1_12TQ
+                                                            : (timing->time_seg1_tq == 13U) ? CAN_BS1_13TQ
+                                                                                             : (timing->time_seg1_tq == 14U) ? CAN_BS1_14TQ
+                                                                                                                              : CAN_BS1_16TQ;
+    s_hcan->Init.TimeSeg2 = (timing->time_seg2_tq == 3U) ? CAN_BS2_3TQ : CAN_BS2_8TQ;
     if (HAL_CAN_Init(s_hcan) != HAL_OK) {
         return -EIO;
     }
+#else
+    (void)timing;
+#endif
     can_port_reset_rx_queue();
     if (HAL_CAN_Start(s_hcan) != HAL_OK) {
         return -EIO;
