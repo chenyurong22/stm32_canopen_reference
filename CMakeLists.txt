@@ -72,6 +72,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     CO_USE_GLOBALS
     CANOPEN_REFERENCE_ENABLE_CIA302_MASTER=$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA302_MASTER}>
     CANOPEN_REFERENCE_ENABLE_IWDG=$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>
+    $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>:HAL_IWDG_MODULE_ENABLED>
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.
     __int64_t_defined=1)

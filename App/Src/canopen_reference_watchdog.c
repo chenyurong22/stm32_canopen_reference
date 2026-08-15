@@ -4,6 +4,7 @@
 #include "main.h"
 
 #if CANOPEN_REFERENCE_ENABLE_IWDG
+#include "stm32f7xx_hal_iwdg.h"
 static IWDG_HandleTypeDef s_iwdg;
 #endif
 

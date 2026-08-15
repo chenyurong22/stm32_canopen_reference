@@ -46,6 +46,9 @@ extern "C" {
 #include "stm32f7xx_hal_pwr_ex.h"
 #include "stm32f7xx_hal_cortex.h"
 #include "stm32f7xx_hal_flash.h"
+#ifdef HAL_IWDG_MODULE_ENABLED
+#include "stm32f7xx_hal_iwdg.h"
+#endif
 
 #ifdef __cplusplus
 }

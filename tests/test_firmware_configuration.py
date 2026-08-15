@@ -28,6 +28,7 @@ CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+HAL_CONF = (ROOT / "Core" / "Inc" / "stm32f7xx_hal_conf.h").read_text(encoding="utf-8")
 CAN_PORT = (ROOT / "middleware" / "canopen" / "port" / "can_port.c").read_text(encoding="utf-8")
 
 
@@ -154,6 +155,8 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceWatchdog_TickISR", MAIN)
         self.assertIn("CANopenReferenceWatchdog_Process", MAIN)
         self.assertIn("HAL_IWDG_Refresh", WATCHDOG_SOURCE)
+        self.assertIn("HAL_IWDG_MODULE_ENABLED", CMAKE)
+        self.assertIn("#include \"stm32f7xx_hal_iwdg.h\"", HAL_CONF)
 
     def test_profile_selection_and_safe_board_defaults(self) -> None:
         """The checked-in personality is CiA 401 and weak board hooks default to de-energized."""
