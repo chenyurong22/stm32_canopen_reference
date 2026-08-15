@@ -357,6 +357,21 @@ class FirmwareConfigurationTests(unittest.TestCase):
         for expected in ("USB-CAN", "Independent CANopen node", "raw CAN traffic", "250 trials", "cannot be closed by host simulation alone"):
             self.assertIn(expected, procedure)
 
+    def test_bus_off_qualification_is_external_and_trial_counted(self) -> None:
+        """Bus-off software tests do not replace the physical fault campaign."""
+        bus_off = (ROOT / "docs" / "bus_off_qualification.md").read_text(encoding="utf-8")
+        for expected in (
+            "bus-off → CAN disabled → safe state → re-initialization → recovery → CAN resumes",
+            "Normal operation",
+            "PDO active",
+            "SDO active",
+            "Repeated bus-off",
+            "Terminal failure",
+            "250 trials",
+            "real fault-injection fixture",
+        ):
+            self.assertIn(expected, bus_off)
+
     def test_cia302_peer_supervision_scope_is_bounded(self) -> None:
         """The v1 CiA 302 claim is peer supervision, not configuration management."""
         cia302 = (ROOT / "docs" / "cia302_peer_supervision_qualification.md").read_text(encoding="utf-8")
