@@ -4,6 +4,7 @@
 #include "CO_app_STM32.h"
 #include "canopen_reference_board.h"
 #include "canopen_reference_config.h"
+#include "canopen_reference_watchdog.h"
 
 CAN_HandleTypeDef hcan1;
 TIM_HandleTypeDef htim7;
@@ -28,6 +29,7 @@ main(void) {
     CANopenReferenceBoard_InitSafe();
     MX_CAN1_Init();
     MX_TIM7_Init();
+    CANopenReferenceWatchdog_Init();
 
     canopenInstance.desiredNodeID = CANOPEN_REFERENCE_DEFAULT_NODE_ID;
     canopenInstance.activeNodeID = 0U;
@@ -46,6 +48,7 @@ main(void) {
 
     for (;;) {
         canopen_app_process();
+        CANopenReferenceWatchdog_Process();
         /* Do not put blocking I/O here. A product may enter sleep only after it
          * has evaluated CAN reception, timer, latency, and wake-up guarantees. */
     }
@@ -57,6 +60,7 @@ main(void) {
 void
 HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM7) {
+        CANopenReferenceWatchdog_TickISR();
         canopen_app_interrupt();
     }
 }
