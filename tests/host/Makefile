@@ -24,7 +24,7 @@ $(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT
 	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@
 
 $(BUILD_DIR)/test_can_port_stm32: $(ROOT)/tests/test_can_port_stm32.c $(ROOT)/middleware/canopen/port/can_port.c $(ROOT)/middleware/canopen/port/can_port.h $(ROOT)/tests/fakes/stm32f7xx_hal.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -DCAN_PORT_STM32 -I$(ROOT)/tests/fakes -I$(ROOT)/middleware/canopen/port $< $(ROOT)/middleware/canopen/port/can_port.c -o $@
+	$(CC) $(CFLAGS) -DCAN_PORT_STM32 -DCAN_PORT_FAKE_F767 -I$(ROOT)/tests/fakes -I$(ROOT)/middleware/canopen/port $< $(ROOT)/middleware/canopen/port/can_port.c -o $@
 
 test-cia302: $(BUILD_DIR)/test_cia302_nmt_master
 	$(BUILD_DIR)/test_cia302_nmt_master

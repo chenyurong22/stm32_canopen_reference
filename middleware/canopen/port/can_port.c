@@ -101,7 +101,7 @@ can_port_init(uint32_t bitrate) {
         return -EINVAL;
     }
 
-#if defined(STM32F767xx)
+#if defined(STM32F767xx) || defined(CAN_PORT_FAKE_F767)
     s_hcan->Init.Prescaler = timing->prescaler;
     s_hcan->Init.TimeSeg1 = (timing->time_seg1_tq == 12U) ? CAN_BS1_12TQ
                                                             : (timing->time_seg1_tq == 13U) ? CAN_BS1_13TQ
@@ -113,6 +113,7 @@ can_port_init(uint32_t bitrate) {
     }
 #else
     (void)timing;
+    return -ENOTSUP;
 #endif
     can_port_reset_rx_queue();
     if (HAL_CAN_Start(s_hcan) != HAL_OK) {
@@ -156,20 +157,16 @@ can_port_register_rx(can_port_rx_callback_t cb) {
     __atomic_store_n(&s_rx_callback, cb, __ATOMIC_RELEASE);
 }
 
-int
-can_port_poll(uint32_t timeout_ms) {
-    uint32_t tail;
-    uint32_t head;
+static int
+can_port_poll_one(void) {
+    uint32_t tail = __atomic_load_n(&s_rx_tail, __ATOMIC_RELAXED);
+    uint32_t head = __atomic_load_n(&s_rx_head, __ATOMIC_ACQUIRE);
     can_port_rx_frame_t frame;
     can_port_rx_callback_t callback;
 
-    (void)timeout_ms;
-    tail = __atomic_load_n(&s_rx_tail, __ATOMIC_RELAXED);
-    head = __atomic_load_n(&s_rx_head, __ATOMIC_ACQUIRE);
     if (tail == head) {
         return 0;
     }
-
     frame = s_rx_queue[tail];
     __atomic_store_n(&s_rx_tail, can_port_next_index(tail), __ATOMIC_RELEASE);
     callback = __atomic_load_n(&s_rx_callback, __ATOMIC_ACQUIRE);
@@ -177,6 +174,31 @@ can_port_poll(uint32_t timeout_ms) {
         callback(frame.id, frame.data, frame.len);
     }
     return 1;
+}
+
+int
+can_port_poll(uint32_t timeout_ms) {
+    uint32_t start_tick;
+    int dispatched = can_port_poll_one();
+
+    if (dispatched != 0 || timeout_ms == 0U) {
+        return dispatched;
+    }
+#if !defined(STM32F767xx) && !defined(CAN_PORT_FAKE_F767)
+    (void)timeout_ms;
+    return -ENOTSUP;
+#else
+    start_tick = HAL_GetTick();
+    do {
+        if (can_port_poll_one() != 0) {
+            return 1;
+        }
+        if ((uint32_t)(HAL_GetTick() - start_tick) >= timeout_ms) {
+            return 0;
+        }
+        HAL_Delay(1U);
+    } while (1);
+#endif
 }
 
 void

@@ -40,6 +40,9 @@ int can_port_send(uint32_t id, uint8_t *data, uint8_t len);
  * frames into a bounded queue from the board-owned RX ISR; it never invokes
  * this callback from interrupt context. The callback is invoked only by the
  * caller of can_port_poll() and may therefore perform mainline-safe work.
+ * A nonzero timeout is bounded by the STM32 HAL tick and returns 0 when the
+ * deadline expires. Unsupported STM32 targets return -ENOTSUP rather than
+ * starting an unconfigured controller.
  */
 void can_port_register_rx(can_port_rx_callback_t cb);
 
@@ -47,7 +50,8 @@ void can_port_register_rx(can_port_rx_callback_t cb);
  * Receive at most one frame and invoke the registered callback in caller
  * context. timeout_ms == 0 performs a non-blocking poll; returns 1 if a frame
  * was dispatched, 0 when no frame is available, and a negative errno-style
- * value on failure. The STM32 façade does not block and ignores timeout_ms.
+ * value on failure. For STM32F767, a nonzero timeout waits in bounded
+ * mainline context using HAL_GetTick(); zero remains non-blocking.
  */
 int can_port_poll(uint32_t timeout_ms);
 

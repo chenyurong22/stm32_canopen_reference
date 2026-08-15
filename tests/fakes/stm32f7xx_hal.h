@@ -6,6 +6,11 @@
 #include <stdint.h>
 
 typedef struct {
+    struct {
+        uint32_t Prescaler;
+        uint32_t TimeSeg1;
+        uint32_t TimeSeg2;
+    } Init;
     uint32_t unused;
 } CAN_HandleTypeDef;
 
@@ -30,6 +35,16 @@ typedef enum {
 #define CAN_ID_STD 0U
 #define CAN_RTR_DATA 0U
 #define DISABLE 0U
+#define CAN_BS1_12TQ 12U
+#define CAN_BS1_13TQ 13U
+#define CAN_BS1_14TQ 14U
+#define CAN_BS1_16TQ 16U
+#define CAN_BS2_3TQ 3U
+#define CAN_BS2_8TQ 8U
+static uint32_t s_fake_tick;
+static inline uint32_t HAL_GetTick(void) { return s_fake_tick; }
+static inline void HAL_Delay(uint32_t delay_ms) { s_fake_tick += delay_ms; }
+static inline HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef *hcan) { (void)hcan; return HAL_OK; }
 
 static inline HAL_StatusTypeDef
 HAL_CAN_Start(CAN_HandleTypeDef *hcan) {

@@ -30,6 +30,10 @@ main(void) {
     assert(can_port_stm32_bind(&hcan) == 0);
     assert(can_port_stm32_bind(&hcan) == -EBUSY);
     assert(can_port_init(500000U) == 0);
+    assert(hcan.Init.Prescaler == 6U);
+    assert(hcan.Init.TimeSeg1 == CAN_BS1_14TQ);
+    assert(hcan.Init.TimeSeg2 == CAN_BS2_3TQ);
+    assert(can_port_poll(5U) == 0);
 
     can_port_register_rx(on_frame);
     can_port_stm32_dispatch_rx_from_isr(0x123U, payload, (uint8_t)sizeof(payload));
