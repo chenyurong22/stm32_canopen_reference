@@ -249,7 +249,8 @@ jobs:
           cmake -S . -B build/ci-firmware \
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
             -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
-            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld"
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON
           cmake --build build/ci-firmware --parallel 2
           arm-none-eabi-size build/ci-firmware/stm32f767_canopen_reference
       - name: Configure and build CiA 402 drive personality
@@ -258,6 +259,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
             -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
             -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON \
             -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=1"
           cmake --build build/ci-cia402 --parallel 2
           arm-none-eabi-size build/ci-cia402/stm32f767_canopen_reference
@@ -267,6 +269,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
             -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
             -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON \
             -DCANOPEN_REFERENCE_ENABLE_CIA302_MASTER=ON
           cmake --build build/ci-cia302 --parallel 2
           arm-none-eabi-size build/ci-cia302/stm32f767_canopen_reference
@@ -276,6 +279,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
             -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
             -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON \
             -DCMAKE_C_FLAGS="-DCANOPEN_REFERENCE_ENABLE_GATEWAY=1"
           cmake --build build/ci-gateway --parallel 2
           arm-none-eabi-size build/ci-gateway/stm32f767_canopen_reference
@@ -286,11 +290,13 @@ jobs:
         run: scripts/write_build_manifest.sh build/ci-build-manifest.txt "$GITHUB_WORKSPACE/third_party/STM32CubeF7"
       - name: Check target memory budget
         env:
-          MAX_TEXT_BYTES: 1572864
-          MAX_DATA_BYTES: 524288
-          MAX_BSS_BYTES: 524288
-          MAX_FLASH_LOAD_BYTES: 1572864
-          MAX_RAM_BYTES: 524288
+          # 80% application Flash/RAM budgets retain explicit headroom for
+          # boot-time growth, diagnostics, and board-specific integration.
+          MAX_TEXT_BYTES: 1228800
+          MAX_DATA_BYTES: 262144
+          MAX_BSS_BYTES: 262144
+          MAX_FLASH_LOAD_BYTES: 1228800
+          MAX_RAM_BYTES: 409600
         run: scripts/check_memory_budget.sh build/ci-firmware/stm32f767_canopen_reference.map build/memory-budget.json
       - name: Generate host coverage and sanitizer reports
         env:

@@ -20,7 +20,7 @@ This milestone is not a production approval, a functional-safety claim, or an of
 | Resource budget | GNU ld map section-size report for text, data, BSS, Flash load, and RAM | Automated in the STM32 build job |
 | Release artifacts | Firmware ELF/HEX/BIN/MAP for all CI personalities, JUnit XML, coverage JSON, sanitizer report, memory report, and manifest | Validated before artifact upload |
 
-The current host coverage gate is an explicit repository baseline of **at least 80% line, 80% function, and 60% branch coverage** for the currently exercised project-owned host modules. The measured report must be retained with the candidate artifact. Raising the branch threshold requires expanding the exercised surface rather than weakening or fabricating measurements.
+The current host coverage gate is an explicit repository baseline of **at least 80% line, 80% function, and 60% branch coverage** for the currently exercised project-owned host modules. The measured report must be retained with the candidate artifact. The recommended production target of 90% line, 95% function, and 85% branch remains a strengthening target until the exercised protocol and error-path surface reaches it; it must not be claimed as met by the current report. The STM32 CI personalities use the explicit production compiler profile and tightened map budgets described in [`docs/production_build_profile.md`](production_build_profile.md).
 
 ## Required external evidence before production labeling
 
@@ -69,4 +69,4 @@ Do not replace the evidence directory with generated host reports. The script ch
 
 ## Traceability
 
-This milestone implements the software and release-engineering actions from the newest engineering review: expanded deterministic vectors, release artifact validation, explicit host coverage thresholds, sanitizer/JUnit evidence, structured fuzzing, clang-tidy, compiler-hardening evaluation, target map budget checks, and release-gate documentation. The remaining physical, security, manufacturing, EMC, HIL, and conformance activities remain external gates by design.
+This milestone implements the software and release-engineering actions from the newest engineering review: expanded deterministic vectors, release artifact validation, explicit host coverage thresholds, sanitizer/JUnit evidence, structured fuzzing, clang-tidy enforcement, a target production compiler profile, tightened map budget checks, machine-validated external evidence semantics, and release-gate documentation. The remaining physical, security, manufacturing, EMC, HIL, and conformance activities remain external gates by design.

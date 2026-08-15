@@ -10,6 +10,7 @@ set(STM32_CUBE_F7_DIR "" CACHE PATH "Path to the STM32CubeF7 firmware package")
 set(STM32_F7_LINKER_SCRIPT "" CACHE FILEPATH "Board/package-specific GNU LD script")
 option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)
 option(CANOPEN_REFERENCE_ENABLE_IWDG "Enable dual-rate IWDG supervision" OFF)
+option(CANOPEN_REFERENCE_PRODUCTION_PROFILE "Enable production optimization and compiler hardening" OFF)
 
 if(NOT STM32_CUBE_F7_DIR)
     message(FATAL_ERROR "Set STM32_CUBE_F7_DIR to an STM32CubeF7 package. See docs/02_build_and_cubemx.md.")
@@ -76,7 +77,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>:HAL_IWDG_MODULE_ENABLED>
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.
-    __int64_t_defined=1)
+    __int64_t_defined=1
+    USE_HAL_CAN_REGISTER_CALLBACKS=0
+    USE_HAL_TIM_REGISTER_CALLBACKS=0
+    ART_ACCELERATOR_ENABLE=1)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     Core/Inc
@@ -101,6 +105,32 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -ffunction-sections -fdata-sections
     -Wall -Wextra -Wpedantic)
 
+if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
+    # The pinned vendor sources are built as part of this executable. Keep
+    # their warnings visible, but do not let known dependency-only unused
+    # parameter/variable diagnostics defeat fail-on-warning for project code.
+    set_source_files_properties(
+        ${CANOPEN_NODE_SOURCES}
+        ${HAL_SOURCES}
+        "${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c"
+        PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -O2
+        -fstack-protector-strong
+        -fno-common
+        -Wformat=2
+        -Wconversion
+        -Wshadow
+        -Wundef
+        -Werror
+        # CANopenNode v4 has a deliberate narrowing mask assignment in a
+        # third-party inline header; keep the warning visible without making
+        # the pinned dependency fail the project-owned production build.
+        -Wno-error=conversion)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -Wl,--fatal-warnings)
+endif()
+
 target_link_options(${PROJECT_NAME} PRIVATE
     -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-d16
     -T${STM32_F7_LINKER_SCRIPT}
@@ -113,7 +143,14 @@ target_link_options(${PROJECT_NAME} PRIVATE
 # The production CANopenNode STM32 driver remains the exclusive owner of bxCAN
 # callbacks and lifecycle in the firmware executable.
 add_library(canopen_stm32_port OBJECT middleware/canopen/port/can_port.c)
-target_compile_definitions(canopen_stm32_port PRIVATE STM32F767xx USE_HAL_DRIVER CAN_PORT_STM32)
+target_compile_definitions(canopen_stm32_port PRIVATE
+    STM32F767xx
+    USE_HAL_DRIVER
+    CAN_PORT_STM32
+    USE_HAL_CAN_REGISTER_CALLBACKS=0
+    USE_HAL_TIM_REGISTER_CALLBACKS=0
+    ART_ACCELERATOR_ENABLE=1
+    __int64_t_defined=1)
 target_include_directories(canopen_stm32_port PRIVATE
     Core/Inc
     middleware/canopen/port
@@ -123,6 +160,22 @@ target_include_directories(canopen_stm32_port PRIVATE
 target_compile_options(canopen_stm32_port PRIVATE
     -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-d16
     -ffunction-sections -fdata-sections -Wall -Wextra -Wpedantic)
+
+if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
+    target_compile_options(canopen_stm32_port PRIVATE
+        -O2
+        -fstack-protector-strong
+        -fno-common
+        -Wformat=2
+        -Wconversion
+        -Wshadow
+        -Wundef
+        -Werror
+        # CANopenNode v4 has a deliberate narrowing mask assignment in a
+        # third-party inline header; keep the warning visible without making
+        # the pinned dependency fail the project-owned production build.
+        -Wno-error=conversion)
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.hex
