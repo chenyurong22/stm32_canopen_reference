@@ -16,6 +16,7 @@
 #include "canopen_reference_diagnostics.h"
 #include "canopen_reference_gateway.h"
 #include "canopen_reference_lss.h"
+#include "canopen_reference_lifecycle.h"
 #include "canopen_reference_storage.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"
@@ -34,25 +35,40 @@ static volatile bool canopenReferenceCanRecoveryPending;
 static volatile bool canopenReferenceSafeFault;
 static volatile bool canopenReferenceRecoveryAttemptActive;
 static CANopenReferenceCanRecovery canopenReferenceCanRecovery;
+static CANopenReferenceRuntimeState canopenReferenceRuntimeState = CANOPEN_REFERENCE_RUNTIME_INIT;
 
 static void
+CANopenReference_SetRuntimeState(CANopenReferenceRuntimeState state) {
+    canopenReferenceRuntimeState = state;
+}
+
+CANopenReferenceRuntimeState
+CANopenReference_RuntimeState(void) {
+    return canopenReferenceRuntimeState;
+}
+
+static bool
 CANopenReference_FilterAdd(uint16_t *ids, uint32_t *count, uint16_t id) {
     id &= 0x07FFU;
-    if (id == 0x7FFU || *count >= 20U) {
-        return;
+    if (id == 0x7FFU) {
+        return false;
     }
     for (uint32_t i = 0U; i < *count; ++i) {
         if (ids[i] == id) {
-            return;
+            return true;
         }
     }
+    if (*count >= CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS) {
+        return false;
+    }
     ids[(*count)++] = id;
+    return true;
 }
 
 bool
 CANopenReference_ConfigureCanFilter(uint8_t node_id) {
     CAN_HandleTypeDef *hcan;
-    uint16_t ids[20] = {0};
+    uint16_t ids[CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS] = {0};
     uint32_t count = 0U;
     const uint32_t rpdo_cob_ids[] = {
         OD_PERSIST_COMM.x1400_RPDOCommunicationParameter.COB_IDUsedByRPDO,
@@ -66,26 +82,36 @@ CANopenReference_ConfigureCanFilter(uint8_t node_id) {
         return false;
     }
     hcan = canopenNodeSTM32->CANHandle;
-    CANopenReference_FilterAdd(ids, &count, 0x000U); /* NMT */
-    CANopenReference_FilterAdd(ids, &count, 0x080U); /* SYNC */
-    CANopenReference_FilterAdd(ids, &count, 0x100U); /* TIME */
-    CANopenReference_FilterAdd(ids, &count, (uint16_t)(0x080U + node_id)); /* EMCY */
+    if (!CANopenReference_FilterAdd(ids, &count, 0x000U) /* NMT */
+        || !CANopenReference_FilterAdd(ids, &count, 0x080U) /* SYNC */
+        || !CANopenReference_FilterAdd(ids, &count, 0x100U) /* TIME */
+        || !CANopenReference_FilterAdd(ids, &count, (uint16_t)(0x080U + node_id))) { /* EMCY */
+        return false;
+    }
     for (uint32_t i = 0U; i < 4U; ++i) {
         if ((rpdo_cob_ids[i] & 0x80000000UL) == 0U) {
-            CANopenReference_FilterAdd(ids, &count, (uint16_t)rpdo_cob_ids[i]);
+            if (!CANopenReference_FilterAdd(ids, &count, (uint16_t)rpdo_cob_ids[i])) {
+                return false;
+            }
         }
     }
     if ((OD_RAM.x1200_SDOServerParameter.COB_IDClientToServerRx & 0x80000000UL) == 0U) {
-        CANopenReference_FilterAdd(ids, &count,
-                                   (uint16_t)OD_RAM.x1200_SDOServerParameter.COB_IDClientToServerRx);
+        if (!CANopenReference_FilterAdd(ids, &count,
+                                         (uint16_t)OD_RAM.x1200_SDOServerParameter.COB_IDClientToServerRx)) {
+            return false;
+        }
     }
     if ((OD_PERSIST_COMM.x1280_SDOClientParameter.COB_IDServerToClientRx & 0x80000000UL) == 0U) {
-        CANopenReference_FilterAdd(ids, &count,
-                                   (uint16_t)OD_PERSIST_COMM.x1280_SDOClientParameter.COB_IDServerToClientRx);
+        if (!CANopenReference_FilterAdd(ids, &count,
+                                         (uint16_t)OD_PERSIST_COMM.x1280_SDOClientParameter.COB_IDServerToClientRx)) {
+            return false;
+        }
     }
-    CANopenReference_FilterAdd(ids, &count, (uint16_t)(0x700U + node_id)); /* heartbeat */
-    CANopenReference_FilterAdd(ids, &count, 0x7E4U); /* LSS master -> slave */
-    CANopenReference_FilterAdd(ids, &count, 0x7E5U); /* LSS slave -> master */
+    if (!CANopenReference_FilterAdd(ids, &count, (uint16_t)(0x700U + node_id)) /* heartbeat */
+        || !CANopenReference_FilterAdd(ids, &count, 0x7E4U) /* LSS master -> slave */
+        || !CANopenReference_FilterAdd(ids, &count, 0x7E5U)) { /* LSS slave -> master */
+        return false;
+    }
 
     for (uint32_t bank = 0U; bank < ((count + 3U) / 4U); ++bank) {
         CAN_FilterTypeDef filter = {0};
@@ -129,6 +155,11 @@ CANopenReference_ForceSafeApplication(void) {
 static int
 CANopenReference_FailRuntime(uint32_t fault_code) {
     canopenReferenceSafeFault = !canopenReferenceRecoveryAttemptActive;
+    if (canopenReferenceSafeFault) {
+        CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_SAFE_FAULT);
+    } else {
+        CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_REINITIALIZING);
+    }
     CANopenReferenceDiagnostics_ReportRuntimeFault(fault_code);
     CANopenReference_ForceSafeApplication();
     if (canopenNodeSTM32 != NULL) {
@@ -176,6 +207,7 @@ canopen_app_init(CANopenNodeSTM32 *instance) {
     }
 
     canopenNodeSTM32 = instance;
+    CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_INIT);
     canopenReferenceSafeFault = false;
     canopenReferenceCanRecoveryPending = false;
     canopenReferenceRecoveryAttemptActive = false;
@@ -211,9 +243,11 @@ canopen_app_resetCommunication(void) {
     CO_LSS_address_t lssAddress;
 
     if (CO == NULL || canopenNodeSTM32 == NULL) {
+        CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_SAFE_FAULT);
         return -1;
     }
 
+    CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_REINITIALIZING);
     CANopenReference_ForceSafeApplication();
     CANopenReferenceCia302_Deinit();
     CO->CANmodule->CANnormal = false;
@@ -280,6 +314,7 @@ canopen_app_resetCommunication(void) {
     canopenReferenceLastTick = HAL_GetTick();
     canopenReferenceSafeFault = false;
     CANopenReferenceCanRecovery_Complete(&canopenReferenceCanRecovery, true, canopenReferenceLastTick);
+    CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_RUNNING);
     return 0;
 }
 
@@ -310,6 +345,7 @@ canopen_app_process(void) {
                                         canopenNodeSTM32->outStatusLEDGreen, canopenNodeSTM32->outStatusLEDRed, now);
 
     if (resetCommand == CO_RESET_COMM) {
+        CANopenReference_SetRuntimeState(CANOPEN_REFERENCE_RUNTIME_RESET_REQUESTED);
         (void)HAL_TIM_Base_Stop_IT(canopenNodeSTM32->timerHandle);
         CO_CANsetConfigurationMode((void *)canopenNodeSTM32);
         CO_delete(CO);

@@ -51,6 +51,12 @@
 #define CANOPEN_REFERENCE_CAN_RECOVERY_MAX_ATTEMPTS 3U
 #endif
 
+/* bxCAN list filters are intentionally bounded. A product that enables more
+ * active COB-IDs must raise this value and verify available filter banks. */
+#ifndef CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS
+#define CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS 20U
+#endif
+
 /* Replace before release. These are deliberately non-production reference
  * values. The same values must be updated in the EDS/XDD and production label. */
 #define CANOPEN_REFERENCE_VENDOR_ID             UINT32_C(0x00000000)
