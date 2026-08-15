@@ -21,6 +21,8 @@ The release candidate must run the tag-triggered SocketCAN job. The workflow exe
 
 ## 2. Physical CAN and transceiver validation
 
+Detailed procedure: [`can_physical_layer_qualification.md`](can_physical_layer_qualification.md). The full rig and case matrix is in [`cia401_hil_validation.md`](cia401_hil_validation.md).
+
 | Activity | Procedure | Pass evidence |
 |---|---|---|
 | Electrical inspection | Review CANH/CANL routing, 120-ohm termination, common-mode range, connector protection, isolation, supply rails, and EN/STB polarity against the released schematic. | Signed schematic review and measured rail values. |
@@ -31,11 +33,15 @@ The release candidate must run the tag-triggered SocketCAN job. The workflow exe
 
 ## 3. Bus-off recovery campaign
 
+Detailed procedure: [`bus_off_qualification.md`](bus_off_qualification.md).
+
 Use a controlled fault-injection fixture or analyzer capable of inducing bus errors without damaging the transceiver. Execute at least 30 trials: 10 from normal operation, 10 during active PDO traffic, and 10 during SDO traffic. Include a power-cycle between selected trials.
 
 For each trial record the first bus-off timestamp, error classification, CANopen lifecycle state, recovery attempt count, time to reinitialize, heartbeat behavior, and final board safety state. Pass criteria are: recovery is mainline-only, retries remain within the configured limit, no duplicate CAN peripheral ownership occurs, outputs remain safe, and exhausted retries latch the documented safe-fault state.
 
 ## 4. Flash persistence and power-loss campaign
+
+Detailed procedure: [`flash_qualification.md`](flash_qualification.md).
 
 Validate both storage slots on the exact MCU density and linker map used by the product. Exercise valid A/B selection, newest-sequence selection, CRC failure of A, CRC failure of B, both slots invalid, interrupted erase, interrupted payload programming, interrupted commit marker programming, and repeated reboot after each interruption point.
 
@@ -44,6 +50,8 @@ For endurance budgeting, record the selected store-rate policy, expected configu
 Pass criteria are that an interrupted write never produces a partially accepted image, a valid older slot remains usable when the newest write is interrupted, CRC failures are observable, and defaults are safe when no valid slot exists.
 
 ## 5. Watchdog timing and reset campaign
+
+Detailed procedure: [`watchdog_qualification.md`](watchdog_qualification.md).
 
 With the IWDG personality enabled, measure the LSI frequency and IWDG timeout at minimum, nominal, and maximum voltage/temperature conditions. Record startup grace duration, timer-progress deadline, refresh margin, and observed reset latency.
 
@@ -61,13 +69,19 @@ For each enabled mode, use a second CANopen node or recognized test tool and arc
 
 ## 8. CiA 302 and LSS commissioning
 
+The bounded peer-supervision procedure is in [`cia302_peer_supervision_qualification.md`](cia302_peer_supervision_qualification.md).
+
 Run the existing UDS/CiA 302 hardware acceptance procedure with at least one independent peer. Add node-ID/bitrate persistence, heartbeat loss, peer reboot, NMT reset, and recovery tests. A complete Network List, Configuration Manager, and LSS Fastscan commissioning claim requires a separate design, implementation, product provisioning procedure, and applicable conformance evidence.
 
 ## 9. Security and secure update
 
+The v1 threat-model gate is in [`security_v1_release_gate.md`](security_v1_release_gate.md).
+
 Before enabling any gateway or field update path, approve a threat model and secure-update design covering immutable trust anchor, signed image format, key custody and rotation, anti-rollback versioning, recovery image, debug lifecycle/option bytes, manufacturing provisioning, failed-update recovery, and audit logging. The reference firmware does not implement these mechanisms and must remain a development baseline until the product security owner signs the release checklist in `docs/10_product_security_release_checklist.md`.
 
 ## 10. Formal conformance and release record
+
+Formal conformance gate: [`canopen_conformance_gate.md`](canopen_conformance_gate.md). Release sequence: [`v1_release_readiness_gate.md`](v1_release_readiness_gate.md). Manufacturing and laboratory records are defined in [`manufacturing_production_record.md`](manufacturing_production_record.md) and [`emc_environmental_qualification.md`](emc_environmental_qualification.md). Stress/resource procedure: [`stress_soak_resource_qualification.md`](stress_soak_resource_qualification.md).
 
 Host vectors and recognized conformance testing are different evidence classes. A formal claim requires the applicable current CiA test plan, test-tool version, complete Object Dictionary/EDS release, exact firmware hash, and archived pass results. Record deviations and waivers explicitly.
 
