@@ -213,11 +213,18 @@ The reference does not define a universal STM32F767 board pinout, external CAN t
 
 ## Related documentation
 
+Use the [documentation map](docs/README.md) as the complete index of architecture notes, profile procedures, qualification gates, release records, and historical reviews.
+
 | Topic | Document |
 |---|---|
 | Reproducible build and flashing | [BUILD.md](BUILD.md) |
+| Documentation index | [docs/README.md](docs/README.md) |
 | CubeMX ownership and board porting | [Build and CubeMX notes](docs/02_build_and_cubemx.md) |
 | CANopen wiring and hardware bring-up | [Hardware integration guide](docs/hardware.md) |
+| Third-party Object Dictionary requests | [OD request handling procedure](docs/handling_third_party_od_requests.md) |
+| In-process protocol smoke testing | [Mock CANopen smoke testing](docs/mock_canopen_protocol_smoke_testing.md) |
+| Inventus battery test profile | [Inventus profile](docs/inventus_battery_test_profile.md) |
+| v1 qualification and release gates | [Production validation plan](docs/production_validation_plan.md) |
 | Protocol examples and frame sequences | [Examples guide](examples/README.md) |
 | UDS/CiA 302 acceptance | [Hardware procedure](docs/hardware/uds_cia302_test_procedure.md) and [test runner](tests/hardware/README.md) |
 | Object Dictionary | [EDS](ObjectDictionary/stm32f767_canopen_reference.eds) |

@@ -4,7 +4,7 @@ Thank you for improving the STM32F767 CANopen reference. Contributions should pr
 
 ## Before making a change
 
-Read the [README](README.md), [BUILD.md](BUILD.md), [third-party inventory](THIRD_PARTY.md), and the relevant hardware procedure. Confirm whether the change affects the Object Dictionary, CAN wire format, generated code, safety defaults, or a device-profile contract.
+Read the [README](README.md), [BUILD.md](BUILD.md), [third-party inventory](THIRD_PARTY.md), the [documentation map](docs/README.md), and the relevant hardware procedure. For third-party Object Dictionary requests, follow [Handling third-party OD requests](docs/handling_third_party_od_requests.md). Confirm whether the change affects the Object Dictionary, CAN wire format, generated code, safety defaults, or a device-profile contract.
 
 Do not commit secrets, private keys, vendor credentials, proprietary board files, generated build output, or a local STM32CubeF7 checkout. Keep application changes in `App/` or project-owned middleware and do not modify the pinned third-party stack unless the change is explicitly justified.
 
@@ -32,14 +32,16 @@ Run these checks from the repository root:
 ```sh
 python3 scripts/validate_od.py
 python3 scripts/validate_cia418.py
+python3 scripts/validate_inventus_battery.py
+python3 scripts/mock_canopen_runner.py
 python3 tests/test_firmware_configuration.py
 python3 tests/test_canopen_wire_contract.py
 python3 tests/run_uds_isotp_contract.py
 python3 tests/run_nmea2000_gateway_contract.py
-make -C tests/host all test-stm32-facade test-gateway-default-deny
+make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery test-mock-canopen
 ```
 
-For a target build, follow [BUILD.md](BUILD.md). For physical CAN testing, use the procedure in `docs/hardware/uds_cia302_test_procedure.md` and attach the JSON result and trace evidence to the pull request or release record.
+For a target build, follow [BUILD.md](BUILD.md). For the complete local sequence, run `bash scripts/validate_reference.sh`; it includes the Inventus validator, mock protocol runner, host targets, contract checks, and ARM personality builds. The mock runner’s scope and limitations are documented in [In-process CANopen protocol smoke testing](docs/mock_canopen_protocol_smoke_testing.md). For physical CAN testing, use the procedure in `docs/hardware/uds_cia302_test_procedure.md` and attach the JSON result and trace evidence to the pull request or release record.
 
 ## Commit and pull-request format
 

@@ -22,6 +22,7 @@ python3 "$ROOT/scripts/validate_od.py"
 python3 "$ROOT/scripts/validate_inventus_battery.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_firmware_configuration.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/mock_canopen_runner.py"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_documentation_index.py"
 mkdir -p "$ROOT/build/tests"
 
 gcc -std=c11 -Wall -Wextra -Werror \

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Deterministic user-space CANopen frame mock for the Inventus test profile.
 
-This runner deliberately does not open a SocketCAN device.  It models a single
+This runner deliberately does not open a SocketCAN device. It models a single
 CANopen node and a lossless in-process bus, records every transmitted frame,
 and exercises the wire-level exchanges needed to smoke-test the Inventus
 profile when the host kernel does not provide vcan0.
 
-The object values and PDO mappings are loaded from the checked-in Inventus CSV
-catalog and catalog module.  This is a protocol smoke test, not a substitute
-for firmware execution, CAN physical-layer qualification, or HIL testing.
+The `Frame`, `MockBus`, and `MockNode` layers form a reusable transport-neutral
+pattern for future opt-in personalities; only the catalog adapter and scenario
+assertions are Inventus-specific. The object values and PDO mappings are loaded
+from the checked-in Inventus CSV catalogs. This is a protocol smoke test, not a
+substitute for firmware execution, CAN physical-layer qualification, or HIL
+testing.
 """
 
 from __future__ import annotations
