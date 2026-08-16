@@ -12,6 +12,7 @@ This repository is a **reference firmware platform** for STM32F767 CANopen devel
 | CiA 402 drive interface | Optional | Reference state/controlword/statusword/fault-reset behavior and Profile Position/Velocity adapter seams | Complete drive product, torque/homing/CSP/CSV/CST behavior, motor feedback, power-stage safety, limits, following-error behavior, HIL, and formal conformance |
 | CiA 302 NMT-master supervision | Optional | Bounded configured-peer boot-up and heartbeat supervision with deterministic host tests; standard Network List/Configuration Manager objects 0x1F80–0x1F89 are not implemented | Complete network list, configuration manager, commissioning workflow, startup configuration manager, multi-node production evidence, and formal conformance |
 | CiA 309 gateway foundation | Optional | Bounded gateway foundation with deny-by-default policy tests | Authenticated production transport, authorization model, audit trail, security approval, and gateway conformance |
+| Inventus battery test OD | Explicit opt-in test-only profile | Workbook-derived manufacturer-specific `0x4800–0x4921` application entries, generated OD/EDS artifacts, and host validation | Commercial use, production default selection, approved safety semantics, hardware conformance, and formal CiA 418/product conformance |
 
 ## Protocol and feature boundaries
 
@@ -20,7 +21,7 @@ This repository is a **reference firmware platform** for STM32F767 CANopen devel
 | NMT, heartbeat, EMCY, SDO, PDO, SYNC | Integrated through CANopenNode and project configuration | Requires product OD approval, board testing, stress testing, and applicable conformance evidence |
 | LSS | Stack integration and project policy hooks | Complete Fastscan commissioning and multi-node provisioning are not claimed |
 | UDS / ISO-TP | Host-side contract models | No embedded UDS server or embedded ISO-TP implementation is claimed |
-| CiA 418 | Explicit opt-in adapter plus synchronized generated model artifact; not part of the default live CANopenNode OD | No CiA 418 SDO/PDO device profile is claimed until a dedicated battery-personality CANopenNode OD, EDS, hardware data source, and validation package exist |
+| CiA 418 | Explicit opt-in adapter plus synchronized generated model artifact; an isolated Inventus battery OD/EDS is available only for non-commercial testing | No CiA 418 or Inventus battery production device profile is claimed; hardware-owner approval, safety semantics, physical evidence, and formal conformance remain absent |
 | NMEA 2000 | Host gateway contract only; no embedded C implementation | No embedded NMEA 2000 stack or field interoperability is claimed; address-claim state machine is also absent |
 | CAN-FD/FDCAN | Not implemented; target uses bxCAN | No CAN-FD capability is claimed |
 | Bootloader and firmware update | Not implemented | No secure update, signature verification, rollback, or anti-rollback capability is claimed |

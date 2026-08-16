@@ -10,6 +10,7 @@ BUILD_DIR=${BUILD_DIR:-"$ROOT/build/firmware"}
 CIA402_BUILD_DIR=${CIA402_BUILD_DIR:-"$ROOT/build/firmware-cia402"}
 GATEWAY_BUILD_DIR=${GATEWAY_BUILD_DIR:-"$ROOT/build/firmware-gateway"}
 CIA418_BUILD_DIR=${CIA418_BUILD_DIR:-"$ROOT/build/firmware-cia418"}
+INVENTUS_BUILD_DIR=${INVENTUS_BUILD_DIR:-"$ROOT/build/firmware-inventus-battery"}
 
 command -v python3 >/dev/null
 command -v gcc >/dev/null
@@ -18,6 +19,7 @@ command -v arm-none-eabi-gcc >/dev/null
 command -v arm-none-eabi-size >/dev/null
 
 python3 "$ROOT/scripts/validate_od.py"
+python3 "$ROOT/scripts/validate_inventus_battery.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_firmware_configuration.py"
 mkdir -p "$ROOT/build/tests"
 
@@ -31,7 +33,7 @@ gcc -std=c11 -Wall -Wextra -Werror \
     "$ROOT/App/Src/cia402_reference.c" \
     -o "$ROOT/build/tests/test_profiles"
 "$ROOT/build/tests/test_profiles"
-make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny test-sanitize test-coverage
+make -C "$ROOT/tests/host" all test-stm32-facade test-gateway-default-deny test-inventus-battery test-sanitize test-coverage
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/test_canopen_wire_contract.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/conformance/run_core_vectors.py"
 PYTHONPATH="$ROOT:$ROOT/tests" PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/run_uds_isotp_contract.py"
@@ -80,5 +82,15 @@ cmake --build "$CIA418_BUILD_DIR" --parallel 2
 arm-none-eabi-size "$CIA418_BUILD_DIR/stm32f767_canopen_reference"
 test -s "$CIA418_BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$CIA418_BUILD_DIR/stm32f767_canopen_reference.bin"
+
+cmake -S "$ROOT" -B "$INVENTUS_BUILD_DIR" \
+    -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
+    -DSTM32_CUBE_F7_DIR="$CUBE_DIR" \
+    -DSTM32_F7_LINKER_SCRIPT="$LINKER_SCRIPT" \
+    -DCANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON
+cmake --build "$INVENTUS_BUILD_DIR" --parallel 2
+arm-none-eabi-size "$INVENTUS_BUILD_DIR/stm32f767_canopen_reference"
+test -s "$INVENTUS_BUILD_DIR/stm32f767_canopen_reference.hex"
+test -s "$INVENTUS_BUILD_DIR/stm32f767_canopen_reference.bin"
 
 printf '%s\n' 'Reference validation completed successfully.'

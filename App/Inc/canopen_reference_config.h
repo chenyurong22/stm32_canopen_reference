@@ -28,6 +28,11 @@
 #define CANOPEN_REFERENCE_ENABLE_CIA418 0U
 #endif
 
+/* Inventus battery OD is an isolated, non-commercial test personality. */
+#ifndef CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY
+#define CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY 0U
+#endif
+
 #ifndef CANOPEN_REFERENCE_ALLOW_COMBINED_PROFILES
 #define CANOPEN_REFERENCE_ALLOW_COMBINED_PROFILES 0U
 #endif
@@ -37,13 +42,21 @@
 #error "CiA 418 personality cannot be combined with the default CiA 401/402 OD personality."
 #endif
 
+#if ((CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY != 0U) \
+     && ((CANOPEN_REFERENCE_ENABLE_CIA401 != 0U) \
+         || (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U) \
+         || (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)))
+#error "Inventus battery test personality must be built as an exclusive OD personality."
+#endif
+
 #if ((CANOPEN_REFERENCE_ENABLE_CIA401 != 0U) && (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U) \
      && (CANOPEN_REFERENCE_ALLOW_COMBINED_PROFILES == 0U))
 #error "Select one device profile or explicitly authorize the non-conformant combined reference mode."
 #endif
 
 #if ((CANOPEN_REFERENCE_ENABLE_CIA401 == 0U) && (CANOPEN_REFERENCE_ENABLE_CIA402 == 0U) \
-     && (CANOPEN_REFERENCE_ENABLE_CIA418 == 0U))
+     && (CANOPEN_REFERENCE_ENABLE_CIA418 == 0U) \
+     && (CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY == 0U))
 #error "At least one application profile or the explicit CiA 418 adapter mode must be selected."
 #endif
 

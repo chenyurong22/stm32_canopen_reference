@@ -15,9 +15,9 @@ FUZZER ?= $(shell command -v clang 2>/dev/null || command -v clang-18 2>/dev/nul
 FUZZ_BUILD_DIR := $(ROOT)/build/host-fuzz
 FUZZER_FLAGS ?= -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -O1 -g
 
-.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-fuzz test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-recovery check-vcan
+.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-fuzz test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-inventus-battery test-recovery check-vcan
 
-all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_can_recovery
+all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_inventus_battery_od $(BUILD_DIR)/test_can_recovery
 
 $(BUILD_DIR):
 	mkdir -p $@
@@ -38,8 +38,14 @@ CIA418_OD_INCLUDES := -I$(ROOT)/tests/fakes \
 	-I$(ROOT)/third_party/CanOpenSTM32/CANopenNode/301 \
 	-I$(ROOT)/third_party/CanOpenSTM32/CANopenNode_STM32
 
+INVENTUS_OD_FLAGS := -DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=0 -DCANOPEN_REFERENCE_ENABLE_CIA418=0 -DCANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=1
+INVENTUS_OD_INCLUDES := $(CIA418_OD_INCLUDES)
+
 $(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/Generated/cia418_OD.c $(ROOT)/third_party/CanOpenSTM32/CANopenNode/301/CO_ODinterface.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(CIA418_OD_FLAGS) $(CIA418_OD_INCLUDES) $^ -o $@
+
+$(BUILD_DIR)/test_inventus_battery_od: $(ROOT)/tests/test_inventus_battery_od.c $(ROOT)/Generated/inventus_battery_OD.c $(ROOT)/third_party/CanOpenSTM32/CANopenNode/301/CO_ODinterface.c $(ROOT)/App/Inc/canopen_reference_od.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INVENTUS_OD_FLAGS) $(INVENTUS_OD_INCLUDES) $^ -o $@
 
 $(BUILD_DIR)/test_can_recovery: $(ROOT)/tests/test_can_recovery.c $(ROOT)/App/Src/canopen_reference_can_recovery.c $(ROOT)/App/Inc/canopen_reference_can_recovery.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@
@@ -55,6 +61,9 @@ test-lss-policy: $(BUILD_DIR)/test_lss_policy
 
 test-cia418: $(BUILD_DIR)/test_cia418_reference
 	$(BUILD_DIR)/test_cia418_reference
+
+test-inventus-battery: $(BUILD_DIR)/test_inventus_battery_od
+	$(BUILD_DIR)/test_inventus_battery_od
 
 test-recovery: $(BUILD_DIR)/test_can_recovery
 	$(BUILD_DIR)/test_can_recovery

@@ -513,6 +513,18 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("OD_find(OD, index)", CIA418_SOURCE)
         self.assertIn("OD_getSub(entry, sub_index, &io, false)", CIA418_SOURCE)
 
+    def test_inventus_battery_test_od_is_explicit_and_isolated(self) -> None:
+        """Inventus battery entries are test-only and cannot replace the v1 CiA 401 OD."""
+        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY "Build the isolated Inventus battery test-only Object Dictionary personality" OFF)', CMAKE)
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=$<BOOL:${CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY}>", CMAKE)
+        self.assertIn("set(CANOPEN_REFERENCE_OD_SOURCE Generated/inventus_battery_OD.c)", CMAKE)
+        self.assertIn("#include \"inventus_battery_OD.h\"", (ROOT / "App" / "Inc" / "canopen_reference_od.h").read_text(encoding="utf-8"))
+        self.assertIn("Inventus battery test personality must be built as an exclusive OD personality.", PROFILE)
+        self.assertIn("test-only, non-commercial", (ROOT / "docs" / "inventus_battery_test_profile.md").read_text(encoding="utf-8"))
+        self.assertIn("test-inventus-battery", HOST_MAKEFILE)
+        self.assertIn("validate_inventus_battery.py", CI)
+        self.assertIn("CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON", CI)
+
     def test_protocol_boundaries_are_documented_at_source_and_scope_levels(self) -> None:
         """Host-only and partial protocol implementations cannot silently become product claims."""
         for expected in (

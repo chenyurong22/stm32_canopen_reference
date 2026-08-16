@@ -106,6 +106,7 @@ jobs:
           python3 scripts/validate_repository.py
           python3 scripts/validate_od.py
           python3 scripts/validate_cia418.py
+          python3 scripts/validate_inventus_battery.py
           python3 scripts/validate_cia401_product.py
           tools/import_objdict.sh Generated --stage
           PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
@@ -119,6 +120,9 @@ jobs:
             tests/run_uds_isotp_contract.py \
             scripts/cia418_catalog.py \
             scripts/generate_cia418_od.py \
+            scripts/inventus_battery_catalog.py \
+            scripts/generate_inventus_battery_od.py \
+            scripts/validate_inventus_battery.py \
             scripts/validate_repository.py \
             scripts/validate_cia418.py \
             scripts/validate_cia401_product.py \
@@ -153,7 +157,7 @@ jobs:
             tests/test_profiles.c App/Src/cia401_reference.c App/Src/cia402_reference.c \
             -o build/tests/test_profiles
           build/tests/test_profiles
-          make -C tests/host all test-stm32-facade test-gateway-default-deny
+          make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery
           make -C tests/host test-sanitize test-coverage
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
@@ -285,6 +289,17 @@ jobs:
             -DCANOPEN_REFERENCE_ENABLE_CIA418=ON
           cmake --build build/ci-cia418 --parallel 2
           arm-none-eabi-size build/ci-cia418/stm32f767_canopen_reference
+      - name: Configure and build optional Inventus battery test personality
+        run: |
+          cmake -S . -B build/ci-inventus-battery \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+            -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON \
+            -DCANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON
+          cmake --build build/ci-inventus-battery --parallel 2
+          arm-none-eabi-size build/ci-inventus-battery/stm32f767_canopen_reference
+
       - name: Configure and build optional CiA 302 master personality
         run: |
           cmake -S . -B build/ci-cia302 \
