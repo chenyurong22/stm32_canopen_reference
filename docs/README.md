@@ -20,6 +20,7 @@ This directory contains the living engineering documentation and historical revi
 | Inventus battery test-only OD, including structured D000 and provisional D001 | [inventus_battery_test_profile.md](inventus_battery_test_profile.md) |
 | Procedure for handling third-party OD requests from issues, screenshots, or workbooks | [handling_third_party_od_requests.md](handling_third_party_od_requests.md) |
 | Reusable in-process CANopen protocol smoke testing | [mock_canopen_protocol_smoke_testing.md](mock_canopen_protocol_smoke_testing.md) |
+| Issue #13 protocol acceptance matrix and standard COB-ID checks | [issue13_protocol_acceptance.md](issue13_protocol_acceptance.md) |
 | CiA 401 hardware-owner questionnaire | [cia401_hardware_owner_questionnaire.md](cia401_hardware_owner_questionnaire.md) |
 | Open-issue and scope-resolution record | [open_issue_resolution.md](open_issue_resolution.md) |
 

@@ -15,9 +15,9 @@ FUZZER ?= $(shell command -v clang 2>/dev/null || command -v clang-18 2>/dev/nul
 FUZZ_BUILD_DIR := $(ROOT)/build/host-fuzz
 FUZZER_FLAGS ?= -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -O1 -g
 
-.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-fuzz test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-inventus-battery test-inventus-battery-data test-mock-canopen test-recovery check-vcan
+.PHONY: all clean test test-sanitize test-sanitize-report test-coverage test-coverage-report test-fuzz test-stm32-facade test-gateway-default-deny test-cia302 test-lss-policy test-cia418 test-inventus-battery test-inventus-battery-data test-protocol-contract test-mock-canopen test-recovery check-vcan
 
-all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_inventus_battery_od $(BUILD_DIR)/test_can_recovery
+all: $(BUILD_DIR)/test_can_port $(BUILD_DIR)/test_can_port_stm32 $(BUILD_DIR)/test_gateway_default_deny $(BUILD_DIR)/test_cia302_nmt_master $(BUILD_DIR)/test_lss_policy $(BUILD_DIR)/test_cia418_reference $(BUILD_DIR)/test_inventus_battery_od $(BUILD_DIR)/test_protocol_contract $(BUILD_DIR)/test_can_recovery
 
 $(BUILD_DIR):
 	mkdir -p $@
@@ -66,6 +66,12 @@ test-inventus-battery: $(BUILD_DIR)/test_inventus_battery_od
 	$(BUILD_DIR)/test_inventus_battery_od
 
 test-inventus-battery-data: test-inventus-battery
+
+$(BUILD_DIR)/test_protocol_contract: $(ROOT)/tests/test_protocol_contract.c $(ROOT)/middleware/canopen/core/canopen_reference_protocol.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(ROOT)/middleware/canopen/core $< -o $@
+
+test-protocol-contract: $(BUILD_DIR)/test_protocol_contract
+	$(BUILD_DIR)/test_protocol_contract
 
 test-mock-canopen:
 	PYTHONDONTWRITEBYTECODE=1 python3 $(ROOT)/scripts/mock_canopen_runner.py
