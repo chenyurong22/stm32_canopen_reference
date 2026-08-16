@@ -1,6 +1,8 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
+
 #include "inventus_battery_data.h"
 
 #include "canopen_reference_config.h"
