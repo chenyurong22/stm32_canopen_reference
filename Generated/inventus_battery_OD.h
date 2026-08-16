@@ -310,6 +310,27 @@ typedef struct {
     uint16_t x4904_inventus_4904_set_enter_sleep_time;
     uint16_t x4920_inventus_4920_voltage_calibration_enable;
     uint16_t x4921_inventus_4921_voltage_calibration_value;
+    uint8_t x6000_inventus_6000_battery_status;
+    uint8_t x6001_inventus_6001_charger_status;
+    int16_t x6010_inventus_6010_temperature;
+    uint32_t x6050_inventus_6050_cumulative_total_ah_charge;
+    uint16_t x6051_inventus_6051_ah_expended_since_last_charge;
+    uint16_t x6052_inventus_6052_ah_returned_during_last_charge;
+    uint32_t x6060_inventus_6060_battery_voltage;
+    uint16_t x6070_inventus_6070_charge_current_requested;
+    uint8_t x6081_inventus_6081_battery_state_of_charge;
+    struct {
+        uint8_t highest_sub_index_supported;
+        uint8_t battery_type;
+        uint16_t capacity;
+        uint16_t max_charge_current;
+        uint16_t number_of_cells;
+    } x6020_inventus_6020_highest_sub_index_supported;
+    struct {
+        uint8_t highest_sub_index_supported;
+        uint32_t ascii_characters_1_to_4;
+        uint32_t ascii_characters_5_to_8;
+    } x6030_inventus_6030_highest_sub_index_supported;
     struct {
         uint8_t highestSub_indexSupported;
         uint16_t ntc1;
@@ -665,10 +686,32 @@ extern OD_ATTR_OD OD_t *OD;
 #define OD_ENTRY_H4920_inventus_4920_voltage_calibration_enable &OD->list[98]
 #define OD_ENTRY_H4921 &OD->list[99]
 #define OD_ENTRY_H4921_inventus_4921_voltage_calibration_value &OD->list[99]
-#define OD_ENTRY_HD000 &OD->list[100]
-#define OD_ENTRY_HD000_inventus_d000_internal_test_commands &OD->list[100]
-#define OD_ENTRY_HD001 &OD->list[101]
-#define OD_ENTRY_HD001_inventus_d001_d001_diagnostic_bytes &OD->list[101]
+#define OD_ENTRY_H6000 &OD->list[100]
+#define OD_ENTRY_H6000_inventus_6000_battery_status &OD->list[100]
+#define OD_ENTRY_H6001 &OD->list[101]
+#define OD_ENTRY_H6001_inventus_6001_charger_status &OD->list[101]
+#define OD_ENTRY_H6010 &OD->list[102]
+#define OD_ENTRY_H6010_inventus_6010_temperature &OD->list[102]
+#define OD_ENTRY_H6020 &OD->list[103]
+#define OD_ENTRY_H6020_inventus_6020_highest_sub_index_supported &OD->list[103]
+#define OD_ENTRY_H6030 &OD->list[104]
+#define OD_ENTRY_H6030_inventus_6030_highest_sub_index_supported &OD->list[104]
+#define OD_ENTRY_H6050 &OD->list[105]
+#define OD_ENTRY_H6050_inventus_6050_cumulative_total_ah_charge &OD->list[105]
+#define OD_ENTRY_H6051 &OD->list[106]
+#define OD_ENTRY_H6051_inventus_6051_ah_expended_since_last_charge &OD->list[106]
+#define OD_ENTRY_H6052 &OD->list[107]
+#define OD_ENTRY_H6052_inventus_6052_ah_returned_during_last_charge &OD->list[107]
+#define OD_ENTRY_H6060 &OD->list[108]
+#define OD_ENTRY_H6060_inventus_6060_battery_voltage &OD->list[108]
+#define OD_ENTRY_H6070 &OD->list[109]
+#define OD_ENTRY_H6070_inventus_6070_charge_current_requested &OD->list[109]
+#define OD_ENTRY_H6081 &OD->list[110]
+#define OD_ENTRY_H6081_inventus_6081_battery_state_of_charge &OD->list[110]
+#define OD_ENTRY_HD000 &OD->list[111]
+#define OD_ENTRY_HD000_inventus_d000_internal_test_commands &OD->list[111]
+#define OD_ENTRY_HD001 &OD->list[112]
+#define OD_ENTRY_HD001_inventus_d001_d001_diagnostic_bytes &OD->list[112]
 
 
 /*******************************************************************************

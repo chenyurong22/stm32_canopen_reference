@@ -269,6 +269,27 @@ OD_ATTR_APP OD_APP_t OD_APP = {
     .x4904_inventus_4904_set_enter_sleep_time = 0,
     .x4920_inventus_4920_voltage_calibration_enable = 0,
     .x4921_inventus_4921_voltage_calibration_value = 0,
+    .x6000_inventus_6000_battery_status = 0,
+    .x6001_inventus_6001_charger_status = 0,
+    .x6010_inventus_6010_temperature = 0,
+    .x6050_inventus_6050_cumulative_total_ah_charge = 0,
+    .x6051_inventus_6051_ah_expended_since_last_charge = 0,
+    .x6052_inventus_6052_ah_returned_during_last_charge = 0,
+    .x6060_inventus_6060_battery_voltage = 0,
+    .x6070_inventus_6070_charge_current_requested = 320,
+    .x6081_inventus_6081_battery_state_of_charge = 0,
+    .x6020_inventus_6020_highest_sub_index_supported = {
+        .highest_sub_index_supported = 0x04,
+        .battery_type = 0xA0,
+        .capacity = 60,
+        .max_charge_current = 60,
+        .number_of_cells = 182
+    },
+    .x6030_inventus_6030_highest_sub_index_supported = {
+        .highest_sub_index_supported = 0x02,
+        .ascii_characters_1_to_4 = 0x30303030,
+        .ascii_characters_5_to_8 = 0x30303030
+    },
     .xD000_inventus_d000_internal_test_commands = {
         .highestSub_indexSupported = 0x70,
         .ntc1 = 2980,
@@ -491,6 +512,17 @@ typedef struct {
     OD_obj_var_t o_4904_inventus_4904_set_enter_sleep_time;
     OD_obj_var_t o_4920_inventus_4920_voltage_calibration_enable;
     OD_obj_var_t o_4921_inventus_4921_voltage_calibration_value;
+    OD_obj_var_t o_6000_inventus_6000_battery_status;
+    OD_obj_var_t o_6001_inventus_6001_charger_status;
+    OD_obj_var_t o_6010_inventus_6010_temperature;
+    OD_obj_var_t o_6050_inventus_6050_cumulative_total_ah_charge;
+    OD_obj_var_t o_6051_inventus_6051_ah_expended_since_last_charge;
+    OD_obj_var_t o_6052_inventus_6052_ah_returned_during_last_charge;
+    OD_obj_var_t o_6060_inventus_6060_battery_voltage;
+    OD_obj_var_t o_6070_inventus_6070_charge_current_requested;
+    OD_obj_var_t o_6081_inventus_6081_battery_state_of_charge;
+    OD_obj_record_t o_6020_inventus_6020_highest_sub_index_supported[5];
+    OD_obj_record_t o_6030_inventus_6030_highest_sub_index_supported[3];
     OD_obj_record_t o_D000_inventus_d000_internal_test_commands[113];
     OD_obj_record_t o_1804_TPDOCommunicationParameter5[7];
     OD_obj_record_t o_1805_TPDOCommunicationParameter6[7];
@@ -1675,6 +1707,103 @@ static CO_PROGMEM ODObjs_t ODObjs = {
         .attribute = ODA_SDO_RW | ODA_MB,
         .dataLength = 2
     },
+    .o_6000_inventus_6000_battery_status = {
+        .dataOrig = &OD_APP.x6000_inventus_6000_battery_status,
+        .attribute = ODA_SDO_R,
+        .dataLength = 1
+    },
+    .o_6001_inventus_6001_charger_status = {
+        .dataOrig = &OD_APP.x6001_inventus_6001_charger_status,
+        .attribute = ODA_SDO_R,
+        .dataLength = 1
+    },
+    .o_6010_inventus_6010_temperature = {
+        .dataOrig = &OD_APP.x6010_inventus_6010_temperature,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 2
+    },
+    .o_6050_inventus_6050_cumulative_total_ah_charge = {
+        .dataOrig = &OD_APP.x6050_inventus_6050_cumulative_total_ah_charge,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 4
+    },
+    .o_6051_inventus_6051_ah_expended_since_last_charge = {
+        .dataOrig = &OD_APP.x6051_inventus_6051_ah_expended_since_last_charge,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 2
+    },
+    .o_6052_inventus_6052_ah_returned_during_last_charge = {
+        .dataOrig = &OD_APP.x6052_inventus_6052_ah_returned_during_last_charge,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 2
+    },
+    .o_6060_inventus_6060_battery_voltage = {
+        .dataOrig = &OD_APP.x6060_inventus_6060_battery_voltage,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 4
+    },
+    .o_6070_inventus_6070_charge_current_requested = {
+        .dataOrig = &OD_APP.x6070_inventus_6070_charge_current_requested,
+        .attribute = ODA_SDO_R | ODA_MB,
+        .dataLength = 2
+    },
+    .o_6081_inventus_6081_battery_state_of_charge = {
+        .dataOrig = &OD_APP.x6081_inventus_6081_battery_state_of_charge,
+        .attribute = ODA_SDO_R,
+        .dataLength = 1
+    },
+    .o_6020_inventus_6020_highest_sub_index_supported = {
+        {
+            .dataOrig = &OD_APP.x6020_inventus_6020_highest_sub_index_supported.highest_sub_index_supported,
+            .subIndex = 0,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x6020_inventus_6020_highest_sub_index_supported.battery_type,
+            .subIndex = 1,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x6020_inventus_6020_highest_sub_index_supported.capacity,
+            .subIndex = 2,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x6020_inventus_6020_highest_sub_index_supported.max_charge_current,
+            .subIndex = 3,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x6020_inventus_6020_highest_sub_index_supported.number_of_cells,
+            .subIndex = 4,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        }
+    },
+    .o_6030_inventus_6030_highest_sub_index_supported = {
+        {
+            .dataOrig = &OD_APP.x6030_inventus_6030_highest_sub_index_supported.highest_sub_index_supported,
+            .subIndex = 0,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x6030_inventus_6030_highest_sub_index_supported.ascii_characters_1_to_4,
+            .subIndex = 1,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x6030_inventus_6030_highest_sub_index_supported.ascii_characters_5_to_8,
+            .subIndex = 2,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        }
+    },
     .o_D000_inventus_d000_internal_test_commands = {
         {
             .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.highestSub_indexSupported,
@@ -2475,6 +2604,17 @@ static OD_ATTR_OD OD_entry_t ODList[] = {
     {0x4904, 0x01, ODT_VAR, &ODObjs.o_4904_inventus_4904_set_enter_sleep_time, NULL},
     {0x4920, 0x01, ODT_VAR, &ODObjs.o_4920_inventus_4920_voltage_calibration_enable, NULL},
     {0x4921, 0x01, ODT_VAR, &ODObjs.o_4921_inventus_4921_voltage_calibration_value, NULL},
+    {0x6000, 0x01, ODT_VAR, &ODObjs.o_6000_inventus_6000_battery_status, NULL},
+    {0x6001, 0x01, ODT_VAR, &ODObjs.o_6001_inventus_6001_charger_status, NULL},
+    {0x6010, 0x01, ODT_VAR, &ODObjs.o_6010_inventus_6010_temperature, NULL},
+    {0x6020, 0x05, ODT_REC, &ODObjs.o_6020_inventus_6020_highest_sub_index_supported, NULL},
+    {0x6030, 0x03, ODT_REC, &ODObjs.o_6030_inventus_6030_highest_sub_index_supported, NULL},
+    {0x6050, 0x01, ODT_VAR, &ODObjs.o_6050_inventus_6050_cumulative_total_ah_charge, NULL},
+    {0x6051, 0x01, ODT_VAR, &ODObjs.o_6051_inventus_6051_ah_expended_since_last_charge, NULL},
+    {0x6052, 0x01, ODT_VAR, &ODObjs.o_6052_inventus_6052_ah_returned_during_last_charge, NULL},
+    {0x6060, 0x01, ODT_VAR, &ODObjs.o_6060_inventus_6060_battery_voltage, NULL},
+    {0x6070, 0x01, ODT_VAR, &ODObjs.o_6070_inventus_6070_charge_current_requested, NULL},
+    {0x6081, 0x01, ODT_VAR, &ODObjs.o_6081_inventus_6081_battery_state_of_charge, NULL},
     {0xD000, 0x71, ODT_REC, &ODObjs.o_D000_inventus_d000_internal_test_commands, NULL},
     {0xD001, 0xFF, ODT_ARR, &ODObjs.o_D001_inventus_d001_d001_diagnostic_bytes, NULL},
     {0x0000, 0x00, 0, NULL, NULL}

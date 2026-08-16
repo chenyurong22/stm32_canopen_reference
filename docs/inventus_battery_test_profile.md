@@ -1,18 +1,24 @@
 # Inventus Battery Test Profile
 
-This profile contains the **60 populated application indices** from the Inventus workbook attached to GitHub issues #6, #9, and #10, plus the requested standard identity/PDO objects, a structured diagnostic record at `0xD000`, and a bounded raw diagnostic array at `0xD001`. It is available only through the opt-in CMake option `CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON`.
+This profile contains the **60 populated core application indices** from the Inventus workbook attached to GitHub issues #6, #9, and #10, the Issue #12 battery application objects at `0x6000`–`0x6081`, the requested standard identity/PDO objects, a structured diagnostic record at `0xD000`, and a bounded raw diagnostic array at `0xD001`. It is available only through the opt-in CMake option `CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON`.
 
 > This is a test-only, non-commercial interoperability profile. It is not part of the frozen CiA 401 v1 personality and must not be used to claim production conformance.
 
 ## Source and isolation
 
-The reviewable sources are `product/inventus_battery_od.csv` for the application/identity/PDO catalog and `product/inventus_battery_d000.csv` for the workbook-derived structured D000 fields. The deterministic generator is `scripts/generate_inventus_battery_od.py`; it emits `Generated/inventus_battery_OD.h`, `Generated/inventus_battery_OD.c`, and `ObjectDictionary/stm32f767_inventus_battery_test.eds`. The default `Generated/OD.c` and generic `Generated/cia418_OD.c` artifacts are not modified by this profile.
+The reviewable sources are `product/inventus_battery_od.csv` for the core application/identity/PDO catalog, `product/inventus_battery_application_od.csv` for the Issue #12 battery application extension, and `product/inventus_battery_d000.csv` for the workbook-derived structured D000 fields. The deterministic generator is `scripts/generate_inventus_battery_od.py`; it emits `Generated/inventus_battery_OD.h`, `Generated/inventus_battery_OD.c`, and `ObjectDictionary/stm32f767_inventus_battery_test.eds`. The profile-local application seam is `App/Src/inventus_battery_data.c` with `App/Inc/inventus_battery_data.h`. The default `Generated/OD.c` and generic `Generated/cia418_OD.c` artifacts are not modified by this profile.
 
-The generated application indices are the 60 populated rows between `0x4800` and `0x4921`: the range is sparse and does **not** mean that every numeric index in the interval exists. The workbook’s stated byte widths are preserved as raw `UNSIGNED8` or `UNSIGNED16` wire values. Signedness, enumerations, scaling limits, persistence, and runtime safety semantics remain unapproved test-profile assumptions and must be resolved before any product use.
+The generated core application indices are the 60 populated rows between `0x4800` and `0x4921`: the range is sparse and does **not** mean that every numeric index in the interval exists. Issue #12 adds 11 sparse application indices: scalar objects `0x6000`, `0x6001`, `0x6010`, `0x6050`, `0x6051`, `0x6052`, `0x6060`, `0x6070`, `0x6081`, plus records `0x6020` and `0x6030`. Their reviewed widths, read-only access, and workbook defaults are generated into the EDS; runtime updates use the profile-local data seam rather than editing generated files. Signedness, enumerations, scaling limits, persistence, and runtime safety semantics remain unapproved test-profile assumptions and must be resolved before any product use.
 
 The profile also exposes standard identity objects `0x1008` (Manufacturer Device Name), `0x1009` (Manufacturer Hardware Version), and `0x100A` (Manufacturer Software Version) as fixed-length read-only `VISIBLE_STRING` fields of 32, 16, and 16 bytes. Their defaults are zero-filled/empty because the latest issue request supplied the object names but no approved product strings. They must be populated by the test harness or hardware owner before identity interoperability is assessed.
 
 The workbook supplies these defaults, including nonzero values such as `0x485B=20000`, `0x485D=28000`, `0x486C=0x04`, `0x4880=15`, `0x4881=58100`, `0x4882=4150`, `0x4883=58100`, and `0x4903=9`. They are transcribed for test reproducibility only; they are not hardware-owner approval.
+
+## Issue #12 battery application extension
+
+The extension is test-only and intentionally not PDO-mapped. The records use `0x6020:00 = 4` and `0x6030:00 = 2`; undefined gaps remain absent. The reviewed `0x6070` default is `320`, but all defaults are workbook transcriptions rather than hardware-owner approval. `InventusBatteryData_UpdateMeasurements()` updates voltage, temperature, state of charge, and requested charge current through `OD_APP`; it rejects state-of-charge values above 100 and has no hardware callback or persistence side effect. `InventusBatteryData_Read()` provides a bounded OD read seam for host and board integration tests.
+
+The issue evidence does not fully settle signedness, exact scaling conversion, byte order for the ASCII record, persistence, or production safety semantics. Those remain approval gates.
 
 ## PDO mapping
 
@@ -37,7 +43,7 @@ Workbook details that are not fully specified—version byte order, signedness o
 ```sh
 python3 scripts/generate_inventus_battery_od.py
 python3 scripts/validate_inventus_battery.py
-make -C tests/host test-inventus-battery
+make -C tests/host test-inventus-battery test-inventus-battery-data test-mock-canopen
 cmake -S . -B build/firmware-inventus \
   -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
   -DSTM32_CUBE_F7_DIR="$PWD/third_party/STM32CubeF7" \

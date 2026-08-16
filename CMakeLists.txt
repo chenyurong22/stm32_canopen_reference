@@ -70,6 +70,7 @@ add_executable(${PROJECT_NAME}
     App/Src/cia401_reference.c
     App/Src/cia418_reference.c
     App/Src/cia402_reference.c
+    App/Src/inventus_battery_data.c
     middleware/canopen/core/canopen_core.c
     middleware/canopen/core/cia302_nmt_master.c
     ${CANOPEN_REFERENCE_OD_SOURCE}

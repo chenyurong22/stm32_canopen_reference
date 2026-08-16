@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "canopen_reference_od.h"
+#include "inventus_battery_data.h"
 
 static const uint16_t requested_indices[] = {
     0x4800, 0x4801, 0x4802, 0x4803, 0x4804, 0x4805, 0x4806, 0x4807,
@@ -25,13 +26,82 @@ static OD_IO_t get_io(uint16_t index, uint8_t sub_index) {
 
 int main(void) {
     assert(sizeof(requested_indices) / sizeof(requested_indices[0]) == 60U);
+    const uint16_t issue12_indices[] = {
+        0x6000U, 0x6001U, 0x6010U, 0x6020U, 0x6030U,
+        0x6050U, 0x6051U, 0x6052U, 0x6060U, 0x6070U, 0x6081U
+    };
+    assert(sizeof(issue12_indices) / sizeof(issue12_indices[0]) == 11U);
     assert(OD != NULL);
+    OD_size_t count_read = 0U;
 
     for (size_t position = 0U;
          position < sizeof(requested_indices) / sizeof(requested_indices[0]);
          ++position) {
         OD_entry_t *entry = OD_find(OD, requested_indices[position]);
         assert(entry != NULL);
+    }
+
+    for (size_t position = 0U;
+         position < sizeof(issue12_indices) / sizeof(issue12_indices[0]);
+         ++position) {
+        assert(OD_find(OD, issue12_indices[position]) != NULL);
+    }
+
+    InventusBatteryDataState data_state = {0};
+    InventusBatteryData_Init(&data_state);
+    assert(data_state.initialized);
+    assert(InventusBatteryData_UpdateMeasurements(&data_state, 512U, -16, 75U, 320U));
+    assert(!InventusBatteryData_UpdateMeasurements(&data_state, 512U, -16, 101U, 320U));
+    uint32_t battery_voltage = 0U;
+    assert(InventusBatteryData_Read(&data_state, 0x6060U, 0U, &battery_voltage));
+    assert(battery_voltage == 512U);
+    uint32_t battery_soc = 0U;
+    assert(InventusBatteryData_Read(&data_state, 0x6081U, 0U, &battery_soc));
+    assert(battery_soc == 75U);
+
+    OD_IO_t battery_status = get_io(0x6000U, 0U);
+    assert(battery_status.stream.dataLength == 1U);
+    assert((battery_status.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t temperature = get_io(0x6010U, 0U);
+    assert(temperature.stream.dataLength == 2U);
+    assert((temperature.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t charge_current = get_io(0x6070U, 0U);
+    assert(charge_current.stream.dataLength == 2U);
+    assert((charge_current.stream.attribute & ODA_SDO_W) == 0U);
+    uint16_t charge_current_default = 0U;
+    count_read = 0U;
+    assert(charge_current.read != NULL);
+    assert(charge_current.read(&charge_current.stream, &charge_current_default,
+                               sizeof(charge_current_default), &count_read) == ODR_OK);
+    assert(charge_current_default == 320U);
+
+    OD_IO_t battery_parameters_count = get_io(0x6020U, 0U);
+    assert(battery_parameters_count.stream.dataLength == 1U);
+    assert((battery_parameters_count.stream.attribute & ODA_SDO_W) == 0U);
+    uint8_t battery_parameters_highest = 0U;
+    count_read = 0U;
+    assert(battery_parameters_count.read(&battery_parameters_count.stream,
+                                         &battery_parameters_highest,
+                                         sizeof(battery_parameters_highest), &count_read) == ODR_OK);
+    assert(battery_parameters_highest == 4U);
+    OD_IO_t battery_type = get_io(0x6020U, 1U);
+    assert(battery_type.stream.dataLength == 1U);
+    OD_IO_t battery_capacity = get_io(0x6020U, 2U);
+    assert(battery_capacity.stream.dataLength == 2U);
+    OD_IO_t battery_cells = get_io(0x6020U, 4U);
+    assert(battery_cells.stream.dataLength == 2U);
+    OD_IO_t serial_count = get_io(0x6030U, 0U);
+    assert(serial_count.stream.dataLength == 1U);
+    OD_IO_t serial_first_half = get_io(0x6030U, 1U);
+    assert(serial_first_half.stream.dataLength == 4U);
+    OD_IO_t serial_second_half = get_io(0x6030U, 2U);
+    assert(serial_second_half.stream.dataLength == 4U);
+
+    const uint16_t issue12_gaps[] = {0x6002U, 0x6021U, 0x6031U, 0x6053U, 0x6071U, 0x6080U};
+    for (size_t position = 0U;
+         position < sizeof(issue12_gaps) / sizeof(issue12_gaps[0]);
+         ++position) {
+        assert(OD_find(OD, issue12_gaps[position]) == NULL);
     }
 
     const uint16_t identity_indices[] = {0x1008U, 0x1009U, 0x100AU};
@@ -61,7 +131,7 @@ int main(void) {
     assert(d000_count.stream.dataLength == 1U);
     assert((d000_count.stream.attribute & ODA_SDO_W) == 0U);
     uint8_t d000_highest = 0U;
-    OD_size_t count_read = 0U;
+    count_read = 0U;
     assert(d000_count.read != NULL);
     assert(d000_count.read(&d000_count.stream, &d000_highest, sizeof(d000_highest), &count_read) == ODR_OK);
     assert(count_read == sizeof(d000_highest));
@@ -135,7 +205,8 @@ int main(void) {
     assert(sleep.write(&sleep.stream, &sleep_value, sizeof(sleep_value), &count_written) == ODR_OK);
     assert(count_written == sizeof(sleep_value));
 
-    printf("inventus_battery_od: PASS (%u application objects, structured D000, bounded D001)\\n",
-           (unsigned)(sizeof(requested_indices) / sizeof(requested_indices[0])));
+    printf("inventus_battery_od: PASS (%u core + %u Issue #12 application objects, structured D000, bounded D001)\\n",
+           (unsigned)(sizeof(requested_indices) / sizeof(requested_indices[0])),
+           (unsigned)(sizeof(issue12_indices) / sizeof(issue12_indices[0])));
     return 0;
 }

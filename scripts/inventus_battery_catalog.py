@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "product" / "inventus_battery_od.csv"
+EXTENSION_SOURCE = ROOT / "product" / "inventus_battery_application_od.csv"
 D000_SOURCE = ROOT / "product" / "inventus_battery_d000.csv"
 
 
@@ -101,6 +102,43 @@ with SOURCE.open(newline="", encoding="utf-8") as stream:
         else:
             SCALARS.append((index, ident, ctype, eds_type, access, default, 0))
 
+EXTENSION_SCALARS = []
+EXTENSION_RECORDS = []
+EXTENSION_SOURCE_ROWS = []
+_extension_fields = {}
+with EXTENSION_SOURCE.open(newline="", encoding="utf-8") as stream:
+    for row in csv.DictReader(stream):
+        index = int(row["index"], 0)
+        sub_index = int(row["sub_index"], 0)
+        name = row["name"].strip()
+        access = row["access"].strip()
+        width = int(row["bytes"], 10)
+        ctype = row["ctype"].strip()
+        eds_type = int(row["eds_type"], 0)
+        default = _parse_default(row["default"])
+        kind = row["kind"].strip()
+        if access not in {"ro", "rw"} or width not in (1, 2, 4):
+            raise ValueError(f"invalid Issue #12 metadata for {index:#06x}:{sub_index:#04x}")
+        if kind == "scalar":
+            if sub_index != 0:
+                raise ValueError(f"scalar Issue #12 object has nonzero sub-index {index:#06x}:{sub_index:#04x}")
+            ident = _identifier(index, name)
+            EXTENSION_SCALARS.append((index, ident, ctype, eds_type, access, default, 0))
+        elif kind == "record":
+            _extension_fields.setdefault(index, []).append((sub_index, name, ctype, eds_type, access, default))
+        else:
+            raise ValueError(f"unsupported Issue #12 catalog kind {kind!r}")
+        EXTENSION_SOURCE_ROWS.append(dict(row))
+
+for index, fields in sorted(_extension_fields.items()):
+    ident = _identifier(index, next(field[1] for field in fields if field[0] == 0))
+    EXTENSION_RECORDS.append((index, ident, sorted(fields, key=lambda field: field[0])))
+SCALARS.extend(EXTENSION_SCALARS)
+SOURCE_ROWS.extend((int(row["index"], 0), row["name"].strip(), row["access"].strip(),
+                    int(row["bytes"], 10), row["unit"].strip(), _parse_default(row["default"]),
+                    _identifier(int(row["index"], 0), row["name"].strip()), "extension")
+                   for row in EXTENSION_SOURCE_ROWS)
+
 # The requested TPDO5/TPDO6 communication records are emitted with disabled
 # COB-IDs and event-driven transmission defaults. These are test-safe defaults,
 # not product configuration or node-ID policy.
@@ -145,7 +183,7 @@ PDO_MAPPINGS = {
 
 # The pinned DS301 template already supplies 0x1800..0x1803 and 0x1A00..0x1A03.
 # The Inventus test profile adds TPDO5/TPDO6 communication and mapping records.
-RECORDS = [D000_RECORD, _tpdo_communication_record(5), _tpdo_communication_record(6)]
+RECORDS = EXTENSION_RECORDS + [D000_RECORD, _tpdo_communication_record(5), _tpdo_communication_record(6)]
 RECORDS.extend(_tpdo_mapping_record(index, values)
                for index, values in PDO_MAPPINGS.items() if index >= 0x1A04)
 
@@ -158,19 +196,26 @@ for mapping in PDO_MAPPINGS.values():
                 break
 
 APPLICATION_INDICES = sorted({row[0] for row in APPLICATION_SOURCE_ROWS})
-REQUESTED_INDICES = APPLICATION_INDICES
+EXTENSION_INDICES = sorted({index for index, *_ in EXTENSION_SCALARS}
+                           | {index for index, *_ in EXTENSION_RECORDS})
+REQUESTED_INDICES = sorted(set(APPLICATION_INDICES) | set(EXTENSION_INDICES))
 DIAGNOSTIC_INDICES = (0xD000, 0xD001)
 DIAGNOSTIC_RECORD_INDICES = (0xD000,)
 DIAGNOSTIC_ARRAY_INDICES = (0xD001,)
 EXPECTED_APPLICATION_OBJECT_COUNT = 60
+EXPECTED_EXTENSION_OBJECT_COUNT = 11
+EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT = EXPECTED_APPLICATION_OBJECT_COUNT + EXPECTED_EXTENSION_OBJECT_COUNT
 EXPECTED_DIAGNOSTIC_RECORD_COUNT = 1
 EXPECTED_DIAGNOSTIC_ARRAY_COUNT = 1
 D000_RESOLVED_HIGHEST_SUBINDEX = 0x70
 D000_WORKBOOK_HIGHEST_SUBINDEX = 0x29
 assert IDENTITY_INDICES == (0x1008, 0x1009, 0x100A)
-assert len(REQUESTED_INDICES) == EXPECTED_APPLICATION_OBJECT_COUNT
+assert len(APPLICATION_INDICES) == EXPECTED_APPLICATION_OBJECT_COUNT
+assert len(EXTENSION_INDICES) == EXPECTED_EXTENSION_OBJECT_COUNT
+assert len(REQUESTED_INDICES) == EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT
 assert len({index for index, *_ in APPLICATION_SOURCE_ROWS}) == EXPECTED_APPLICATION_OBJECT_COUNT
-assert all(0x4800 <= index <= 0x4921 for index in REQUESTED_INDICES)
+assert all(0x4800 <= index <= 0x4921 for index in APPLICATION_INDICES)
+assert all(0x6000 <= index <= 0x6081 for index in EXTENSION_INDICES)
 assert DIAGNOSTIC_INDICES == (0xD000, 0xD001)
 assert DIAGNOSTIC_RECORD_INDICES == (0xD000,)
 assert DIAGNOSTIC_ARRAY_INDICES == (0xD001,)

@@ -18,6 +18,10 @@ from inventus_battery_catalog import (  # noqa: E402
     DIAGNOSTIC_INDICES,
     DIAGNOSTIC_RECORD_INDICES,
     EXPECTED_APPLICATION_OBJECT_COUNT,
+    EXPECTED_EXTENSION_OBJECT_COUNT,
+    EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT,
+    EXTENSION_INDICES,
+    EXTENSION_SOURCE,
     EXPECTED_DIAGNOSTIC_ARRAY_COUNT,
     EXPECTED_DIAGNOSTIC_RECORD_COUNT,
     IDENTITY_INDICES,
@@ -33,12 +37,14 @@ def fail(message: str) -> None:
 
 
 def main() -> None:
-    if len(REQUESTED_INDICES) != EXPECTED_APPLICATION_OBJECT_COUNT:
-        fail("catalog does not contain exactly 60 populated application indices")
+    if len(REQUESTED_INDICES) != EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT:
+        fail("catalog does not contain the 60 core plus 11 Issue #12 application indices")
+    if len(EXTENSION_INDICES) != EXPECTED_EXTENSION_OBJECT_COUNT:
+        fail("catalog does not contain exactly 11 Issue #12 extension indices")
     if len(set(REQUESTED_INDICES)) != len(REQUESTED_INDICES):
         fail("catalog contains duplicate application indices")
-    if not all(0x4800 <= index <= 0x4921 for index in REQUESTED_INDICES):
-        fail("application index is outside the requested 0x4800-0x4921 range")
+    if not all((0x4800 <= index <= 0x4921) or (0x6000 <= index <= 0x6081) for index in REQUESTED_INDICES):
+        fail("application index is outside the core or Issue #12 Inventus ranges")
     if not SOURCE.exists():
         fail(f"source catalog is missing: {SOURCE}")
     if not D000_SOURCE.exists():
@@ -65,7 +71,7 @@ def main() -> None:
         if f"dataLength = {length}" not in source:
             fail(f"generated OD identity length is wrong for 0x{index:04X}")
 
-    expected_records = {0xD000, 0x1804, 0x1805, 0x1A04, 0x1A05}
+    expected_records = {0x6020, 0x6030, 0xD000, 0x1804, 0x1805, 0x1A04, 0x1A05}
     if {index for index, *_ in RECORDS} != expected_records:
         fail("Inventus catalog record set is not D000 plus TPDO5/TPDO6 communication and mapping records")
     for index in sorted(expected_records):
@@ -122,6 +128,17 @@ def main() -> None:
         fail("diagnostic array D001 incorrectly emits unsupported sub-index 255")
     if "diagnostic_array" not in SOURCE.read_text(encoding="utf-8") or "workbook" not in D000_SOURCE.read_text(encoding="utf-8").lower():
         fail("source catalogs do not disclose diagnostic provenance")
+    if not EXTENSION_SOURCE.exists() or "Battery status" not in EXTENSION_SOURCE.read_text(encoding="utf-8"):
+        fail("Issue #12 extension source catalog is missing or incomplete")
+    for index in (0x6000, 0x6001, 0x6010, 0x6050, 0x6051, 0x6052, 0x6060, 0x6070, 0x6081):
+        if f"[{index:04X}]" not in eds:
+            fail(f"generated EDS is missing Issue #12 scalar 0x{index:04X}")
+    for index, highest in ((0x6020, 4), (0x6030, 2)):
+        section = eds.split(f"[{index:04X}]", 1)[1].split("[", 1)[0]
+        if "ObjectType=0x9" not in section or f"SubNumber=0x{highest + 1:02X}" not in section:
+            fail(f"Issue #12 record 0x{index:04X} has incorrect sub-index count")
+    if "DefaultValue=320" not in eds.split("[6070]", 1)[1].split("[", 1)[0]:
+        fail("Issue #12 charge-current default 320 is missing")
 
     for mapping_index, mappings in PDO_MAPPINGS.items():
         if len(mappings) == 0 or sum(value & 0xFF for value in mappings) > 64:
@@ -133,10 +150,10 @@ def main() -> None:
 
     optional_section = eds.split("[OptionalObjects]", 1)[-1].split("[", 1)[0]
     supported_match = re.search(r"^SupportedObjects=(\d+)$", optional_section, re.MULTILINE)
-    if supported_match is None or int(supported_match.group(1)) < EXPECTED_APPLICATION_OBJECT_COUNT:
-        fail("EDS OptionalObjects SupportedObjects is smaller than the 60 requested application objects")
+    if supported_match is None or int(supported_match.group(1)) < EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT:
+        fail("EDS OptionalObjects SupportedObjects is smaller than the core plus Issue #12 application objects")
 
-    print(f"inventus battery validation: PASS ({EXPECTED_APPLICATION_OBJECT_COUNT} application objects, structured D000 with {len(D000_FIELDS)} fields, bounded D001 array, {len(PDO_MAPPINGS)} PDO maps, {len(IDENTITY_INDICES)} identity objects)")
+    print(f"inventus battery validation: PASS ({EXPECTED_TOTAL_APPLICATION_OBJECT_COUNT} application objects, structured D000 with {len(D000_FIELDS)} fields, bounded D001 array, {len(PDO_MAPPINGS)} PDO maps, {len(IDENTITY_INDICES)} identity objects)")
 
 
 if __name__ == "__main__":

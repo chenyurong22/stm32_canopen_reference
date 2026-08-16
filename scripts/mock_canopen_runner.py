@@ -27,7 +27,7 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "product" / "inventus_battery_od.csv"
 sys.path.insert(0, str(ROOT / "scripts"))
-from inventus_battery_catalog import D000_SOURCE, PDO_MAPPINGS, RECORDS  # noqa: E402
+from inventus_battery_catalog import D000_SOURCE, EXTENSION_SOURCE, PDO_MAPPINGS, RECORDS  # noqa: E402
 
 
 SDO_ABORT_TOGGLE = 0x05030000
@@ -107,6 +107,24 @@ class InventusObjectDictionary:
                 else:
                     self.add(index, 0, width, row["access"].strip(), _default_bytes(row["default"], width), row["name"])
 
+        with EXTENSION_SOURCE.open(newline="", encoding="utf-8") as stream:
+            extension_records: dict[int, list[dict[str, str]]] = {}
+            for row in csv.DictReader(stream):
+                index = int(row["index"], 0)
+                sub_index = int(row["sub_index"], 0)
+                if row["kind"].strip() == "scalar":
+                    self.add(index, sub_index, int(row["bytes"], 10), row["access"].strip(),
+                             _default_bytes(row["default"], int(row["bytes"], 10),
+                                            signed=row["ctype"].strip().startswith("int")), row["name"])
+                else:
+                    extension_records.setdefault(index, []).append(row)
+            for index, rows in extension_records.items():
+                for row in rows:
+                    width = int(row["bytes"], 10)
+                    self.add(index, int(row["sub_index"], 0), width, row["access"].strip(),
+                             _default_bytes(row["default"], width,
+                                            signed=row["ctype"].strip().startswith("int")), row["name"])
+
         with D000_SOURCE.open(newline="", encoding="utf-8") as stream:
             for row in csv.DictReader(stream):
                 sub_index = int(row["sub_index"], 0)
@@ -137,7 +155,7 @@ class InventusObjectDictionary:
 
         # Retain the catalog module as an import-time consistency check and
         # ensure the generated profile's extra records are represented here.
-        assert len(RECORDS) == 5
+        assert len(RECORDS) == 7
 
     def add(self, index: int, sub_index: int, width: int, access: str, value: bytes, name: str) -> None:
         self.objects[(index, sub_index)] = ObjectValue(index, sub_index, width, access, bytearray(value), name)
