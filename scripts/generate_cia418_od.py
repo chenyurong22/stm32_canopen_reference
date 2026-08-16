@@ -57,7 +57,8 @@ def catalog_member_declarations() -> str:
         lines.append(c_declaration(ctype, f"x{index:04X}_{ident}", "    "))
     for index, ident, fields in RECORDS:
         lines.append("    struct {")
-        lines.append("        uint8_t highestSub_indexSupported;")
+        if not any(sub_index == 0 for sub_index, *_ in fields):
+            lines.append("        uint8_t highestSub_indexSupported;")
         for _sub, field, ctype, *_ in fields:
             lines.append(c_declaration(ctype, field, "        "))
         lines.append(f"    }} x{index:04X}_{ident};")
@@ -86,7 +87,13 @@ def app_initializer() -> str:
         value = "{0}" if _ctype.startswith("char[") else (default or "0")
         lines.append(f"    .x{index:04X}_{ident} = {value},")
     for index, ident, fields in RECORDS:
-        lines.append(f"    .x{index:04X}_{ident} = {{ .highestSub_indexSupported = {len(fields)},")
+        max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
+        explicit_sub0 = any(sub_index == 0 and field == "numberOfMappedApplicationObjectsInPDO"
+                            for sub_index, field, *_ in fields)
+        if explicit_sub0:
+            lines.append(f"    .x{index:04X}_{ident} = {{")
+        else:
+            lines.append(f"    .x{index:04X}_{ident} = {{ .highestSub_indexSupported = {max_sub_index},")
         for _sub, field, _ctype, _eds, _access, default in fields:
             lines.append(f"        .{field} = {default or '0'},")
         lines[-1] = lines[-1].rstrip(",")
@@ -102,7 +109,8 @@ def object_member_declarations() -> str:
     for index, ident, *_ in SCALARS:
         lines.append(f"    OD_obj_var_t o_{index:04X}_{ident};")
     for index, ident, fields in RECORDS:
-        lines.append(f"    OD_obj_record_t o_{index:04X}_{ident}[{len(fields) + 1}];")
+        max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
+        lines.append(f"    OD_obj_record_t o_{index:04X}_{ident}[{max_sub_index + 1}];")
     for index, ident, *_ in ARRAYS:
         lines.append(f"    OD_obj_array_t o_{index:04X}_{ident};")
     return "\n".join(lines) + "\n"
@@ -119,16 +127,28 @@ def scalar_definition(index, ident, ctype, _eds, access, _default, pdo) -> str:
 
 
 def record_definition(index, ident, fields) -> str:
+    explicit_sub0 = next((field_data for field_data in fields
+                          if field_data[0] == 0 and field_data[1] == "numberOfMappedApplicationObjectsInPDO"), None)
+    if explicit_sub0 is None:
+        sub0 = (f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.highestSub_indexSupported,\n"
+                "            .subIndex = 0,\n"
+                "            .attribute = ODA_SDO_R,\n"
+                "            .dataLength = 1\n")
+    else:
+        _position, field, ctype, _eds, access, _default = explicit_sub0
+        sub0 = (f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.{field},\n"
+                "            .subIndex = 0,\n"
+                f"            .attribute = {od_attribute(access, data_length(ctype))},\n"
+                f"            .dataLength = {data_length(ctype)}\n")
     lines = [
         f"    .o_{index:04X}_{ident} = {{",
         "        {",
-        f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.highestSub_indexSupported,",
-        "            .subIndex = 0,",
-        "            .attribute = ODA_SDO_R,",
-        "            .dataLength = 1",
+        sub0.rstrip("\n"),
         "        },",
     ]
     for position, field, ctype, _eds, access, _default in fields:
+        if position == 0:
+            continue
         lines.extend([
             "        {",
             f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.{field},",
@@ -164,14 +184,35 @@ def generate_header() -> str:
 
     base_source = (UPSTREAM / "OD.c").read_text()
     base_odlist = base_source.split("static OD_ATTR_OD OD_entry_t ODList[] = {", 1)[1].split("};", 1)[0]
-    base_count = len(re.findall(r"^\s+\{0x", base_odlist, re.MULTILINE))
+    low_index_profile = any(index < 0x2000 for index in APPLICATION_NAMES)
     shortcuts = []
-    for position, (index, ident) in enumerate(sorted(APPLICATION_NAMES.items())):
-        shortcuts.append(f"#define OD_ENTRY_H{index:04X} &OD->list[{base_count + position}]")
-        shortcuts.append(f"#define OD_ENTRY_H{index:04X}_{ident} &OD->list[{base_count + position}]")
-    marker = "#define OD_ENTRY_H1A03_TPDOMappingParameter &OD->list[32]\n"
-    if marker not in header:
+    if low_index_profile:
+        base_indices = [int(value, 16) for value in re.findall(r"^[ \t]+\{0x([0-9A-Fa-f]+),", base_odlist, re.MULTILINE) if int(value, 16) != 0]
+        all_indices = sorted(set(base_indices) | set(APPLICATION_NAMES))
+        list_positions = {index: position for position, index in enumerate(all_indices)}
+        # Low-index profiles can be inserted before the upstream OD entries,
+        # so rewrite inherited shortcuts for the rebuilt sorted ODList.
+        def rewrite_shortcut(match):
+            prefix, index_text, suffix = match.groups()
+            return f"{prefix}{list_positions[int(index_text, 16)]}{suffix}"
+        header = re.sub(
+            r"(#define OD_ENTRY_H([0-9A-Fa-f]{4})(?:_[A-Za-z0-9_]+)? &OD->list\[)\d+(\])",
+            rewrite_shortcut,
+            header,
+        )
+        for index, ident in sorted(APPLICATION_NAMES.items()):
+            position = list_positions[index]
+            shortcuts.append(f"#define OD_ENTRY_H{index:04X} &OD->list[{position}]")
+            shortcuts.append(f"#define OD_ENTRY_H{index:04X}_{ident} &OD->list[{position}]")
+    else:
+        base_count = len(re.findall(r"^[ \t]+\{0x", base_odlist, re.MULTILINE))
+        for position, (index, ident) in enumerate(sorted(APPLICATION_NAMES.items())):
+            shortcuts.append(f"#define OD_ENTRY_H{index:04X} &OD->list[{base_count + position}]")
+            shortcuts.append(f"#define OD_ENTRY_H{index:04X}_{ident} &OD->list[{base_count + position}]")
+    marker_match = re.search(r"#define OD_ENTRY_H1A03_TPDOMappingParameter &OD->list\[\d+\]\n", header)
+    if marker_match is None:
         raise RuntimeError("Unexpected upstream OD.h shortcut layout")
+    marker = marker_match.group(0)
     header = header.replace(marker, marker + "\n" + "\n".join(shortcuts) + "\n", 1)
     prefix, suffix = header.rsplit("#endif", 1)
     rendered = prefix + "#endif /* CIA418_OD_H */" + suffix
@@ -180,6 +221,7 @@ def generate_header() -> str:
 
 def generate_source() -> str:
     source = (UPSTREAM / "OD.c").read_text()
+    base_odlist = source.split("static OD_ATTR_OD OD_entry_t ODList[] = {", 1)[1].split("};", 1)[0]
     source = source.replace('#include "OD.h"', '#include "cia418_OD.h"', 1)
     app_marker = "\n\n/*******************************************************************************\n    All OD objects (constant definitions)"
     if app_marker not in source:
@@ -208,21 +250,40 @@ def generate_source() -> str:
     scalar_by_index = {item[0]: item for item in SCALARS}
     record_by_index = {item[0]: item for item in RECORDS}
     array_by_index = {item[0]: item for item in ARRAYS}
-    entries = []
+    application_entries = {}
     for index in sorted(APPLICATION_NAMES):
         if index in scalar_by_index:
             _index, ident, *_ = scalar_by_index[index]
-            entries.append(f"    {{0x{index:04X}, 0x01, ODT_VAR, &ODObjs.o_{index:04X}_{ident}, NULL}},")
+            application_entries[index] = f"    {{0x{index:04X}, 0x01, ODT_VAR, &ODObjs.o_{index:04X}_{ident}, NULL}},"
         elif index in record_by_index:
             _index, ident, fields = record_by_index[index]
-            entries.append(f"    {{0x{index:04X}, 0x{len(fields) + 1:02X}, ODT_REC, &ODObjs.o_{index:04X}_{ident}, NULL}},")
+            max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
+            application_entries[index] = f"    {{0x{index:04X}, 0x{max_sub_index + 1:02X}, ODT_REC, &ODObjs.o_{index:04X}_{ident}, NULL}},"
         else:
             _index, ident, _ctype, _eds, _access, count, _fields = array_by_index[index]
-            entries.append(f"    {{0x{index:04X}, 0x{count + 1:02X}, ODT_ARR, &ODObjs.o_{index:04X}_{ident}, NULL}},")
-    entry_marker = "    {0x0000, 0x00, 0, NULL, NULL}\n"
-    if entry_marker not in source:
-        raise RuntimeError("Unexpected upstream OD.c ODList terminator")
-    source = source.replace(entry_marker, "\n".join(entries) + "\n" + entry_marker, 1)
+            application_entries[index] = f"    {{0x{index:04X}, 0x{count + 1:02X}, ODT_ARR, &ODObjs.o_{index:04X}_{ident}, NULL}},"
+    low_index_profile = any(index < 0x2000 for index in APPLICATION_NAMES)
+    if low_index_profile:
+        base_entries = {
+            int(value, 16): line.rstrip()
+            for line, value in re.findall(r"^([ \t]+\{0x([0-9A-Fa-f]+),.*)$", base_odlist, re.MULTILINE)
+        }
+        base_entries.pop(0, None)
+        if set(base_entries) & set(application_entries):
+            raise RuntimeError("Application OD index overlaps upstream OD index")
+        entries = [application_entries[index] if index in application_entries else base_entries[index]
+                   for index in sorted(set(base_entries) | set(application_entries))]
+        list_start = source.find("static OD_ATTR_OD OD_entry_t ODList[] = {")
+        list_end = source.find("};", list_start)
+        if list_start < 0 or list_end < 0:
+            raise RuntimeError("Unexpected upstream OD.c ODList layout")
+        list_prefix = "static OD_ATTR_OD OD_entry_t ODList[] = {\n\n"
+        source = source[:list_start] + list_prefix + "\n".join(entries) + "\n    {0x0000, 0x00, 0, NULL, NULL}\n};" + source[list_end + 2:]
+    else:
+        entry_marker = "    {0x0000, 0x00, 0, NULL, NULL}\n"
+        if entry_marker not in source:
+            raise RuntimeError("Unexpected upstream OD.c ODList terminator")
+        source = source.replace(entry_marker, "\n".join(application_entries[index] for index in sorted(application_entries)) + "\n" + entry_marker, 1)
 
     pdo_mappings = {
         0x1A00: [0x60600120, 0x60100110, 0x60810108],
@@ -256,11 +317,23 @@ def eds_scalar(index, ident, eds_type, access, default, pdo):
 
 def eds_record(index, ident, fields):
     name = re.sub(r"(?<!^)(?=[A-Z])", " ", ident).capitalize()
+    max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
     lines = [f"[{index:04X}]", f"ParameterName={name}", "ObjectType=0x9",
-             f"SubNumber=0x{len(fields) + 1:02X}", ""]
-    lines += [f"[{index:04X}sub0]", "ParameterName=Number of entries", "ObjectType=0x7",
-              "DataType=0x0005", "AccessType=ro", f"DefaultValue={len(fields)}", "PDOMapping=0", ""]
+             f"SubNumber=0x{max_sub_index + 1:02X}", ""]
+    explicit_sub0 = next((field_data for field_data in fields
+                          if field_data[0] == 0 and field_data[1] == "numberOfMappedApplicationObjectsInPDO"), None)
+    if explicit_sub0 is None:
+        sub0_name = "Highest sub-index supported" if index in (0x1804, 0x1805) else "Number of entries"
+        lines += [f"[{index:04X}sub0]", f"ParameterName={sub0_name}", "ObjectType=0x7",
+                  "DataType=0x0005", "AccessType=ro", f"DefaultValue={max_sub_index}", "PDOMapping=0", ""]
+    else:
+        _sub, field, _ctype, eds_type, access, default = explicit_sub0
+        field_name = re.sub(r"(?<!^)(?=[A-Z])", " ", field).capitalize()
+        lines += [f"[{index:04X}sub0]", f"ParameterName={field_name}", "ObjectType=0x7",
+                  f"DataType={eds_type}", f"AccessType={access}", f"DefaultValue={default or ''}", "PDOMapping=0", ""]
     for sub, field, _ctype, eds_type, access, default in fields:
+        if sub == 0:
+            continue
         field_name = re.sub(r"(?<!^)(?=[A-Z])", " ", field).capitalize()
         lines += [f"[{index:04X}sub{sub}]", f"ParameterName={field_name}", "ObjectType=0x7",
                   f"DataType={eds_type}", f"AccessType={access}", f"DefaultValue={default or ''}", "PDOMapping=0", ""]

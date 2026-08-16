@@ -34,6 +34,29 @@ int main(void) {
         assert(entry != NULL);
     }
 
+    const uint16_t identity_indices[] = {0x1008U, 0x1009U, 0x100AU};
+    const uint8_t identity_lengths[] = {32U, 16U, 16U};
+    for (size_t position = 0U; position < sizeof(identity_indices) / sizeof(identity_indices[0]); ++position) {
+        OD_IO_t identity = get_io(identity_indices[position], 0U);
+        assert(identity.stream.dataLength == identity_lengths[position]);
+        assert((identity.stream.attribute & ODA_SDO_W) == 0U);
+    }
+
+    OD_IO_t tpdo5_cob_id = get_io(0x1804U, 1U);
+    assert(tpdo5_cob_id.stream.dataLength == 4U);
+    assert((tpdo5_cob_id.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t tpdo6_event_timer = get_io(0x1805U, 5U);
+    assert(tpdo6_event_timer.stream.dataLength == 2U);
+    assert((tpdo6_event_timer.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t tpdo5_map_count = get_io(0x1A04U, 0U);
+    assert(tpdo5_map_count.stream.dataLength == 1U);
+    assert((tpdo5_map_count.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t tpdo6_map_entry = get_io(0x1A05U, 1U);
+    assert(tpdo6_map_entry.stream.dataLength == 4U);
+    assert((tpdo6_map_entry.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t reserved_tpdo_subindex = {0};
+    assert(OD_getSub(OD_find(OD, 0x1804U), 4U, &reserved_tpdo_subindex, false) == ODR_SUB_NOT_EXIST);
+
     OD_IO_t bq_count = get_io(0x4900U, 0U);
     assert(bq_count.stream.dataLength == 1U);
     assert((bq_count.stream.attribute & ODA_SDO_W) == 0U);

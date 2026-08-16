@@ -207,6 +207,9 @@ OD_ATTR_RAM OD_RAM_t OD_RAM = {
 
 
 OD_ATTR_APP OD_APP_t OD_APP = {
+    .x1008_inventus_1008_manufacturer_device_name = {0},
+    .x1009_inventus_1009_manufacturer_hardware_version = {0},
+    .x100A_inventus_100a_manufacturer_software_version = {0},
     .x4800_inventus_4800_soh = 0,
     .x4801_inventus_4801_operation_mode = 0,
     .x4802_inventus_4802_charge_fault = 0,
@@ -266,6 +269,42 @@ OD_ATTR_APP OD_APP_t OD_APP = {
     .x4904_inventus_4904_set_enter_sleep_time = 0,
     .x4920_inventus_4920_voltage_calibration_enable = 0,
     .x4921_inventus_4921_voltage_calibration_value = 0,
+    .x1804_TPDOCommunicationParameter5 = { .highestSub_indexSupported = 6,
+        .COB_IDUsedByTPDO = 0xC0000000,
+        .transmissionType = 0xFE,
+        .inhibitTime = 0,
+        .eventTimer = 0,
+        .SYNCStartValue = 0
+    },
+    .x1805_TPDOCommunicationParameter6 = { .highestSub_indexSupported = 6,
+        .COB_IDUsedByTPDO = 0xC0000000,
+        .transmissionType = 0xFE,
+        .inhibitTime = 0,
+        .eventTimer = 0,
+        .SYNCStartValue = 0
+    },
+    .x1A04_TPDOMappingParameter5 = {
+        .numberOfMappedApplicationObjectsInPDO = 0x04,
+        .applicationObject1 = 0x48640010,
+        .applicationObject2 = 0x48650010,
+        .applicationObject3 = 0x48660010,
+        .applicationObject4 = 0x48670010,
+        .applicationObject5 = 0x00000000,
+        .applicationObject6 = 0x00000000,
+        .applicationObject7 = 0x00000000,
+        .applicationObject8 = 0x00000000,
+    },
+    .x1A05_TPDOMappingParameter6 = {
+        .numberOfMappedApplicationObjectsInPDO = 0x05,
+        .applicationObject1 = 0x48680010,
+        .applicationObject2 = 0x48690008,
+        .applicationObject3 = 0x486A0010,
+        .applicationObject4 = 0x486B0010,
+        .applicationObject5 = 0x486C0008,
+        .applicationObject6 = 0x00000000,
+        .applicationObject7 = 0x00000000,
+        .applicationObject8 = 0x00000000,
+    },
     .x4900_inventus_4900_bq8050_smbus_data = { 254, 0 },
 };
 
@@ -306,6 +345,9 @@ typedef struct {
     OD_obj_record_t o_1A01_TPDOMappingParameter[9];
     OD_obj_record_t o_1A02_TPDOMappingParameter[9];
     OD_obj_record_t o_1A03_TPDOMappingParameter[9];
+    OD_obj_var_t o_1008_inventus_1008_manufacturer_device_name;
+    OD_obj_var_t o_1009_inventus_1009_manufacturer_hardware_version;
+    OD_obj_var_t o_100A_inventus_100a_manufacturer_software_version;
     OD_obj_var_t o_4800_inventus_4800_soh;
     OD_obj_var_t o_4801_inventus_4801_operation_mode;
     OD_obj_var_t o_4802_inventus_4802_charge_fault;
@@ -365,6 +407,10 @@ typedef struct {
     OD_obj_var_t o_4904_inventus_4904_set_enter_sleep_time;
     OD_obj_var_t o_4920_inventus_4920_voltage_calibration_enable;
     OD_obj_var_t o_4921_inventus_4921_voltage_calibration_value;
+    OD_obj_record_t o_1804_TPDOCommunicationParameter5[7];
+    OD_obj_record_t o_1805_TPDOCommunicationParameter6[7];
+    OD_obj_record_t o_1A04_TPDOMappingParameter5[9];
+    OD_obj_record_t o_1A05_TPDOMappingParameter6[9];
     OD_obj_array_t o_4900_inventus_4900_bq8050_smbus_data;
 } ODObjs_t;
 
@@ -1233,6 +1279,21 @@ static CO_PROGMEM ODObjs_t ODObjs = {
             .dataLength = 4
         }
     },
+    .o_1008_inventus_1008_manufacturer_device_name = {
+        .dataOrig = &OD_APP.x1008_inventus_1008_manufacturer_device_name,
+        .attribute = ODA_SDO_R | ODA_STR,
+        .dataLength = 32
+    },
+    .o_1009_inventus_1009_manufacturer_hardware_version = {
+        .dataOrig = &OD_APP.x1009_inventus_1009_manufacturer_hardware_version,
+        .attribute = ODA_SDO_R | ODA_STR,
+        .dataLength = 16
+    },
+    .o_100A_inventus_100a_manufacturer_software_version = {
+        .dataOrig = &OD_APP.x100A_inventus_100a_manufacturer_software_version,
+        .attribute = ODA_SDO_R | ODA_STR,
+        .dataLength = 16
+    },
     .o_4800_inventus_4800_soh = {
         .dataOrig = &OD_APP.x4800_inventus_4800_soh,
         .attribute = ODA_SDO_R,
@@ -1528,6 +1589,194 @@ static CO_PROGMEM ODObjs_t ODObjs = {
         .attribute = ODA_SDO_RW | ODA_MB,
         .dataLength = 2
     },
+    .o_1804_TPDOCommunicationParameter5 = {
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.highestSub_indexSupported,
+            .subIndex = 0,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.COB_IDUsedByTPDO,
+            .subIndex = 1,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.transmissionType,
+            .subIndex = 2,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.inhibitTime,
+            .subIndex = 3,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.eventTimer,
+            .subIndex = 5,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.SYNCStartValue,
+            .subIndex = 6,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        }
+    },
+    .o_1805_TPDOCommunicationParameter6 = {
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.highestSub_indexSupported,
+            .subIndex = 0,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.COB_IDUsedByTPDO,
+            .subIndex = 1,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.transmissionType,
+            .subIndex = 2,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.inhibitTime,
+            .subIndex = 3,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.eventTimer,
+            .subIndex = 5,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.x1805_TPDOCommunicationParameter6.SYNCStartValue,
+            .subIndex = 6,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        }
+    },
+    .o_1A04_TPDOMappingParameter5 = {
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.numberOfMappedApplicationObjectsInPDO,
+            .subIndex = 0,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject1,
+            .subIndex = 1,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject2,
+            .subIndex = 2,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject3,
+            .subIndex = 3,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject4,
+            .subIndex = 4,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject5,
+            .subIndex = 5,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject6,
+            .subIndex = 6,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject7,
+            .subIndex = 7,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A04_TPDOMappingParameter5.applicationObject8,
+            .subIndex = 8,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        }
+    },
+    .o_1A05_TPDOMappingParameter6 = {
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.numberOfMappedApplicationObjectsInPDO,
+            .subIndex = 0,
+            .attribute = ODA_SDO_RW,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject1,
+            .subIndex = 1,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject2,
+            .subIndex = 2,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject3,
+            .subIndex = 3,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject4,
+            .subIndex = 4,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject5,
+            .subIndex = 5,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject6,
+            .subIndex = 6,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject7,
+            .subIndex = 7,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.x1A05_TPDOMappingParameter6.applicationObject8,
+            .subIndex = 8,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        }
+    },
     .o_4900_inventus_4900_bq8050_smbus_data = {
         .dataOrig0 = (uint8_t*) &OD_APP.x4900_inventus_4900_bq8050_smbus_data[0],
         .dataOrig = &OD_APP.x4900_inventus_4900_bq8050_smbus_data[1],
@@ -1543,12 +1792,16 @@ static CO_PROGMEM ODObjs_t ODObjs = {
     Object dictionary
 *******************************************************************************/
 static OD_ATTR_OD OD_entry_t ODList[] = {
+
     {0x1000, 0x01, ODT_VAR, &ODObjs.o_1000_deviceType, NULL},
     {0x1001, 0x01, ODT_VAR, &ODObjs.o_1001_errorRegister, NULL},
     {0x1003, 0x11, ODT_ARR, &ODObjs.o_1003_pre_definedErrorField, NULL},
     {0x1005, 0x01, ODT_VAR, &ODObjs.o_1005_COB_ID_SYNCMessage, NULL},
     {0x1006, 0x01, ODT_VAR, &ODObjs.o_1006_communicationCyclePeriod, NULL},
     {0x1007, 0x01, ODT_VAR, &ODObjs.o_1007_synchronousWindowLength, NULL},
+    {0x1008, 0x01, ODT_VAR, &ODObjs.o_1008_inventus_1008_manufacturer_device_name, NULL},
+    {0x1009, 0x01, ODT_VAR, &ODObjs.o_1009_inventus_1009_manufacturer_hardware_version, NULL},
+    {0x100A, 0x01, ODT_VAR, &ODObjs.o_100A_inventus_100a_manufacturer_software_version, NULL},
     {0x1010, 0x05, ODT_ARR, &ODObjs.o_1010_storeParameters, NULL},
     {0x1011, 0x05, ODT_ARR, &ODObjs.o_1011_restoreDefaultParameters, NULL},
     {0x1012, 0x01, ODT_VAR, &ODObjs.o_1012_COB_IDTimeStampObject, NULL},
@@ -1572,10 +1825,14 @@ static OD_ATTR_OD OD_entry_t ODList[] = {
     {0x1801, 0x06, ODT_REC, &ODObjs.o_1801_TPDOCommunicationParameter, NULL},
     {0x1802, 0x06, ODT_REC, &ODObjs.o_1802_TPDOCommunicationParameter, NULL},
     {0x1803, 0x06, ODT_REC, &ODObjs.o_1803_TPDOCommunicationParameter, NULL},
+    {0x1804, 0x07, ODT_REC, &ODObjs.o_1804_TPDOCommunicationParameter5, NULL},
+    {0x1805, 0x07, ODT_REC, &ODObjs.o_1805_TPDOCommunicationParameter6, NULL},
     {0x1A00, 0x09, ODT_REC, &ODObjs.o_1A00_TPDOMappingParameter, NULL},
     {0x1A01, 0x09, ODT_REC, &ODObjs.o_1A01_TPDOMappingParameter, NULL},
     {0x1A02, 0x09, ODT_REC, &ODObjs.o_1A02_TPDOMappingParameter, NULL},
     {0x1A03, 0x09, ODT_REC, &ODObjs.o_1A03_TPDOMappingParameter, NULL},
+    {0x1A04, 0x09, ODT_REC, &ODObjs.o_1A04_TPDOMappingParameter5, NULL},
+    {0x1A05, 0x09, ODT_REC, &ODObjs.o_1A05_TPDOMappingParameter6, NULL},
     {0x4800, 0x01, ODT_VAR, &ODObjs.o_4800_inventus_4800_soh, NULL},
     {0x4801, 0x01, ODT_VAR, &ODObjs.o_4801_inventus_4801_operation_mode, NULL},
     {0x4802, 0x01, ODT_VAR, &ODObjs.o_4802_inventus_4802_charge_fault, NULL},

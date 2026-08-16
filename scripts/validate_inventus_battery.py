@@ -10,7 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from inventus_battery_catalog import (  # noqa: E402
+    IDENTITY_INDICES,
     PDO_MAPPINGS,
+    RECORDS,
     REQUESTED_INDICES,
     SOURCE,
     EXPECTED_APPLICATION_OBJECT_COUNT,
@@ -42,6 +44,29 @@ def main() -> None:
         if f"[{index:04X}]" not in eds:
             fail(f"generated EDS is missing application object 0x{index:04X}")
 
+    for index, length in ((0x1008, 32), (0x1009, 16), (0x100A, 16)):
+        if index not in IDENTITY_INDICES:
+            fail(f"identity catalog is missing 0x{index:04X}")
+        if f"{{0x{index:04X}, 0x01, ODT_VAR" not in source:
+            fail(f"generated OD is missing identity object 0x{index:04X}")
+        if f"[{index:04X}]" not in eds or f"DataType=9" not in eds.split(f"[{index:04X}]", 1)[1].split("[", 1)[0]:
+            fail(f"generated EDS is missing VISIBLE_STRING identity object 0x{index:04X}")
+        if f"dataLength = {length}" not in source:
+            fail(f"generated OD identity length is wrong for 0x{index:04X}")
+
+    expected_records = {0x1804, 0x1805, 0x1A04, 0x1A05}
+    if {index for index, *_ in RECORDS} != expected_records:
+        fail("Inventus catalog record set is not exactly TPDO5/TPDO6 communication and mapping records")
+    for index in sorted(expected_records):
+        if f"{{0x{index:04X}," not in source or f"[{index:04X}]" not in eds:
+            fail(f"generated OD/EDS is missing record 0x{index:04X}")
+    if ".COB_IDUsedByTPDO = 0xC0000000" not in source:
+        fail("TPDO5/TPDO6 communication defaults are not disabled")
+    for reserved_index in (0x1804, 0x1805):
+        record_section = eds.split(f"[{reserved_index:04X}]", 1)[1].split("[", 1)[0]
+        if f"[{reserved_index:04X}sub4]" in record_section:
+            fail(f"reserved TPDO sub-index 4 was incorrectly emitted for 0x{reserved_index:04X}")
+
     for mapping_index, mappings in PDO_MAPPINGS.items():
         if len(mappings) == 0 or sum(value & 0xFF for value in mappings) > 64:
             fail(f"invalid PDO mapping definition 0x{mapping_index:04X}")
@@ -55,7 +80,7 @@ def main() -> None:
     if supported_match is None or int(supported_match.group(1)) < EXPECTED_APPLICATION_OBJECT_COUNT:
         fail("EDS OptionalObjects SupportedObjects is smaller than the 60 requested application objects")
 
-    print(f"inventus battery validation: PASS ({EXPECTED_APPLICATION_OBJECT_COUNT} objects, {len(PDO_MAPPINGS)} PDO maps)")
+    print(f"inventus battery validation: PASS ({EXPECTED_APPLICATION_OBJECT_COUNT} objects, {len(PDO_MAPPINGS)} PDO maps, {len(IDENTITY_INDICES)} identity objects)")
 
 
 if __name__ == "__main__":

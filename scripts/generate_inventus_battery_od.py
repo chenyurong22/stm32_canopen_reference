@@ -13,12 +13,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import generate_cia418_od as common  # noqa: E402
-from inventus_battery_catalog import ARRAYS, PDO_MAPPINGS, SCALARS  # noqa: E402
+from inventus_battery_catalog import ARRAYS, PDO_MAPPINGS, RECORDS, SCALARS  # noqa: E402
 
 common.SCALARS = SCALARS
-common.RECORDS = []
+common.RECORDS = RECORDS
 common.ARRAYS = ARRAYS
 common.APPLICATION_NAMES = {index: ident for index, ident, *_ in SCALARS}
+common.APPLICATION_NAMES.update({index: ident for index, ident, _fields in RECORDS})
 common.APPLICATION_NAMES.update({index: ident for index, ident, *_ in ARRAYS})
 
 GENERATED = ROOT / "Generated"
@@ -35,13 +36,14 @@ def _replace_profile_names(text: str) -> str:
 
 def _replace_mapping_block(source: str, index: int, values: list[int]) -> str:
     padded = values + [0] * (8 - len(values))
-    block = (f"    .x{index:04X}_TPDOMappingParameter = {{\n"
+    ident = "TPDOMappingParameter" if index <= 0x1A03 else f"TPDOMappingParameter{index - 0x1A00 + 1}"
+    block = (f"    .x{index:04X}_{ident} = {{\n"
              f"        .numberOfMappedApplicationObjectsInPDO = 0x{len(values):02X},\n" +
              "\n".join(f"        .applicationObject{position} = 0x{value:08X},"
                            for position, value in enumerate(padded, start=1)) +
              "\n    }")
     source, replaced = re.subn(
-        rf"    \.x{index:04X}_TPDOMappingParameter = \{{.*?\n    \}}",
+        rf"    \.x{index:04X}_{ident} = \{{.*?\n    \}}",
         block,
         source,
         count=1,
@@ -59,8 +61,7 @@ def generate_header() -> str:
 def generate_source() -> str:
     source = _replace_profile_names(common.generate_source())
     for index, values in PDO_MAPPINGS.items():
-        if index <= 0x1A03:
-            source = _replace_mapping_block(source, index, values)
+        source = _replace_mapping_block(source, index, values)
     return source
 
 
