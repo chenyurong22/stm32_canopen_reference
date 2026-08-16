@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "CANopen.h"
-#include "OD.h"
+#include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_hw.h"
 
@@ -50,17 +50,25 @@ Cia402Reference_ModeIsSupported(int8_t mode) {
 
 void
 Cia402Reference_ForceDisable(void) {
+#if (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U)
     CANopenReferenceHw_DriveSetEnable(false);
     OD_APP.x6041_statusword = CIA402_STATUS_SWITCH_ON_DISABLED;
     OD_APP.x6061_modesOfOperationDisplay = 0;
+#else
+    (void)0;
+#endif
 }
 
 void
 Cia402Reference_Init(void) {
+#if (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U)
     OD_APP.x603F_errorCode = 0U;
     OD_APP.x6040_controlword = 0U;
     OD_APP.x6060_modesOfOperation = 0;
     Cia402Reference_ForceDisable();
+#else
+    (void)0;
+#endif
 }
 
 void

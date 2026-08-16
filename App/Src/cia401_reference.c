@@ -2,26 +2,36 @@
 #include "cia401_reference.h"
 
 #include "CANopen.h"
-#include "OD.h"
+#include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_hw.h"
 
 void
 Cia401Reference_Init(void) {
+#if (CANOPEN_REFERENCE_ENABLE_CIA401 != 0U)
     if (CANOPEN_REFERENCE_OUTPUTS_DEFAULT_SAFE != 0U) {
         OD_APP.x6200_writeDigitalOutputs = 0U;
         OD_APP.x6422_writeAnalogOutput1 = 0;
         CANopenReferenceHw_WriteDigitalOutputs(0U);
         CANopenReferenceHw_WriteAnalogOutput(1U, 0);
     }
+#else
+    /* The selected personality owns a different OD; there are no CiA 401
+     * application objects to initialize in this build. */
+    (void)0;
+#endif
 }
 
 void
 Cia401Reference_ForceSafeOutputs(void) {
+#if (CANOPEN_REFERENCE_ENABLE_CIA401 != 0U)
     OD_APP.x6200_writeDigitalOutputs = 0U;
     OD_APP.x6422_writeAnalogOutput1 = 0;
     CANopenReferenceHw_WriteDigitalOutputs(0U);
     CANopenReferenceHw_WriteAnalogOutput(1U, 0);
+#else
+    (void)0;
+#endif
 }
 
 void

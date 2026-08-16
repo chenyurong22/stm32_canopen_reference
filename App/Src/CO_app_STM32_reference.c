@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #include "CANopen.h"
-#include "OD.h"
+#include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_can_recovery.h"
 #include "canopen_reference_cia302.h"
@@ -161,7 +161,6 @@ CANopenReference_ForceSafeApplication(void) {
     Cia402Reference_ForceDisable();
 #if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
     Cia418Reference_ForceSafe(&canopenReferenceCia418State);
-    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
 #endif
 }
 
@@ -318,10 +317,8 @@ canopen_app_resetCommunication(void) {
     Cia401Reference_Init();
     Cia402Reference_Init();
 #if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
-    /* This initializes only the explicit adapter/model mode. The generated
-     * CiA 418 artifact is not the live CANopenNode OD and is not SDO-visible. */
+    /* Initialize the selected live CANopenNode CiA 418 OD personality. */
     Cia418Reference_Init(&canopenReferenceCia418State);
-    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
 #endif
 
     if (HAL_TIM_Base_Start_IT(canopenNodeSTM32->timerHandle) != HAL_OK) {
@@ -437,7 +434,6 @@ canopen_app_interrupt(void) {
 #if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
     uint32_t cia418_start = CANopenReferenceTiming_PhaseEnter();
 #endif
-    Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);
 #if (CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION != 0U)
     CANopenReferenceTiming_PhaseExit(&canopenReferenceTimingStats.cia418_cycles_max, cia418_start);
 #endif

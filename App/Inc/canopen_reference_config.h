@@ -21,9 +21,9 @@
 #define CANOPEN_REFERENCE_ENABLE_CIA402 0U
 #endif
 
-/* CiA 418 is an opt-in adapter/model artifact until a dedicated CANopenNode
- * battery-personality OD is generated. It must not be combined with the
- * default CiA 401/402 OD because the profile index ranges collide. */
+/* CiA 418 is an opt-in dedicated CANopenNode live-OD personality. It must
+ * not be combined with the default CiA 401/402 OD because the profile index
+ * ranges and generated source selection are mutually exclusive. */
 #ifndef CANOPEN_REFERENCE_ENABLE_CIA418
 #define CANOPEN_REFERENCE_ENABLE_CIA418 0U
 #endif
@@ -34,7 +34,7 @@
 
 #if ((CANOPEN_REFERENCE_ENABLE_CIA418 != 0U) \
      && ((CANOPEN_REFERENCE_ENABLE_CIA401 != 0U) || (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U)))
-#error "CiA 418 adapter mode cannot be combined with the default CiA 401/402 OD personality."
+#error "CiA 418 personality cannot be combined with the default CiA 401/402 OD personality."
 #endif
 
 #if ((CANOPEN_REFERENCE_ENABLE_CIA401 != 0U) && (CANOPEN_REFERENCE_ENABLE_CIA402 != 0U) \

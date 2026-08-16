@@ -30,6 +30,7 @@ BOARD = (ROOT / "App" / "Src" / "canopen_reference_board.c").read_text(encoding=
 CIA302_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_cia302.h").read_text(encoding="utf-8")
 CIA302_SOURCE = (ROOT / "App" / "Src" / "canopen_reference_cia302.c").read_text(encoding="utf-8")
 CIA418_HEADER = (ROOT / "App" / "Inc" / "cia418_reference.h").read_text(encoding="utf-8")
+CIA418_OD_HEADER = (ROOT / "Generated" / "cia418_OD.h").read_text(encoding="utf-8")
 CIA418_SOURCE = (ROOT / "App" / "Src" / "cia418_reference.c").read_text(encoding="utf-8")
 APP_RUNTIME = (ROOT / "App" / "Src" / "CO_app_STM32_reference.c").read_text(encoding="utf-8")
 TIMING_HEADER = (ROOT / "App" / "Inc" / "canopen_reference_timing.h").read_text(encoding="utf-8")
@@ -496,16 +497,21 @@ class FirmwareConfigurationTests(unittest.TestCase):
         self.assertIn("CANopenReferenceHw_DriveSetEnable(false);", BOARD)
         self.assertIn("CANopenReferenceHw_WriteDigitalOutputs(0U);", BOARD)
 
-    def test_cia418_adapter_mode_is_explicit_and_not_claimed_as_live_od(self) -> None:
-        """CiA 418 is opt-in, mutually exclusive, and clearly separated from SDO-visible OD claims."""
-        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 adapter/model personality" OFF)', CMAKE)
+    def test_cia418_live_od_personality_is_explicit_and_isolated(self) -> None:
+        """CiA 418 is opt-in, mutually exclusive, and uses one profile-specific live OD."""
+        self.assertIn('option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 live Object Dictionary personality" OFF)', CMAKE)
         self.assertIn("CANOPEN_REFERENCE_ENABLE_CIA418=$<BOOL:${CANOPEN_REFERENCE_ENABLE_CIA418}>", CMAKE)
-        self.assertIn("#error \"CiA 418 adapter mode cannot be combined", PROFILE)
+        self.assertIn("set(CANOPEN_REFERENCE_OD_SOURCE Generated/cia418_OD.c)", CMAKE)
+        self.assertIn("set(CANOPEN_REFERENCE_OD_SOURCE Generated/OD.c)", CMAKE)
+        self.assertIn("#error \"CiA 418 personality cannot be combined", PROFILE)
+        self.assertIn("#include \"CO_ODinterface.h\"", CIA418_OD_HEADER)
+        self.assertIn("extern OD_ATTR_APP OD_APP_t OD_APP;", CIA418_OD_HEADER)
         self.assertIn("Cia418Reference_Init(&canopenReferenceCia418State);", APP_RUNTIME)
-        self.assertIn("Cia418Reference_SyncToGeneratedOd(&canopenReferenceCia418State, &CIA418_OD_APP);", APP_RUNTIME)
-        self.assertIn("not the live CANopenNode OD", APP_RUNTIME)
-        self.assertIn("not the live CANopenNode OD", CIA418_HEADER)
-        self.assertIn("Cia418Reference_SyncToGeneratedOd", CIA418_SOURCE)
+        self.assertNotIn("Cia418Reference_SyncToGeneratedOd", APP_RUNTIME)
+        self.assertNotIn("Cia418Reference_SyncToGeneratedOd", CIA418_HEADER)
+        self.assertNotIn("Cia418Reference_SyncToGeneratedOd", CIA418_SOURCE)
+        self.assertIn("OD_find(OD, index)", CIA418_SOURCE)
+        self.assertIn("OD_getSub(entry, sub_index, &io, false)", CIA418_SOURCE)
 
     def test_protocol_boundaries_are_documented_at_source_and_scope_levels(self) -> None:
         """Host-only and partial protocol implementations cannot silently become product claims."""
@@ -513,9 +519,9 @@ class FirmwareConfigurationTests(unittest.TestCase):
             "0x1F80–0x1F89",
             "No embedded UDS server",
             "No embedded NMEA 2000 stack",
-            "not live-OD/SDO integrated",
+            "SDO/PDO reachable in that personality",
         ):
-            self.assertIn(expected, FEATURE_MATRIX if "live-OD" in expected or "0x1F80" in expected else PRODUCT_SCOPE)
+            self.assertIn(expected, FEATURE_MATRIX if "live-OD" in expected or "SDO/PDO" in expected or "0x1F80" in expected else PRODUCT_SCOPE)
         self.assertIn("standard CiA 302 Network List/Configuration Manager", CIA302_SOURCE)
         self.assertIn("host-side validation code only", UDS_MODEL)
         self.assertIn("host-side gateway contract code only", NMEA_MODEL)

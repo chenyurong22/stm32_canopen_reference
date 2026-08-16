@@ -9,7 +9,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(STM32_CUBE_F7_DIR "" CACHE PATH "Path to the STM32CubeF7 firmware package")
 set(STM32_F7_LINKER_SCRIPT "" CACHE FILEPATH "Board/package-specific GNU LD script")
 option(CANOPEN_REFERENCE_ENABLE_CIA302_MASTER "Build the opt-in CiA 302 NMT-master personality" OFF)
-option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 adapter/model personality" OFF)
+option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 live Object Dictionary personality" OFF)
 option(CANOPEN_REFERENCE_ENABLE_IWDG "Enable dual-rate IWDG supervision" OFF)
 option(CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION "Enable DWT timing instrumentation" OFF)
 option(CANOPEN_REFERENCE_PRODUCTION_PROFILE "Enable production optimization and compiler hardening" OFF)
@@ -31,6 +31,12 @@ file(GLOB_RECURSE CANOPEN_NODE_SOURCES CONFIGURE_DEPENDS
     "${CANOPEN_NODE_DIR}/305/*.c"
     "${CANOPEN_NODE_DIR}/309/*.c"
     "${CANOPEN_NODE_DIR}/storage/CO_storage.c")
+
+if(CANOPEN_REFERENCE_ENABLE_CIA418)
+    set(CANOPEN_REFERENCE_OD_SOURCE Generated/cia418_OD.c)
+else()
+    set(CANOPEN_REFERENCE_OD_SOURCE Generated/OD.c)
+endif()
 
 file(GLOB HAL_SOURCES CONFIGURE_DEPENDS
     "${STM32_CUBE_F7_DIR}/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal*.c")
@@ -63,8 +69,7 @@ add_executable(${PROJECT_NAME}
     App/Src/cia402_reference.c
     middleware/canopen/core/canopen_core.c
     middleware/canopen/core/cia302_nmt_master.c
-    Generated/OD.c
-    Generated/cia418_OD.c
+    ${CANOPEN_REFERENCE_OD_SOURCE}
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c
     ${CANOPEN_NODE_DIR}/CANopen.c
     ${CANOPEN_NODE_SOURCES}

@@ -9,6 +9,7 @@ LINKER_SCRIPT=${STM32_F7_LINKER_SCRIPT:-"$ROOT/linker/STM32F767_2M_512K_FLASH.ld
 BUILD_DIR=${BUILD_DIR:-"$ROOT/build/firmware"}
 CIA402_BUILD_DIR=${CIA402_BUILD_DIR:-"$ROOT/build/firmware-cia402"}
 GATEWAY_BUILD_DIR=${GATEWAY_BUILD_DIR:-"$ROOT/build/firmware-gateway"}
+CIA418_BUILD_DIR=${CIA418_BUILD_DIR:-"$ROOT/build/firmware-cia418"}
 
 command -v python3 >/dev/null
 command -v gcc >/dev/null
@@ -69,4 +70,15 @@ cmake --build "$GATEWAY_BUILD_DIR" --parallel 2
 arm-none-eabi-size "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference"
 test -s "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference.hex"
 test -s "$GATEWAY_BUILD_DIR/stm32f767_canopen_reference.bin"
+
+cmake -S "$ROOT" -B "$CIA418_BUILD_DIR" \
+    -DCMAKE_TOOLCHAIN_FILE="$ROOT/cmake/arm-none-eabi-gcc.cmake" \
+    -DSTM32_CUBE_F7_DIR="$CUBE_DIR" \
+    -DSTM32_F7_LINKER_SCRIPT="$LINKER_SCRIPT" \
+    -DCANOPEN_REFERENCE_ENABLE_CIA418=ON
+cmake --build "$CIA418_BUILD_DIR" --parallel 2
+arm-none-eabi-size "$CIA418_BUILD_DIR/stm32f767_canopen_reference"
+test -s "$CIA418_BUILD_DIR/stm32f767_canopen_reference.hex"
+test -s "$CIA418_BUILD_DIR/stm32f767_canopen_reference.bin"
+
 printf '%s\n' 'Reference validation completed successfully.'

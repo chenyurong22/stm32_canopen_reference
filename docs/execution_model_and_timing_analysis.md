@@ -51,7 +51,6 @@ CO_process_SYNC(CO, 1000 us, ...)
 CO_process_RPDO(CO, syncWas, 1000 us, ...)
 Cia401Reference_Process1ms()
 Cia402Reference_Process1ms()
-Cia418Reference_SyncToGeneratedOd(...)   [optional]
 CO_process_TPDO(CO, syncWas, 1000 us, ...)
 ```
 

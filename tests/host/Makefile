@@ -31,8 +31,15 @@ $(BUILD_DIR)/test_cia302_nmt_master: $(ROOT)/tests/test_cia302_nmt_master.c $(RO
 $(BUILD_DIR)/test_lss_policy: $(ROOT)/tests/test_lss_policy.c $(ROOT)/App/Src/canopen_reference_lss.c $(ROOT)/App/Inc/canopen_reference_lss.h $(ROOT)/tests/fakes/CANopen.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/tests/fakes -I$(ROOT)/App/Inc $^ -o $@
 
-$(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/Generated/cia418_OD.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc -I$(ROOT)/Generated $^ -o $@
+CIA418_OD_FLAGS := -DCANOPEN_REFERENCE_ENABLE_CIA401=0 -DCANOPEN_REFERENCE_ENABLE_CIA402=0 -DCANOPEN_REFERENCE_ENABLE_CIA418=1
+CIA418_OD_INCLUDES := -I$(ROOT)/tests/fakes \
+	-I$(ROOT)/App/Inc -I$(ROOT)/Generated \
+	-I$(ROOT)/third_party/CanOpenSTM32/CANopenNode \
+	-I$(ROOT)/third_party/CanOpenSTM32/CANopenNode/301 \
+	-I$(ROOT)/third_party/CanOpenSTM32/CANopenNode_STM32
+
+$(BUILD_DIR)/test_cia418_reference: $(ROOT)/tests/test_cia418_reference.c $(ROOT)/App/Src/cia418_reference.c $(ROOT)/Generated/cia418_OD.c $(ROOT)/third_party/CanOpenSTM32/CANopenNode/301/CO_ODinterface.c $(ROOT)/App/Inc/cia418_reference.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(CIA418_OD_FLAGS) $(CIA418_OD_INCLUDES) $^ -o $@
 
 $(BUILD_DIR)/test_can_recovery: $(ROOT)/tests/test_can_recovery.c $(ROOT)/App/Src/canopen_reference_can_recovery.c $(ROOT)/App/Inc/canopen_reference_can_recovery.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(ROOT)/App/Inc $^ -o $@

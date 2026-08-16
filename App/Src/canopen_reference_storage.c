@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#include "OD.h"
+#include "canopen_reference_od.h"
 #include "storage/CO_storage.h"
 
 #if defined(STM32F767xx)

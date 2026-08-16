@@ -47,9 +47,9 @@ CANopenReferenceCia302_Deinit();
 | `CANOPEN_REFERENCE_ENABLE_CIA402` | Off | Enables the CiA 402 reference adapter |
 | `CANOPEN_REFERENCE_ENABLE_CIA302_MASTER` | Off | Enables the bounded NMT-master adapter |
 | `CANOPEN_REFERENCE_ENABLE_GATEWAY` | Off | Enables the bounded gateway foundation |
-| `CANOPEN_REFERENCE_ENABLE_CIA418` | Separate | Builds the battery-profile artifacts outside the default OD |
+| `CANOPEN_REFERENCE_ENABLE_CIA418` | Off | Builds the isolated CiA 418 live CANopenNode Object Dictionary personality from the checked-in generic catalog |
 
-Build each personality in a clean directory. Do not combine mutually exclusive profile Object Dictionaries without reviewing generated index and memory requirements.
+Build each personality in a clean directory. The CiA 418 option selects `Generated/cia418_OD.c` instead of the default OD and disables the CiA 401/CiA 402 application personalities for that build. Do not combine mutually exclusive profile Object Dictionaries without reviewing generated index and memory requirements.
 
 ## CAN-port boundary
 

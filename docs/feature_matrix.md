@@ -21,7 +21,7 @@ This repository is an **STM32 CANopen reference platform**. CANopenNode is the p
 | CiA 309 gateway | Optional bounded foundation | Gateway deny-by-default test | Security and transport HIL required | Not claimed |
 | UDS | Host-side contract model only | UDS contract runner | Embedded implementation required | Not claimed |
 | ISO-TP | Host-side contract model only | ISO-TP contract runner | Embedded implementation required | Not claimed |
-| CiA 418 | Explicit opt-in adapter synchronized to a detached generated model; not live-OD/SDO integrated | Adapter unit/source-contract tests | Dedicated battery-personality HIL required | Not claimed |
+| CiA 418 | Explicit opt-in dedicated CANopenNode live Object Dictionary personality using the checked-in generic reference catalog; SDO/PDO reachable in that personality | Live-OD artifact validator, host SDO-style access test, source contracts | Dedicated battery-personality HIL required | Not claimed |
 | NMEA 2000 | Host gateway contract only; no embedded C implementation | Host contract runner | Embedded stack and address-claim HIL required | Not claimed |
 | CAN-FD/FDCAN | Not implemented; target uses bxCAN | None | Required if selected | Not claimed |
 | Bootloader/firmware update | Not implemented | None | Required | Not claimed |
@@ -63,7 +63,7 @@ The CiA 302 personality is a **NMT-master supervision reference**, not a complet
 
 LSS is integrated through the stack and project policy hooks, including node-ID/bitrate persistence seams. Complete Fastscan commissioning behavior, product provisioning, and conformance evidence remain future work.
 
-The CiA 418 adapter is initialized only when its explicit build option is selected and synchronizes a detached generated battery model. Its indexes collide with the default CiA 401/402 OD, so no `OD_extension_init()` registration or live SDO/PDO claim is made. A dedicated battery-personality CANopenNode OD is required for that next scope change.
+The CiA 418 personality is initialized only when its explicit build option is selected and builds exactly one dedicated CANopenNode Object Dictionary from `scripts/cia418_catalog.py`. Its application indexes are isolated from the default CiA 401/402 OD by profile-specific source selection; the adapter reads and writes the live OD through CANopenNode’s OD interface, and its configured TPDO mappings are available in that personality. The catalog remains a generic reference catalog rather than a customer-specific Inventus Power product dictionary, and dedicated battery-personality HIL and product approval remain external gates.
 
 UDS/ISO-TP and NMEA 2000 are host-side contract models. No embedded UDS server, ISO-TP transport, NMEA 2000 stack, or address-claim state machine is present in the STM32 firmware.
 

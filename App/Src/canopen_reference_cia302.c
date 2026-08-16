@@ -14,7 +14,7 @@
 
 #include "CANopen.h"
 #include "CO_HBconsumer.h"
-#include "OD.h"
+#include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "cia302_nmt_master.h"
 
