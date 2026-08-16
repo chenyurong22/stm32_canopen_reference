@@ -52,6 +52,16 @@ with SOURCE.open(newline="", encoding="utf-8") as stream:
                 raise ValueError(f"invalid visible-string identity metadata for {index:#06x}")
             SCALARS.append((index, ident, ctype, eds_type, access, default, 0))
             continue
+        if kind == "diagnostic_array":
+            ctype = row["ctype"].strip()
+            eds_type = int(row["eds_type"], 0)
+            count = int(row.get("count", ""), 0)
+            if ctype != "uint8_t" or eds_type != 0x0005 or width != 1:
+                raise ValueError(f"invalid raw diagnostic-array metadata for {index:#06x}")
+            if access not in {"ro", "rw"} or count != 0xFE:
+                raise ValueError(f"invalid bounded diagnostic-array metadata for {index:#06x}")
+            ARRAYS.append((index, ident, ctype, eds_type, access, count, []))
+            continue
         if kind != "application":
             raise ValueError(f"unsupported catalog row kind {kind!r} for {index:#06x}")
         APPLICATION_SOURCE_ROWS.append((index, name, access, width, unit, default, ident, kind))
@@ -121,8 +131,12 @@ for mapping in PDO_MAPPINGS.values():
 
 APPLICATION_INDICES = sorted({row[0] for row in APPLICATION_SOURCE_ROWS})
 REQUESTED_INDICES = APPLICATION_INDICES
+DIAGNOSTIC_INDICES = tuple(sorted(index for index, *_ in ARRAYS if index >= 0xD000))
 EXPECTED_APPLICATION_OBJECT_COUNT = 60
+EXPECTED_DIAGNOSTIC_ARRAY_COUNT = 2
 assert IDENTITY_INDICES == (0x1008, 0x1009, 0x100A)
 assert len(REQUESTED_INDICES) == EXPECTED_APPLICATION_OBJECT_COUNT
 assert len({index for index, *_ in APPLICATION_SOURCE_ROWS}) == EXPECTED_APPLICATION_OBJECT_COUNT
 assert all(0x4800 <= index <= 0x4921 for index in REQUESTED_INDICES)
+assert DIAGNOSTIC_INDICES == (0xD000, 0xD001)
+assert len(DIAGNOSTIC_INDICES) == EXPECTED_DIAGNOSTIC_ARRAY_COUNT

@@ -1,6 +1,6 @@
 # Inventus Battery Test Profile
 
-This profile contains the **60 populated application indices** from the Inventus workbook attached to GitHub issues #6, #9, and #10. It is available only through the opt-in CMake option `CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON`.
+This profile contains the **60 populated application indices** from the Inventus workbook attached to GitHub issues #6, #9, and #10, plus the requested standard identity/PDO objects and two bounded diagnostic arrays at `0xD000` and `0xD001`. It is available only through the opt-in CMake option `CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY=ON`.
 
 > This is a test-only, non-commercial interoperability profile. It is not part of the frozen CiA 401 v1 personality and must not be used to claim production conformance.
 
@@ -21,6 +21,12 @@ The catalog retains the six workbook-declared TPDO mapping groups `0x1A00` throu
 ## 0x4900 limitation
 
 The workbook writes `0x4900` sub-indices as `0x00~0xFF`. CANopenNode represents the array count and data sub-index with an 8-bit sub-index, so the generated standard array exposes the representable data range `0x01..0xFE` with sub-index `0` as the count. The `0xFF` endpoint requires a separate vendor-specific transport definition and is intentionally not guessed.
+
+## D000/D001 diagnostic limitation
+
+Issue #10 and Issue #11 request vendor-specific objects `0xD000` and `0xD001`. The attached screenshots do not provide complete machine-readable type, width, scaling, default, persistence, or command-side-effect metadata for every sub-index. This profile therefore exposes an explicitly labeled raw-byte diagnostic representation only: `0xD000` is a read-only array and `0xD001` is a read/write array, each with count `0xFE` and data sub-indices `0x01..0xFE`. Sub-index `0` is the standard array count, and `0xFF` is intentionally absent because the screenshot range cannot be represented without a vendor-specific transport decision.
+
+The D000/D001 arrays have no persistence, no application callback, no PDO mapping, and no implied battery-control semantics. The `0xD001` write test changes only the in-memory diagnostic byte. This is a transport/SDO test placeholder, not a final vendor OD and not an interoperability or production-conformance claim. A complete vendor table is still required before semantic per-subindex generation.
 
 ## Build and test
 

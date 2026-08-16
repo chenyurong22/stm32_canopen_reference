@@ -349,6 +349,8 @@ typedef struct {
         uint32_t applicationObject8;
     } x1A05_TPDOMappingParameter6;
     uint16_t x4900_inventus_4900_bq8050_smbus_data[255];
+    uint8_t xD000_inventus_d000_d000_diagnostic_bytes[255];
+    uint8_t xD001_inventus_d001_d001_diagnostic_bytes[255];
 } OD_APP_t;
 
 #ifndef OD_ATTR_APP
@@ -581,6 +583,10 @@ extern OD_ATTR_OD OD_t *OD;
 #define OD_ENTRY_H4920_inventus_4920_voltage_calibration_enable &OD->list[98]
 #define OD_ENTRY_H4921 &OD->list[99]
 #define OD_ENTRY_H4921_inventus_4921_voltage_calibration_value &OD->list[99]
+#define OD_ENTRY_HD000 &OD->list[100]
+#define OD_ENTRY_HD000_inventus_d000_d000_diagnostic_bytes &OD->list[100]
+#define OD_ENTRY_HD001 &OD->list[101]
+#define OD_ENTRY_HD001_inventus_d001_d001_diagnostic_bytes &OD->list[101]
 
 
 /*******************************************************************************

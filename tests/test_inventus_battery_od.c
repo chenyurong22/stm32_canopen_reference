@@ -57,6 +57,28 @@ int main(void) {
     OD_IO_t reserved_tpdo_subindex = {0};
     assert(OD_getSub(OD_find(OD, 0x1804U), 4U, &reserved_tpdo_subindex, false) == ODR_SUB_NOT_EXIST);
 
+    OD_IO_t d000_count = get_io(0xD000U, 0U);
+    assert(d000_count.stream.dataLength == 1U);
+    assert((d000_count.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t d000_byte = get_io(0xD000U, 1U);
+    assert(d000_byte.stream.dataLength == 1U);
+    assert((d000_byte.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t d001_count = get_io(0xD001U, 0U);
+    assert(d001_count.stream.dataLength == 1U);
+    assert((d001_count.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t d001_byte = get_io(0xD001U, 1U);
+    assert(d001_byte.stream.dataLength == 1U);
+    assert((d001_byte.stream.attribute & ODA_SDO_W) != 0U);
+    uint8_t diagnostic_value = 0x5AU;
+    OD_size_t count_written = 0U;
+    assert(d001_byte.write != NULL);
+    assert(d001_byte.write(&d001_byte.stream, &diagnostic_value, sizeof(diagnostic_value), &count_written) == ODR_OK);
+    assert(count_written == sizeof(diagnostic_value));
+    OD_IO_t unsupported_d000_subindex = {0};
+    assert(OD_getSub(OD_find(OD, 0xD000U), 0xFFU, &unsupported_d000_subindex, false) == ODR_SUB_NOT_EXIST);
+    OD_IO_t unsupported_d001_subindex = {0};
+    assert(OD_getSub(OD_find(OD, 0xD001U), 0xFFU, &unsupported_d001_subindex, false) == ODR_SUB_NOT_EXIST);
+
     OD_IO_t bq_count = get_io(0x4900U, 0U);
     assert(bq_count.stream.dataLength == 1U);
     assert((bq_count.stream.attribute & ODA_SDO_W) == 0U);
@@ -72,12 +94,12 @@ int main(void) {
     assert(sleep.stream.dataLength == 2U);
     assert((sleep.stream.attribute & ODA_SDO_W) != 0U);
     uint16_t sleep_value = 1U;
-    OD_size_t count_written = 0U;
+    count_written = 0U;
     assert(sleep.write != NULL);
     assert(sleep.write(&sleep.stream, &sleep_value, sizeof(sleep_value), &count_written) == ODR_OK);
     assert(count_written == sizeof(sleep_value));
 
-    printf("inventus_battery_od: PASS (%u application objects)\n",
+    printf("inventus_battery_od: PASS (%u application objects, 2 diagnostic arrays)\\n",
            (unsigned)(sizeof(requested_indices) / sizeof(requested_indices[0])));
     return 0;
 }
