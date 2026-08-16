@@ -60,9 +60,47 @@ int main(void) {
     OD_IO_t d000_count = get_io(0xD000U, 0U);
     assert(d000_count.stream.dataLength == 1U);
     assert((d000_count.stream.attribute & ODA_SDO_W) == 0U);
-    OD_IO_t d000_byte = get_io(0xD000U, 1U);
-    assert(d000_byte.stream.dataLength == 1U);
-    assert((d000_byte.stream.attribute & ODA_SDO_W) == 0U);
+    uint8_t d000_highest = 0U;
+    OD_size_t count_read = 0U;
+    assert(d000_count.read != NULL);
+    assert(d000_count.read(&d000_count.stream, &d000_highest, sizeof(d000_highest), &count_read) == ODR_OK);
+    assert(count_read == sizeof(d000_highest));
+    assert(d000_highest == 0x70U);
+
+    OD_IO_t d000_ntc1 = get_io(0xD000U, 1U);
+    assert(d000_ntc1.stream.dataLength == 2U);
+    assert((d000_ntc1.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t d000_current = get_io(0xD000U, 0x64U);
+    assert(d000_current.stream.dataLength == 2U);
+    assert((d000_current.stream.attribute & ODA_SDO_W) == 0U);
+    OD_IO_t d000_rtc_time = get_io(0xD000U, 0x6CU);
+    assert(d000_rtc_time.stream.dataLength == 4U);
+    assert((d000_rtc_time.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t d000_eeprom = get_io(0xD000U, 0x6FU);
+    assert(d000_eeprom.stream.dataLength == 2U);
+    assert((d000_eeprom.stream.attribute & ODA_SDO_W) != 0U);
+    OD_IO_t d000_balance = get_io(0xD000U, 0x70U);
+    assert(d000_balance.stream.dataLength == 2U);
+    assert((d000_balance.stream.attribute & ODA_SDO_W) != 0U);
+    uint16_t d000_command = 0x3456U;
+    OD_size_t count_written = 0U;
+    assert(d000_balance.write != NULL);
+    assert(d000_balance.write(&d000_balance.stream, &d000_command, sizeof(d000_command), &count_written) == ODR_OK);
+    assert(count_written == sizeof(d000_command));
+
+    for (uint8_t gap = 0x19U; gap <= 0x1AU; ++gap) {
+        OD_IO_t unsupported_d000_subindex = {0};
+        assert(OD_getSub(OD_find(OD, 0xD000U), gap, &unsupported_d000_subindex, false) == ODR_SUB_NOT_EXIST);
+    }
+    for (uint8_t gap = 0x25U; gap <= 0x27U; ++gap) {
+        OD_IO_t unsupported_d000_subindex = {0};
+        assert(OD_getSub(OD_find(OD, 0xD000U), gap, &unsupported_d000_subindex, false) == ODR_SUB_NOT_EXIST);
+    }
+    OD_IO_t unsupported_d000_29 = {0};
+    assert(OD_getSub(OD_find(OD, 0xD000U), 0x29U, &unsupported_d000_29, false) == ODR_SUB_NOT_EXIST);
+    OD_IO_t unsupported_d000_subindex = {0};
+    assert(OD_getSub(OD_find(OD, 0xD000U), 0xFFU, &unsupported_d000_subindex, false) == ODR_SUB_NOT_EXIST);
+
     OD_IO_t d001_count = get_io(0xD001U, 0U);
     assert(d001_count.stream.dataLength == 1U);
     assert((d001_count.stream.attribute & ODA_SDO_W) == 0U);
@@ -70,12 +108,10 @@ int main(void) {
     assert(d001_byte.stream.dataLength == 1U);
     assert((d001_byte.stream.attribute & ODA_SDO_W) != 0U);
     uint8_t diagnostic_value = 0x5AU;
-    OD_size_t count_written = 0U;
     assert(d001_byte.write != NULL);
+    count_written = 0U;
     assert(d001_byte.write(&d001_byte.stream, &diagnostic_value, sizeof(diagnostic_value), &count_written) == ODR_OK);
     assert(count_written == sizeof(diagnostic_value));
-    OD_IO_t unsupported_d000_subindex = {0};
-    assert(OD_getSub(OD_find(OD, 0xD000U), 0xFFU, &unsupported_d000_subindex, false) == ODR_SUB_NOT_EXIST);
     OD_IO_t unsupported_d001_subindex = {0};
     assert(OD_getSub(OD_find(OD, 0xD001U), 0xFFU, &unsupported_d001_subindex, false) == ODR_SUB_NOT_EXIST);
 
@@ -99,7 +135,7 @@ int main(void) {
     assert(sleep.write(&sleep.stream, &sleep_value, sizeof(sleep_value), &count_written) == ODR_OK);
     assert(count_written == sizeof(sleep_value));
 
-    printf("inventus_battery_od: PASS (%u application objects, 2 diagnostic arrays)\\n",
+    printf("inventus_battery_od: PASS (%u application objects, structured D000, bounded D001)\\n",
            (unsigned)(sizeof(requested_indices) / sizeof(requested_indices[0])));
     return 0;
 }

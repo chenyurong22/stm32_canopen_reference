@@ -24,7 +24,7 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "product" / "inventus_battery_od.csv"
 sys.path.insert(0, str(ROOT / "scripts"))
-from inventus_battery_catalog import PDO_MAPPINGS, RECORDS  # noqa: E402
+from inventus_battery_catalog import D000_SOURCE, PDO_MAPPINGS, RECORDS  # noqa: E402
 
 
 SDO_ABORT_TOGGLE = 0x05030000
@@ -72,17 +72,17 @@ def _parse_integer(raw: str) -> int:
     return int(raw.strip() or "0", 0)
 
 
-def _default_bytes(raw: str, width: int, *, visible_string: bool = False) -> bytearray:
+def _default_bytes(raw: str, width: int, *, visible_string: bool = False, signed: bool = False) -> bytearray:
     if visible_string:
         encoded = raw.encode("ascii")
         if len(encoded) > width:
             raise ValueError(f"identity default exceeds declared width {width}")
         return bytearray(encoded + b"\x00" * (width - len(encoded)))
-    return bytearray(_parse_integer(raw).to_bytes(width, "little", signed=False))
+    return bytearray(_parse_integer(raw).to_bytes(width, "little", signed=signed))
 
 
 def _ctype_width(ctype: str) -> int:
-    return {"uint8_t": 1, "uint16_t": 2, "uint32_t": 4}[ctype]
+    return {"int8_t": 1, "uint8_t": 1, "int16_t": 2, "uint16_t": 2, "int32_t": 4, "uint32_t": 4}[ctype]
 
 
 class InventusObjectDictionary:
@@ -103,6 +103,15 @@ class InventusObjectDictionary:
                     self.add(index, 0, width, "ro", _default_bytes(row["default"], width, visible_string=True), row["name"])
                 else:
                     self.add(index, 0, width, row["access"].strip(), _default_bytes(row["default"], width), row["name"])
+
+        with D000_SOURCE.open(newline="", encoding="utf-8") as stream:
+            for row in csv.DictReader(stream):
+                sub_index = int(row["sub_index"], 0)
+                ctype = row["ctype"].strip()
+                width = _ctype_width(ctype)
+                self.add(0xD000, sub_index, width, row["access"].strip(),
+                         _default_bytes(row["default"], width, signed=ctype.startswith("int")),
+                         row["name"])
 
         # Include the standard six TPDO communication records as the generated
         # profile does.  Reserved sub-index 4 is intentionally not installed.
@@ -125,7 +134,7 @@ class InventusObjectDictionary:
 
         # Retain the catalog module as an import-time consistency check and
         # ensure the generated profile's extra records are represented here.
-        assert len(RECORDS) == 4
+        assert len(RECORDS) == 5
 
     def add(self, index: int, sub_index: int, width: int, access: str, value: bytes, name: str) -> None:
         self.objects[(index, sub_index)] = ObjectValue(index, sub_index, width, access, bytearray(value), name)
@@ -354,15 +363,21 @@ def run_scenarios(node_id: int, verbose: bool) -> int:
         identity = sdo_upload(bus, node_id, index, 0)
         require(identity == b"\x00" * width, f"identity placeholder {index:#06x} mismatch")
 
-    require(sdo_upload(bus, node_id, 0xD000, 0) == b"\xFE", "D000 count mismatch")
+    require(sdo_upload(bus, node_id, 0xD000, 0) == b"\x70", "D000 highest-subindex value mismatch")
+    require(sdo_upload(bus, node_id, 0xD000, 1) == struct.pack("<H", 2980), "D000 NTC1 default mismatch")
+    require(sdo_upload(bus, node_id, 0xD000, 0x64) == b"\x00\x00", "D000 signed-current default mismatch")
     require(sdo_upload(bus, node_id, 0xD001, 0) == b"\xFE", "D001 count mismatch")
-    require(sdo_upload(bus, node_id, 0xD000, 0xFF) is None, "D000 sub-index FF was accepted")
+    for gap in (0x19, 0x1A, 0x25, 0x26, 0x27, 0x29, 0x41, 0x4F, 0xFF):
+        require(sdo_upload(bus, node_id, 0xD000, gap) is None, f"D000 gap {gap:#04x} was accepted")
     require(sdo_upload(bus, node_id, 0xD001, 0xFF) is None, "D001 sub-index FF was accepted")
     diag_write = sdo_request(bus, node_id, 0x2F, 0xD001, 1, b"\x5A\x00\x00\x00")
     require(diag_write[0].data[0] == 0x60, "D001 diagnostic write failed")
     require(sdo_upload(bus, node_id, 0xD001, 1) == b"\x5A", "D001 diagnostic readback mismatch")
+    d000_write = sdo_request(bus, node_id, 0x2B, 0xD000, 0x70, b"\x56\x34\x00\x00")
+    require(d000_write[0].data[0] == 0x60, "D000 writable field write failed")
+    require(sdo_upload(bus, node_id, 0xD000, 0x70) == b"\x56\x34", "D000 writable field readback mismatch")
     diag_ro_write = sdo_request(bus, node_id, 0x2F, 0xD000, 1, b"\x5A\x00\x00\x00")
-    require(diag_ro_write[0].data[0] == 0x80, "D000 read-only diagnostic write was accepted")
+    require(diag_ro_write[0].data[0] == 0x80, "D000 read-only field write was accepted")
 
     for pdo_number in range(1, 7):
         require(node.emit_tpdo(pdo_number) is None, f"TPDO{pdo_number} was not disabled by default")

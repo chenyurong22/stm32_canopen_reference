@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "product" / "inventus_battery_od.csv"
+D000_SOURCE = ROOT / "product" / "inventus_battery_d000.csv"
 
 
 def _identifier(index: int, name: str) -> str:
@@ -33,6 +34,28 @@ RECORDS = []
 ARRAYS = []
 SOURCE_ROWS = []
 APPLICATION_SOURCE_ROWS = []
+D000_SOURCE_ROWS = []
+D000_FIELDS = []
+with D000_SOURCE.open(newline="", encoding="utf-8") as stream:
+    for row in csv.DictReader(stream):
+        sub_index = int(row["sub_index"], 0)
+        field = row["field"].strip()
+        ctype = row["ctype"].strip()
+        eds_type = int(row["eds_type"], 0)
+        access = row["access"].strip()
+        default = _parse_default(row["default"])
+        width = int(row["bytes"], 10)
+        if width not in (1, 2, 4):
+            raise ValueError(f"invalid D000 width at sub-index {sub_index:#04x}")
+        if access not in {"ro", "rw"}:
+            raise ValueError(f"invalid D000 access at sub-index {sub_index:#04x}")
+        if sub_index == 0 and (field != "highestSub_indexSupported" or default != "0x70"):
+            raise ValueError("D000:00 must resolve the highest supported sub-index to 0x70")
+        D000_SOURCE_ROWS.append(dict(row))
+        D000_FIELDS.append((sub_index, field, ctype, eds_type, access, default))
+
+if len(D000_FIELDS) != 81 or max(sub_index for sub_index, *_ in D000_FIELDS) != 0x70:
+    raise ValueError("D000 source must contain 81 fields with maximum sub-index 0x70")
 IDENTITY_INDICES = (0x1008, 0x1009, 0x100A)
 with SOURCE.open(newline="", encoding="utf-8") as stream:
     for row in csv.DictReader(stream):
@@ -104,6 +127,11 @@ def _tpdo_mapping_record(index: int, values: list[int]):
     return index, f"TPDOMappingParameter{index - 0x1A00 + 1}", fields
 
 
+# D000 is a sparse typed diagnostic record from the workbook-derived catalog.
+# The source row records the workbook's 0x29 value, while the generated test
+# personality resolves sub-index 0 to 0x70 because entries are defined through 0x70.
+D000_RECORD = (0xD000, "inventus_d000_internal_test_commands", D000_FIELDS)
+
 # The workbook maps these application objects into six TPDOs. The mappings are
 # retained as checked-in source metadata and are applied to 0x1A00..0x1A05.
 PDO_MAPPINGS = {
@@ -117,7 +145,7 @@ PDO_MAPPINGS = {
 
 # The pinned DS301 template already supplies 0x1800..0x1803 and 0x1A00..0x1A03.
 # The Inventus test profile adds TPDO5/TPDO6 communication and mapping records.
-RECORDS = [_tpdo_communication_record(5), _tpdo_communication_record(6)]
+RECORDS = [D000_RECORD, _tpdo_communication_record(5), _tpdo_communication_record(6)]
 RECORDS.extend(_tpdo_mapping_record(index, values)
                for index, values in PDO_MAPPINGS.items() if index >= 0x1A04)
 
@@ -131,12 +159,22 @@ for mapping in PDO_MAPPINGS.values():
 
 APPLICATION_INDICES = sorted({row[0] for row in APPLICATION_SOURCE_ROWS})
 REQUESTED_INDICES = APPLICATION_INDICES
-DIAGNOSTIC_INDICES = tuple(sorted(index for index, *_ in ARRAYS if index >= 0xD000))
+DIAGNOSTIC_INDICES = (0xD000, 0xD001)
+DIAGNOSTIC_RECORD_INDICES = (0xD000,)
+DIAGNOSTIC_ARRAY_INDICES = (0xD001,)
 EXPECTED_APPLICATION_OBJECT_COUNT = 60
-EXPECTED_DIAGNOSTIC_ARRAY_COUNT = 2
+EXPECTED_DIAGNOSTIC_RECORD_COUNT = 1
+EXPECTED_DIAGNOSTIC_ARRAY_COUNT = 1
+D000_RESOLVED_HIGHEST_SUBINDEX = 0x70
+D000_WORKBOOK_HIGHEST_SUBINDEX = 0x29
 assert IDENTITY_INDICES == (0x1008, 0x1009, 0x100A)
 assert len(REQUESTED_INDICES) == EXPECTED_APPLICATION_OBJECT_COUNT
 assert len({index for index, *_ in APPLICATION_SOURCE_ROWS}) == EXPECTED_APPLICATION_OBJECT_COUNT
 assert all(0x4800 <= index <= 0x4921 for index in REQUESTED_INDICES)
 assert DIAGNOSTIC_INDICES == (0xD000, 0xD001)
-assert len(DIAGNOSTIC_INDICES) == EXPECTED_DIAGNOSTIC_ARRAY_COUNT
+assert DIAGNOSTIC_RECORD_INDICES == (0xD000,)
+assert DIAGNOSTIC_ARRAY_INDICES == (0xD001,)
+assert len(DIAGNOSTIC_RECORD_INDICES) == EXPECTED_DIAGNOSTIC_RECORD_COUNT
+assert len(DIAGNOSTIC_ARRAY_INDICES) == EXPECTED_DIAGNOSTIC_ARRAY_COUNT
+assert D000_FIELDS[0][0] == 0 and D000_FIELDS[0][5] == "0x70"
+assert max(sub_index for sub_index, *_ in D000_FIELDS) == D000_RESOLVED_HIGHEST_SUBINDEX

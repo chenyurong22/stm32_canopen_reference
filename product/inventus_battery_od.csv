@@ -62,5 +62,4 @@ index,name,access,bytes,unit,default,kind,ctype,eds_type,count
 0x4904,set enter sleep time,rw,2,N/A,0,application,,,
 0x4920,Voltage Calibration Enable,rw,2,N/A,0,application,,,
 0x4921,Voltage Calibration Value,rw,2,N/A,0,application,,,
-0xD000,D000 diagnostic bytes,ro,1,raw,0,diagnostic_array,uint8_t,0x0005,254
 0xD001,D001 diagnostic bytes,rw,1,raw,0,diagnostic_array,uint8_t,0x0005,254

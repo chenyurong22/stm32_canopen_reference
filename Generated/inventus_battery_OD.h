@@ -312,6 +312,89 @@ typedef struct {
     uint16_t x4921_inventus_4921_voltage_calibration_value;
     struct {
         uint8_t highestSub_indexSupported;
+        uint16_t ntc1;
+        uint16_t ntc2;
+        uint16_t ntc3;
+        uint16_t ntc4;
+        uint16_t ntc5;
+        uint16_t ntc6;
+        uint16_t ntc7;
+        uint16_t ntc8;
+        uint16_t ntc9;
+        uint16_t ntc10;
+        uint16_t ntc11;
+        uint16_t ntc12;
+        uint16_t ntc13;
+        uint16_t ntc14;
+        uint16_t ntc15;
+        uint16_t ntc16;
+        uint16_t pack_volt_adc_vaule;
+        uint16_t battery_volt_adc_vaule;
+        uint16_t buck_charge_adc_value;
+        uint16_t reserved_for_adc_value;
+        uint16_t reserved_for_adc_value_2;
+        uint16_t reserved_for_adc_value_3;
+        uint16_t reserved_for_adc_value_4;
+        uint16_t reserved_for_adc_value_5;
+        uint32_t atsam_sw_version;
+        uint32_t bl_version;
+        uint32_t uid;
+        uint32_t bq_fw_version;
+        uint32_t atsam_agency_version;
+        uint32_t bq_agency_version;
+        uint16_t charge_fault;
+        uint16_t discharge_fault;
+        uint16_t charge_mode;
+        uint16_t charge_enable_control;
+        uint16_t discharge_enable_control;
+        uint16_t charger_fault_flag;
+        uint16_t peripheral_status;
+        uint16_t can_error_times;
+        uint16_t can_reveive_ovf_times;
+        uint16_t pic_status_1;
+        uint16_t pic_status_2;
+        uint16_t charge_and_discharge_enable;
+        uint16_t pic_fet_status;
+        uint16_t communication_succeed_rate;
+        uint32_t atsam_charge_fault_flag;
+        uint32_t atsam_discharge_fault_flag;
+        uint8_t atsam_discharge_alarm_flag;
+        uint16_t afe_adc_gain;
+        uint16_t afe_adc_offset;
+        uint16_t cell_1_voltage;
+        uint16_t cell_2_voltage;
+        uint16_t cell_3_voltage;
+        uint16_t cell_4_voltage;
+        uint16_t cell_5_voltage;
+        uint16_t cell_6_voltage;
+        uint16_t cell_7_voltage;
+        uint16_t cell_8_voltage;
+        uint16_t cell_9_voltage;
+        uint16_t cell_10_voltage;
+        uint16_t cell_11_voltage;
+        uint16_t cell_12_voltage;
+        uint16_t cell_13_voltage;
+        uint16_t cell_14_voltage;
+        uint16_t battery_voltage_sum_of_cell_voltage;
+        uint16_t afe_temp1;
+        uint16_t afe_temp2;
+        uint16_t afe_temp3;
+        int16_t afe_current;
+        uint16_t afe_system_status;
+        uint16_t afe_cell_balance1;
+        uint16_t afe_cell_balance2;
+        uint16_t afe_cell_balance3;
+        uint16_t afe_system_control1;
+        uint16_t afe_system_control2;
+        uint8_t afe_communicate_succeed_rate;
+        uint32_t rtc_time;
+        uint32_t rtc_date;
+        uint8_t rtc_communicate_succeed_rate;
+        uint16_t eeprom_test_command;
+        uint16_t disable_cell_balance;
+    } xD000_inventus_d000_internal_test_commands;
+    struct {
+        uint8_t highestSub_indexSupported;
         uint32_t COB_IDUsedByTPDO;
         uint8_t transmissionType;
         uint16_t inhibitTime;
@@ -349,7 +432,6 @@ typedef struct {
         uint32_t applicationObject8;
     } x1A05_TPDOMappingParameter6;
     uint16_t x4900_inventus_4900_bq8050_smbus_data[255];
-    uint8_t xD000_inventus_d000_d000_diagnostic_bytes[255];
     uint8_t xD001_inventus_d001_d001_diagnostic_bytes[255];
 } OD_APP_t;
 
@@ -584,7 +666,7 @@ extern OD_ATTR_OD OD_t *OD;
 #define OD_ENTRY_H4921 &OD->list[99]
 #define OD_ENTRY_H4921_inventus_4921_voltage_calibration_value &OD->list[99]
 #define OD_ENTRY_HD000 &OD->list[100]
-#define OD_ENTRY_HD000_inventus_d000_d000_diagnostic_bytes &OD->list[100]
+#define OD_ENTRY_HD000_inventus_d000_internal_test_commands &OD->list[100]
 #define OD_ENTRY_HD001 &OD->list[101]
 #define OD_ENTRY_HD001_inventus_d001_d001_diagnostic_bytes &OD->list[101]
 

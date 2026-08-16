@@ -269,6 +269,89 @@ OD_ATTR_APP OD_APP_t OD_APP = {
     .x4904_inventus_4904_set_enter_sleep_time = 0,
     .x4920_inventus_4920_voltage_calibration_enable = 0,
     .x4921_inventus_4921_voltage_calibration_value = 0,
+    .xD000_inventus_d000_internal_test_commands = {
+        .highestSub_indexSupported = 0x70,
+        .ntc1 = 2980,
+        .ntc2 = 2980,
+        .ntc3 = 2980,
+        .ntc4 = 2980,
+        .ntc5 = 2980,
+        .ntc6 = 2980,
+        .ntc7 = 2980,
+        .ntc8 = 2980,
+        .ntc9 = 2980,
+        .ntc10 = 2980,
+        .ntc11 = 2980,
+        .ntc12 = 2980,
+        .ntc13 = 2980,
+        .ntc14 = 2980,
+        .ntc15 = 2980,
+        .ntc16 = 2980,
+        .pack_volt_adc_vaule = 0,
+        .battery_volt_adc_vaule = 0,
+        .buck_charge_adc_value = 0,
+        .reserved_for_adc_value = 0,
+        .reserved_for_adc_value_2 = 0,
+        .reserved_for_adc_value_3 = 0,
+        .reserved_for_adc_value_4 = 0,
+        .reserved_for_adc_value_5 = 0,
+        .atsam_sw_version = 0,
+        .bl_version = 0,
+        .uid = 0,
+        .bq_fw_version = 0,
+        .atsam_agency_version = 0,
+        .bq_agency_version = 0,
+        .charge_fault = 0,
+        .discharge_fault = 0,
+        .charge_mode = 0,
+        .charge_enable_control = 0,
+        .discharge_enable_control = 0,
+        .charger_fault_flag = 0,
+        .peripheral_status = 0,
+        .can_error_times = 0,
+        .can_reveive_ovf_times = 0,
+        .pic_status_1 = 0,
+        .pic_status_2 = 0,
+        .charge_and_discharge_enable = 0,
+        .pic_fet_status = 0,
+        .communication_succeed_rate = 0,
+        .atsam_charge_fault_flag = 0,
+        .atsam_discharge_fault_flag = 0,
+        .atsam_discharge_alarm_flag = 0,
+        .afe_adc_gain = 0,
+        .afe_adc_offset = 0,
+        .cell_1_voltage = 0,
+        .cell_2_voltage = 0,
+        .cell_3_voltage = 0,
+        .cell_4_voltage = 0,
+        .cell_5_voltage = 0,
+        .cell_6_voltage = 0,
+        .cell_7_voltage = 0,
+        .cell_8_voltage = 0,
+        .cell_9_voltage = 0,
+        .cell_10_voltage = 0,
+        .cell_11_voltage = 0,
+        .cell_12_voltage = 0,
+        .cell_13_voltage = 0,
+        .cell_14_voltage = 0,
+        .battery_voltage_sum_of_cell_voltage = 0,
+        .afe_temp1 = 0,
+        .afe_temp2 = 0,
+        .afe_temp3 = 0,
+        .afe_current = 0,
+        .afe_system_status = 0,
+        .afe_cell_balance1 = 0,
+        .afe_cell_balance2 = 0,
+        .afe_cell_balance3 = 0,
+        .afe_system_control1 = 0,
+        .afe_system_control2 = 0,
+        .afe_communicate_succeed_rate = 0,
+        .rtc_time = 0,
+        .rtc_date = 0,
+        .rtc_communicate_succeed_rate = 0,
+        .eeprom_test_command = 0,
+        .disable_cell_balance = 0
+    },
     .x1804_TPDOCommunicationParameter5 = { .highestSub_indexSupported = 6,
         .COB_IDUsedByTPDO = 0xC0000000,
         .transmissionType = 0xFE,
@@ -306,7 +389,6 @@ OD_ATTR_APP OD_APP_t OD_APP = {
         .applicationObject8 = 0x00000000,
     },
     .x4900_inventus_4900_bq8050_smbus_data = { 254, 0 },
-    .xD000_inventus_d000_d000_diagnostic_bytes = { 254, 0 },
     .xD001_inventus_d001_d001_diagnostic_bytes = { 254, 0 },
 };
 
@@ -409,12 +491,12 @@ typedef struct {
     OD_obj_var_t o_4904_inventus_4904_set_enter_sleep_time;
     OD_obj_var_t o_4920_inventus_4920_voltage_calibration_enable;
     OD_obj_var_t o_4921_inventus_4921_voltage_calibration_value;
+    OD_obj_record_t o_D000_inventus_d000_internal_test_commands[113];
     OD_obj_record_t o_1804_TPDOCommunicationParameter5[7];
     OD_obj_record_t o_1805_TPDOCommunicationParameter6[7];
     OD_obj_record_t o_1A04_TPDOMappingParameter5[9];
     OD_obj_record_t o_1A05_TPDOMappingParameter6[9];
     OD_obj_array_t o_4900_inventus_4900_bq8050_smbus_data;
-    OD_obj_array_t o_D000_inventus_d000_d000_diagnostic_bytes;
     OD_obj_array_t o_D001_inventus_d001_d001_diagnostic_bytes;
 } ODObjs_t;
 
@@ -1593,6 +1675,494 @@ static CO_PROGMEM ODObjs_t ODObjs = {
         .attribute = ODA_SDO_RW | ODA_MB,
         .dataLength = 2
     },
+    .o_D000_inventus_d000_internal_test_commands = {
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.highestSub_indexSupported,
+            .subIndex = 0,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc1,
+            .subIndex = 1,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc2,
+            .subIndex = 2,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc3,
+            .subIndex = 3,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc4,
+            .subIndex = 4,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc5,
+            .subIndex = 5,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc6,
+            .subIndex = 6,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc7,
+            .subIndex = 7,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc8,
+            .subIndex = 8,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc9,
+            .subIndex = 9,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc10,
+            .subIndex = 10,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc11,
+            .subIndex = 11,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc12,
+            .subIndex = 12,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc13,
+            .subIndex = 13,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc14,
+            .subIndex = 14,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc15,
+            .subIndex = 15,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.ntc16,
+            .subIndex = 16,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.pack_volt_adc_vaule,
+            .subIndex = 17,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.battery_volt_adc_vaule,
+            .subIndex = 18,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.buck_charge_adc_value,
+            .subIndex = 19,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.reserved_for_adc_value,
+            .subIndex = 20,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.reserved_for_adc_value_2,
+            .subIndex = 21,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.reserved_for_adc_value_3,
+            .subIndex = 22,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.reserved_for_adc_value_4,
+            .subIndex = 23,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.reserved_for_adc_value_5,
+            .subIndex = 24,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.atsam_sw_version,
+            .subIndex = 32,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.bl_version,
+            .subIndex = 33,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.uid,
+            .subIndex = 34,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.bq_fw_version,
+            .subIndex = 35,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.atsam_agency_version,
+            .subIndex = 36,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.bq_agency_version,
+            .subIndex = 40,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.charge_fault,
+            .subIndex = 48,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.discharge_fault,
+            .subIndex = 49,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.charge_mode,
+            .subIndex = 50,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.charge_enable_control,
+            .subIndex = 51,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.discharge_enable_control,
+            .subIndex = 52,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.charger_fault_flag,
+            .subIndex = 53,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.peripheral_status,
+            .subIndex = 54,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.can_error_times,
+            .subIndex = 55,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.can_reveive_ovf_times,
+            .subIndex = 56,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.pic_status_1,
+            .subIndex = 57,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.pic_status_2,
+            .subIndex = 58,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.charge_and_discharge_enable,
+            .subIndex = 59,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.pic_fet_status,
+            .subIndex = 60,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.communication_succeed_rate,
+            .subIndex = 61,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.atsam_charge_fault_flag,
+            .subIndex = 62,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.atsam_discharge_fault_flag,
+            .subIndex = 63,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.atsam_discharge_alarm_flag,
+            .subIndex = 64,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_adc_gain,
+            .subIndex = 80,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_adc_offset,
+            .subIndex = 81,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_1_voltage,
+            .subIndex = 82,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_2_voltage,
+            .subIndex = 83,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_3_voltage,
+            .subIndex = 84,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_4_voltage,
+            .subIndex = 85,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_5_voltage,
+            .subIndex = 86,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_6_voltage,
+            .subIndex = 87,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_7_voltage,
+            .subIndex = 88,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_8_voltage,
+            .subIndex = 89,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_9_voltage,
+            .subIndex = 90,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_10_voltage,
+            .subIndex = 91,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_11_voltage,
+            .subIndex = 92,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_12_voltage,
+            .subIndex = 93,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_13_voltage,
+            .subIndex = 94,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.cell_14_voltage,
+            .subIndex = 95,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.battery_voltage_sum_of_cell_voltage,
+            .subIndex = 96,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_temp1,
+            .subIndex = 97,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_temp2,
+            .subIndex = 98,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_temp3,
+            .subIndex = 99,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_current,
+            .subIndex = 100,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_system_status,
+            .subIndex = 101,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_cell_balance1,
+            .subIndex = 102,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_cell_balance2,
+            .subIndex = 103,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_cell_balance3,
+            .subIndex = 104,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_system_control1,
+            .subIndex = 105,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_system_control2,
+            .subIndex = 106,
+            .attribute = ODA_SDO_R | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.afe_communicate_succeed_rate,
+            .subIndex = 107,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.rtc_time,
+            .subIndex = 108,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.rtc_date,
+            .subIndex = 109,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 4
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.rtc_communicate_succeed_rate,
+            .subIndex = 110,
+            .attribute = ODA_SDO_R,
+            .dataLength = 1
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.eeprom_test_command,
+            .subIndex = 111,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        },
+        {
+            .dataOrig = &OD_APP.xD000_inventus_d000_internal_test_commands.disable_cell_balance,
+            .subIndex = 112,
+            .attribute = ODA_SDO_RW | ODA_MB,
+            .dataLength = 2
+        }
+    },
     .o_1804_TPDOCommunicationParameter5 = {
         {
             .dataOrig = &OD_APP.x1804_TPDOCommunicationParameter5.highestSub_indexSupported,
@@ -1789,14 +2359,6 @@ static CO_PROGMEM ODObjs_t ODObjs = {
         .dataElementLength = 2,
         .dataElementSizeof = sizeof(uint16_t)
     },
-    .o_D000_inventus_d000_d000_diagnostic_bytes = {
-        .dataOrig0 = (uint8_t*) &OD_APP.xD000_inventus_d000_d000_diagnostic_bytes[0],
-        .dataOrig = &OD_APP.xD000_inventus_d000_d000_diagnostic_bytes[1],
-        .attribute0 = ODA_SDO_R,
-        .attribute = ODA_SDO_R,
-        .dataElementLength = 1,
-        .dataElementSizeof = sizeof(uint8_t)
-    },
     .o_D001_inventus_d001_d001_diagnostic_bytes = {
         .dataOrig0 = (uint8_t*) &OD_APP.xD001_inventus_d001_d001_diagnostic_bytes[0],
         .dataOrig = &OD_APP.xD001_inventus_d001_d001_diagnostic_bytes[1],
@@ -1913,7 +2475,7 @@ static OD_ATTR_OD OD_entry_t ODList[] = {
     {0x4904, 0x01, ODT_VAR, &ODObjs.o_4904_inventus_4904_set_enter_sleep_time, NULL},
     {0x4920, 0x01, ODT_VAR, &ODObjs.o_4920_inventus_4920_voltage_calibration_enable, NULL},
     {0x4921, 0x01, ODT_VAR, &ODObjs.o_4921_inventus_4921_voltage_calibration_value, NULL},
-    {0xD000, 0xFF, ODT_ARR, &ODObjs.o_D000_inventus_d000_d000_diagnostic_bytes, NULL},
+    {0xD000, 0x71, ODT_REC, &ODObjs.o_D000_inventus_d000_internal_test_commands, NULL},
     {0xD001, 0xFF, ODT_ARR, &ODObjs.o_D001_inventus_d001_d001_diagnostic_bytes, NULL},
     {0x0000, 0x00, 0, NULL, NULL}
 };

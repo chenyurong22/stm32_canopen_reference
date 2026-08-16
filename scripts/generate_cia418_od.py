@@ -88,8 +88,7 @@ def app_initializer() -> str:
         lines.append(f"    .x{index:04X}_{ident} = {value},")
     for index, ident, fields in RECORDS:
         max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
-        explicit_sub0 = any(sub_index == 0 and field == "numberOfMappedApplicationObjectsInPDO"
-                            for sub_index, field, *_ in fields)
+        explicit_sub0 = any(sub_index == 0 for sub_index, *_ in fields)
         if explicit_sub0:
             lines.append(f"    .x{index:04X}_{ident} = {{")
         else:
@@ -127,8 +126,7 @@ def scalar_definition(index, ident, ctype, _eds, access, _default, pdo) -> str:
 
 
 def record_definition(index, ident, fields) -> str:
-    explicit_sub0 = next((field_data for field_data in fields
-                          if field_data[0] == 0 and field_data[1] == "numberOfMappedApplicationObjectsInPDO"), None)
+    explicit_sub0 = next((field_data for field_data in fields if field_data[0] == 0), None)
     if explicit_sub0 is None:
         sub0 = (f"            .dataOrig = &OD_APP.x{index:04X}_{ident}.highestSub_indexSupported,\n"
                 "            .subIndex = 0,\n"
@@ -320,8 +318,7 @@ def eds_record(index, ident, fields):
     max_sub_index = max((sub_index for sub_index, *_ in fields), default=0)
     lines = [f"[{index:04X}]", f"ParameterName={name}", "ObjectType=0x9",
              f"SubNumber=0x{max_sub_index + 1:02X}", ""]
-    explicit_sub0 = next((field_data for field_data in fields
-                          if field_data[0] == 0 and field_data[1] == "numberOfMappedApplicationObjectsInPDO"), None)
+    explicit_sub0 = next((field_data for field_data in fields if field_data[0] == 0), None)
     if explicit_sub0 is None:
         sub0_name = "Highest sub-index supported" if index in (0x1804, 0x1805) else "Number of entries"
         lines += [f"[{index:04X}sub0]", f"ParameterName={sub0_name}", "ObjectType=0x7",
