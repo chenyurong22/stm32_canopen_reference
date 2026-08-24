@@ -73,6 +73,10 @@ typedef struct {
 
 int uds_stm32_can_bind(UdsStm32Can *adapter, CAN_HandleTypeDef *hcan,
                        uint32_t request_id, uint32_t response_id);
+/* Attach to the board-owned HAL RX callback registration. This does not start,
+ * stop, configure, or reconfigure the CAN controller. */
+int uds_stm32_can_attach(UdsStm32Can *adapter);
+void uds_stm32_can_detach(UdsStm32Can *adapter);
 void uds_stm32_can_reset(UdsStm32Can *adapter);
 
 /* ISR-safe receive handoff. It only validates, copies, counts, and publishes. */
