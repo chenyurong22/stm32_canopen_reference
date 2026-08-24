@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: LicenseRef-STM32-CANopen-Research-Education-Commercial-1.0 */
 /* Reference linker script for STM32F767 variants with 2 MiB FLASH and 512 KiB
  * SRAM. Verify the exact package, memory-map, bootloader reservation,
  * external memory use, and interrupt-vector location before production use.

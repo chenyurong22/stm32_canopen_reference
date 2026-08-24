@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: LicenseRef-STM32-CANopen-Research-Education-Commercial-1.0 */
 #include "main.h"
 
 /* Reference clock tree for an STM32F767 board with a 25 MHz HSE crystal:

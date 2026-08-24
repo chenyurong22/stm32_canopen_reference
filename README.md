@@ -16,7 +16,7 @@ The firmware provides the communication and application boundaries needed to dev
 
 This repository is a **reference implementation**, not a device-profile or functional-safety certification. A product implementation must add its exact board support, electrical protection, production Object Dictionary, application behavior, HIL evidence, and applicable conformance testing. The formal supported and unsupported feature boundary is defined in [`PRODUCT_SCOPE.md`](PRODUCT_SCOPE.md), with implementation and evidence detail in [`docs/feature_matrix.md`](docs/feature_matrix.md).
 
-The project is released under the [Apache License 2.0](LICENSE). Third-party components retain their respective licenses, which are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+Project-owned material is available under the [STM32 CANopen Reference Research and Education License](LICENSE): free use is limited to qualifying research and education, while industrial, commercial, production, and large-scale use requires a separate paid commercial license. This is source-available and is not an OSI-approved Open Source license. Third-party components retain their respective licenses, which are listed in [THIRD_PARTY.md](THIRD_PARTY.md). See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for commercial licensing requests.
 
 ## Hardware reference
 

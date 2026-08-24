@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: LicenseRef-STM32-CANopen-Research-Education-Commercial-1.0 */
 /*
  * Minimal newlib syscall policy for this no-console, static-allocation reference.
  * The application has no runtime heap contract and no file-descriptor transport.
