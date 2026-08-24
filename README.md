@@ -203,6 +203,10 @@ Use the CiA 302 personality with a second CANopen node to supervise boot-up, hea
 
 Use the host-side UDS/ISO-TP contract model and SocketCAN hardware runner to exercise diagnostic sessions, negative responses, CAN timing, NMT transitions, reset behavior, and heartbeat supervision during development and production test.
 
+## UDS diagnostics
+
+The opt-in UDS profile is a bounded classic-CAN ISO-TP and UDS reference subset. Start with [the UDS/ISO-TP architecture](docs/11_uds_iso_tp.md), then review the [DID and SecurityAccess policy](docs/12_uds_security_and_dids.md), [download and recovery boundary](docs/13_uds_download_and_recovery.md), and [validation and acceptance plan](docs/14_uds_validation_and_acceptance.md). The [STM32F767 hardware runner](tests/hardware/run_stm32f767_uds_acceptance.py) keeps reset and download operations disabled unless the operator explicitly enables them. This repository does not claim complete ISO 14229 or ISO 15765-2 conformance, a production bootloader, or production cryptographic update security.
+
 ### CANopen gateway prototype
 
 Use the bounded CiA 309 and gateway foundations as an integration starting point for a service tool, protocol bridge, or PC-connected commissioning interface. Add authentication, transport limits, access control, and fault handling before exposing the gateway to a deployed network.
@@ -227,6 +231,7 @@ Use the [documentation map](docs/README.md) as the complete index of architectur
 | v1 qualification and release gates | [Production validation plan](docs/production_validation_plan.md) |
 | Protocol examples and frame sequences | [Examples guide](examples/README.md) |
 | UDS/CiA 302 acceptance | [Hardware procedure](docs/hardware/uds_cia302_test_procedure.md) and [test runner](tests/hardware/README.md) |
+| UDS/ISO-TP reference profile | [Architecture](docs/11_uds_iso_tp.md), [security and DIDs](docs/12_uds_security_and_dids.md), [download and recovery](docs/13_uds_download_and_recovery.md), and [acceptance plan](docs/14_uds_validation_and_acceptance.md) |
 | Object Dictionary | [EDS](ObjectDictionary/stm32f767_canopen_reference.eds) |
 | Dependencies and licenses | [THIRD_PARTY.md](THIRD_PARTY.md) and [LICENSE](LICENSE) |
 | Contribution process | [CONTRIBUTING.md](CONTRIBUTING.md) |

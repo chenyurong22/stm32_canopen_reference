@@ -12,6 +12,10 @@ This directory contains the living engineering documentation and historical revi
 | Execution model and timing | [execution_model_and_timing_analysis.md](execution_model_and_timing_analysis.md) |
 | Public API and integration seams | [API.md](API.md) |
 | Feature and scope matrix | [feature_matrix.md](feature_matrix.md) |
+| UDS and ISO-TP architecture | [11_uds_iso_tp.md](11_uds_iso_tp.md) |
+| UDS SecurityAccess and DID policy | [12_uds_security_and_dids.md](12_uds_security_and_dids.md) |
+| UDS download and recovery | [13_uds_download_and_recovery.md](13_uds_download_and_recovery.md) |
+| UDS validation and acceptance | [14_uds_validation_and_acceptance.md](14_uds_validation_and_acceptance.md) |
 
 ## Object Dictionary and profile procedures
 
