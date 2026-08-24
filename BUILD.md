@@ -66,6 +66,23 @@ arm-none-eabi-size build/f767/stm32f767_canopen_reference
 
 The output directory contains the ELF image and post-build HEX, BIN, and MAP artifacts. Retain the MAP file with release evidence.
 
+### Opt-in UDS profile
+
+Enable UDS only in a deliberate diagnostic build. The profile adds bounded classic-CAN ISO-TP and UDS processing, exact FIFO1 filters, static queues, and mainline service dispatch. It is disabled by default and does not provide a production bootloader or production SecurityAccess provider.
+
+```sh
+cmake -S . -B build/f767-uds \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DSTM32_CUBE_F7_DIR="$STM32_CUBE_F7_DIR" \
+  -DSTM32_F7_LINKER_SCRIPT="$PWD/linker/STM32F767_2M_512K_FLASH.ld" \
+  -DCANOPEN_REFERENCE_ENABLE_UDS=ON \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build/f767-uds --parallel
+arm-none-eabi-size build/f767-uds/stm32f767_canopen_reference
+```
+
+Review [`docs/uds/configuration.md`](docs/uds/configuration.md), [`docs/uds/can_ids.md`](docs/uds/can_ids.md), and [`docs/uds/timing.md`](docs/uds/timing.md) before enabling it on a board. The default UDS identifiers are `0x7E0` and `0x7E8`; check for collisions with the complete CANopen network plan.
+
 ## Build personalities
 
 The default image enables CiA 401 and leaves optional personalities disabled. Build each product personality in a clean build directory.
@@ -110,6 +127,7 @@ python3 tests/test_canopen_wire_contract.py
 python3 tests/run_uds_isotp_contract.py
 python3 tests/run_nmea2000_gateway_contract.py
 make -C tests/host all test-stm32-facade test-gateway-default-deny
+make -C tests/host test-uds
 ```
 
 On a Linux host with the `vcan` kernel module, create the virtual CAN interface and run the host protocol suite:
@@ -119,7 +137,7 @@ sudo ./scripts/setup_vcan.sh
 make -C tests/host test
 ```
 
-The hardware acceptance runner is separate from the virtual-CAN suite. Use [`tests/hardware/README.md`](tests/hardware/README.md) for the physical SocketCAN procedure.
+The hardware acceptance runner is separate from the virtual-CAN suite. Use [`tests/hardware/README.md`](tests/hardware/README.md) and [`docs/uds/hil_testing.md`](docs/uds/hil_testing.md) for the physical SocketCAN procedure. The runner is non-destructive by default; reset and Flash operations require explicit operator gates. Host and fake-HAL tests do not constitute STM32F767 timing, bus-error, watchdog, electrical, or Flash power-loss evidence.
 
 ## Flashing with ST-LINK
 

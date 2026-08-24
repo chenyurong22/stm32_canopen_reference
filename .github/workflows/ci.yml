@@ -130,6 +130,7 @@ jobs:
             tests/test_nmea2000_gateway.py \
             tests/run_nmea2000_gateway_contract.py \
             tests/hardware/run_uds_cia302_acceptance.py \
+            tests/hardware/run_uds_stm32f767_acceptance.py \
             tests/hardware/run_cia401_hil_campaign.py \
             tests/conformance/run_core_vectors.py \
             scripts/validate_build_manifest.py
@@ -139,6 +140,11 @@ jobs:
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_uds_isotp_contract.py
           PYTHONPATH=.:tests PYTHONDONTWRITEBYTECODE=1 python3 tests/run_nmea2000_gateway_contract.py
           PYTHONDONTWRITEBYTECODE=1 python3 tests/hardware/run_uds_cia302_acceptance.py --dry-run
+          PYTHONDONTWRITEBYTECODE=1 python3 tests/hardware/run_uds_stm32f767_acceptance.py \
+            --dry-run \
+            --json-out build/hil/uds-stm32f767-acceptance.json \
+            --csv-out build/hil/uds-stm32f767-acceptance.csv \
+            --report-out build/hil/uds-stm32f767-acceptance.txt
           python3 tests/hardware/run_cia401_hil_campaign.py \
             --dry-run \
             --output build/hil/cia401-hil-pending.json \
@@ -157,7 +163,7 @@ jobs:
             tests/test_profiles.c App/Src/cia401_reference.c App/Src/cia402_reference.c \
             -o build/tests/test_profiles
           build/tests/test_profiles
-          make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery test-acceptance-filter
+          make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery test-acceptance-filter test-uds
           make -C tests/host test-sanitize test-coverage
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
@@ -269,6 +275,16 @@ jobs:
             -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON
           cmake --build build/ci-firmware --parallel 2
           arm-none-eabi-size build/ci-firmware/stm32f767_canopen_reference
+      - name: Configure and build UDS-enabled diagnostic profile
+        run: |
+          cmake -S . -B build/ci-uds \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+            -DSTM32_CUBE_F7_DIR="$GITHUB_WORKSPACE/third_party/STM32CubeF7" \
+            -DSTM32_F7_LINKER_SCRIPT="$GITHUB_WORKSPACE/linker/STM32F767_2M_512K_FLASH.ld" \
+            -DCANOPEN_REFERENCE_PRODUCTION_PROFILE=ON \
+            -DCANOPEN_REFERENCE_ENABLE_UDS=ON
+          cmake --build build/ci-uds --parallel 2
+          arm-none-eabi-size build/ci-uds/stm32f767_canopen_reference
       - name: Configure and build CiA 402 drive personality
         run: |
           cmake -S . -B build/ci-cia402 \
@@ -368,6 +384,10 @@ jobs:
             build/ci-firmware/stm32f767_canopen_reference.hex
             build/ci-firmware/stm32f767_canopen_reference.bin
             build/ci-firmware/stm32f767_canopen_reference.map
+            build/ci-uds/stm32f767_canopen_reference
+            build/ci-uds/stm32f767_canopen_reference.hex
+            build/ci-uds/stm32f767_canopen_reference.bin
+            build/ci-uds/stm32f767_canopen_reference.map
             build/ci-cia402/stm32f767_canopen_reference
             build/ci-cia402/stm32f767_canopen_reference.hex
             build/ci-cia402/stm32f767_canopen_reference.bin

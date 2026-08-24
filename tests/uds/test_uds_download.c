@@ -27,8 +27,8 @@ static UdsDownloadResult erase_poll(void *context) {
     return UDS_DOWNLOAD_OK;
 }
 
-static UdsDownloadResult program(void *context, uint32_t address,
-                                 const uint8_t *data, uint16_t length) {
+static UdsDownloadResult program(void *context, uint32_t address, const uint8_t *data,
+                                 uint16_t length) {
     struct TestContext *test = context;
     (void)data;
     assert((address == 0x08080000UL) || (address == 0x08080004UL));
@@ -91,10 +91,8 @@ int main(void) {
     UdsDownloadCallbacks download_callbacks = callbacks();
     uds_download_init(&download, &memory, &download_callbacks, &context);
 
-    assert(uds_download_begin(&download, 0x08000000UL, 8U, 0U) ==
-           UDS_DOWNLOAD_OUT_OF_RANGE);
-    assert(uds_download_begin(&download, 0x08080002UL, 4U, 0U) ==
-           UDS_DOWNLOAD_ALIGNMENT_ERROR);
+    assert(uds_download_begin(&download, 0x08000000UL, 8U, 0U) == UDS_DOWNLOAD_OUT_OF_RANGE);
+    assert(uds_download_begin(&download, 0x08080002UL, 4U, 0U) == UDS_DOWNLOAD_ALIGNMENT_ERROR);
     assert(uds_download_begin(&download, 0x08080000UL, 8U, 0U) == UDS_DOWNLOAD_OK);
     assert(uds_download_state(&download) == UDS_DOWNLOAD_ERASING);
     assert(uds_download_poll_erase(&download, 1U) == UDS_DOWNLOAD_OK);
@@ -103,15 +101,13 @@ int main(void) {
     uint8_t payload[4] = {1U, 2U, 3U, 4U};
     assert(uds_download_write(&download, 2U, payload, sizeof(payload), 2U) ==
            UDS_DOWNLOAD_SEQUENCE_ERROR);
-    assert(uds_download_write(&download, 1U, payload, sizeof(payload), 2U) ==
-           UDS_DOWNLOAD_OK);
-    assert(uds_download_write(&download, 2U, payload, sizeof(payload), 3U) ==
-           UDS_DOWNLOAD_OK);
+    assert(uds_download_write(&download, 1U, payload, sizeof(payload), 2U) == UDS_DOWNLOAD_OK);
+    assert(uds_download_write(&download, 2U, payload, sizeof(payload), 3U) == UDS_DOWNLOAD_OK);
     assert(uds_download_finish(&download, 0U, false, 4U) == UDS_DOWNLOAD_OK);
     assert(uds_download_state(&download) == UDS_DOWNLOAD_COMPLETE);
     assert(uds_download_activation_pending(&download));
-    assert(context.erase_calls == 2U && context.program_calls == 2U &&
-           context.verify_calls == 1U && context.abort_calls == 0U);
+    assert(context.erase_calls == 2U && context.program_calls == 2U && context.verify_calls == 1U &&
+           context.abort_calls == 0U);
     assert(context.watchdog_calls >= 3U);
 
     uds_download_init(&download, &memory, &download_callbacks, &context);

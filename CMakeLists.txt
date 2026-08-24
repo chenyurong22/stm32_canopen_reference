@@ -25,6 +25,18 @@ if(NOT STM32_F7_LINKER_SCRIPT)
     message(FATAL_ERROR "Set STM32_F7_LINKER_SCRIPT for the exact STM32F767 package and memory map.")
 endif()
 
+set(STM32_SYSTEM_SOURCE "${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/system_stm32f7xx.c")
+set(STM32_STARTUP_SOURCE "${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/gcc/startup_stm32f767xx.s")
+if(NOT EXISTS "${STM32_SYSTEM_SOURCE}" OR NOT EXISTS "${STM32_STARTUP_SOURCE}")
+    # The pinned CubeF7 package stores the STM32F767ZI CMSIS pair under its
+    # Nucleo example tree rather than the deprecated Templates directory.
+    set(STM32_SYSTEM_SOURCE "${STM32_CUBE_F7_DIR}/Projects/STM32F767ZI-Nucleo/Applications/EEPROM/EEPROM_Emulation/Src/system_stm32f7xx.c")
+    set(STM32_STARTUP_SOURCE "${STM32_CUBE_F7_DIR}/Projects/STM32F767ZI-Nucleo/Applications/EEPROM/EEPROM_Emulation/SW4STM32/startup_stm32f767xx.s")
+endif()
+if(NOT EXISTS "${STM32_SYSTEM_SOURCE}" OR NOT EXISTS "${STM32_STARTUP_SOURCE}")
+    message(FATAL_ERROR "STM32CubeF7 package lacks a usable STM32F767 system/startup source pair")
+endif()
+
 set(CANOPEN_STM32_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/CanOpenSTM32")
 set(CANOPEN_NODE_DIR "${CANOPEN_STM32_DIR}/CANopenNode")
 
@@ -57,8 +69,8 @@ add_executable(${PROJECT_NAME}
     Core/Src/stm32f7xx_it.c
     Core/Src/system_clock_reference.c
     Core/Src/syscalls.c
-    ${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/system_stm32f7xx.c
-    ${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/gcc/startup_stm32f767xx.s
+    ${STM32_SYSTEM_SOURCE}
+    ${STM32_STARTUP_SOURCE}
     App/Src/CO_app_STM32_reference.c
     App/Src/canopen_reference_hw.c
     App/Src/canopen_reference_board.c
@@ -154,7 +166,7 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
         ${HAL_SOURCES}
         "${CANOPEN_NODE_DIR}/CANopen.c"
         "${CANOPEN_REFERENCE_OD_SOURCE}"
-        "${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/system_stm32f7xx.c"
+        "${STM32_SYSTEM_SOURCE}"
         "${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c"
         PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=format;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
     target_compile_options(${PROJECT_NAME} PRIVATE

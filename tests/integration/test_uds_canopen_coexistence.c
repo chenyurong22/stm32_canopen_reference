@@ -20,8 +20,7 @@ int main(void) {
     uint16_t ids[20U] = {0};
     uint32_t count = 0U;
     const uint16_t canopen_ids[] = {
-        0x000U, 0x080U, 0x180U, 0x280U, 0x380U, 0x480U,
-        0x580U, 0x600U, 0x700U, 0x7E4U, 0x7E5U,
+        0x000U, 0x080U, 0x180U, 0x280U, 0x380U, 0x480U, 0x580U, 0x600U, 0x700U, 0x7E4U, 0x7E5U,
     };
     for (uint32_t index = 0U; index < (sizeof(canopen_ids) / sizeof(canopen_ids[0])); ++index) {
         assert(CANopenAcceptanceFilter_Add(ids, 20U, &count, canopen_ids[index]));
@@ -42,7 +41,8 @@ int main(void) {
     uint8_t data[8] = {0x02U, 0x3EU, 0x00U, 0U, 0U, 0U, 0U, 0U};
     uint32_t uds_received = 0U;
     for (uint32_t sequence = 0U; sequence < 1000U; ++sequence) {
-        uint32_t canopen_id = canopen_ids[sequence % (sizeof(canopen_ids) / sizeof(canopen_ids[0]))];
+        uint32_t canopen_id =
+            canopen_ids[sequence % (sizeof(canopen_ids) / sizeof(canopen_ids[0]))];
         uds_stm32_can_rx_from_isr(&adapter, canopen_id, data, 3U);
         uds_stm32_can_rx_from_isr(&adapter, 0x7E0U, data, 3U);
         IsoTpCanFrame frame = {0};
