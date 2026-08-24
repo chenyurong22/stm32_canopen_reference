@@ -131,10 +131,14 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
     # parameter/variable diagnostics defeat fail-on-warning for project code.
     # Generated OD sources belong to the same dependency class: they include
     # CANopenNode headers directly and are regenerated, never hand-edited.
+    # CANopen.c sits at the stack root outside the 301..309/storage glob, and
+    # system_stm32f7xx.c is a vendor template; both are dependency-grade too.
     set_source_files_properties(
         ${CANOPEN_NODE_SOURCES}
         ${HAL_SOURCES}
+        "${CANOPEN_NODE_DIR}/CANopen.c"
         "${CANOPEN_REFERENCE_OD_SOURCE}"
+        "${STM32_CUBE_F7_DIR}/Drivers/CMSIS/Device/ST/STM32F7xx/Source/Templates/system_stm32f7xx.c"
         "${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c"
         PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=format;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
     target_compile_options(${PROJECT_NAME} PRIVATE
