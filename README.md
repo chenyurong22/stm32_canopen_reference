@@ -205,7 +205,7 @@ Use the host-side UDS/ISO-TP contract model and SocketCAN hardware runner to exe
 
 ## UDS diagnostics
 
-The opt-in UDS profile is a bounded classic-CAN ISO-TP and UDS reference subset. Begin with the [UDS architecture](docs/uds/architecture.md), [ISO-TP contract](docs/uds/isotp.md), [service matrix](docs/uds/services.md), and [configuration](docs/uds/configuration.md). The [STM32F767 hardware runner](tests/hardware/run_stm32f767_uds_acceptance.py) keeps reset and download operations disabled unless the operator explicitly enables them. This repository does not claim complete ISO 14229 or ISO 15765-2 conformance, a production bootloader, or production cryptographic update security.
+The opt-in UDS profile is a bounded classic-CAN ISO-TP and UDS reference subset. Begin with the [UDS architecture](docs/uds/architecture.md), [ISO-TP contract](docs/uds/isotp.md), [service matrix](docs/uds/services.md), and [configuration](docs/uds/configuration.md). The [STM32F767 hardware runner](tests/hardware/run_uds_stm32f767_acceptance.py) keeps reset and download operations disabled unless the operator explicitly enables them. This repository does not claim complete ISO 14229 or ISO 15765-2 conformance, a production bootloader, or production cryptographic update security.
 
 ### CANopen gateway prototype
 

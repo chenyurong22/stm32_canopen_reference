@@ -1,6 +1,6 @@
 # UDS HIL Testing
 
-`tests/hardware/run_stm32f767_uds_acceptance.py` is a safety-gated SocketCAN runner. It uses an independent CAN interface and defaults to non-destructive checks. It does not configure the interface, alter termination, erase Flash, or reset the ECU unless the operator explicitly supplies the corresponding option.
+`tests/hardware/run_uds_stm32f767_acceptance.py` is a safety-gated SocketCAN runner. It uses an independent CAN interface and defaults to non-destructive checks. It does not configure the interface, alter termination, erase Flash, or reset the ECU unless the operator explicitly supplies the corresponding option.
 
 The acceptance inventory covers UDS session control, ECU reset, ReadDTCInformation, ReadDataByIdentifier, SecurityAccess, CommunicationControl policy, RoutineControl policy, RequestDownload policy, TransferData sequencing, RequestTransferExit policy, and TesterPresent. The underlying ISO-TP runner covers SF, FF, CF, FC, BS, STmin, sequence errors, timeout, and overflow behavior. The CANopen coexistence campaign must exercise NMT, heartbeat, SDO, PDO, and EMCY concurrently with UDS traffic.
 
