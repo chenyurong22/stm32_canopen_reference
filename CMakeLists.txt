@@ -66,6 +66,7 @@ add_executable(${PROJECT_NAME}
     App/Src/canopen_reference_diagnostics.c
     App/Src/canopen_reference_watchdog.c
     App/Src/canopen_reference_timing.c
+    App/Src/canopen_reference_uds.c
     App/Src/canopen_reference_storage.c
     App/Src/canopen_reference_can_recovery.c
     App/Src/canopen_reference_gateway.c
@@ -110,7 +111,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.
     __int64_t_defined=1
-    USE_HAL_CAN_REGISTER_CALLBACKS=0
+    USE_HAL_CAN_REGISTER_CALLBACKS=$<BOOL:${CANOPEN_REFERENCE_ENABLE_UDS}>
     USE_HAL_TIM_REGISTER_CALLBACKS=0
     ART_ACCELERATOR_ENABLE=1)
 
@@ -190,7 +191,7 @@ target_compile_definitions(canopen_stm32_port PRIVATE
     STM32F767xx
     USE_HAL_DRIVER
     CAN_PORT_STM32
-    USE_HAL_CAN_REGISTER_CALLBACKS=0
+    USE_HAL_CAN_REGISTER_CALLBACKS=$<BOOL:${CANOPEN_REFERENCE_ENABLE_UDS}>
     USE_HAL_TIM_REGISTER_CALLBACKS=0
     ART_ACCELERATOR_ENABLE=1
     __int64_t_defined=1)

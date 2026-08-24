@@ -7,6 +7,27 @@
 #include <stddef.h>
 #include <string.h>
 
+#if defined(USE_HAL_CAN_REGISTER_CALLBACKS) && (USE_HAL_CAN_REGISTER_CALLBACKS != 0U)
+static UdsStm32Can *s_attached_adapter;
+
+static void uds_stm32_can_rx_fifo1_callback(CAN_HandleTypeDef *hcan) {
+    if ((s_attached_adapter == NULL) || (hcan == NULL) ||
+        (hcan != s_attached_adapter->hcan)) {
+        return;
+    }
+    while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO1) != 0U) {
+        CAN_RxHeaderTypeDef header = {0};
+        uint8_t data[ISOTP_MAX_FRAME_DATA] = {0};
+        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &header, data) != HAL_OK) {
+            uds_stm32_can_note_error(s_attached_adapter, 1U, false);
+            break;
+        }
+        uds_stm32_can_rx_from_isr(s_attached_adapter, header.StdId, data,
+                                  (uint8_t)header.DLC);
+    }
+}
+#endif
+
 static uint32_t next_index(uint32_t index, uint32_t capacity) {
     return (index + 1U == capacity) ? 0U : index + 1U;
 }
@@ -36,6 +57,40 @@ int uds_stm32_can_bind(UdsStm32Can *adapter, CAN_HandleTypeDef *hcan,
     return 0;
 }
 
+int uds_stm32_can_attach(UdsStm32Can *adapter) {
+    if ((adapter == NULL) || !adapter->bound || (adapter->hcan == NULL)) {
+        return -EINVAL;
+    }
+#if defined(USE_HAL_CAN_REGISTER_CALLBACKS) && (USE_HAL_CAN_REGISTER_CALLBACKS != 0U)
+    if ((s_attached_adapter != NULL) && (s_attached_adapter != adapter)) {
+        return -EBUSY;
+    }
+    /* UDS filters are assigned to FIFO1. CANopenNode continues to own FIFO0,
+     * so this registration does not replace the CANopen receive callback. */
+    if (HAL_CAN_RegisterCallback(adapter->hcan, HAL_CAN_RX_FIFO1_MSG_PENDING_CB_ID,
+                                 uds_stm32_can_rx_fifo1_callback) != HAL_OK) {
+        return -EIO;
+    }
+    s_attached_adapter = adapter;
+    return 0;
+#else
+    return -ENOTSUP;
+#endif
+}
+
+void uds_stm32_can_detach(UdsStm32Can *adapter) {
+#if defined(USE_HAL_CAN_REGISTER_CALLBACKS) && (USE_HAL_CAN_REGISTER_CALLBACKS != 0U)
+    if ((s_attached_adapter == adapter) && (adapter != NULL) &&
+        (adapter->hcan != NULL)) {
+        (void)HAL_CAN_UnRegisterCallback(adapter->hcan,
+                                         HAL_CAN_RX_FIFO1_MSG_PENDING_CB_ID);
+        s_attached_adapter = NULL;
+    }
+#else
+    (void)adapter;
+#endif
+}
+
 void uds_stm32_can_reset(UdsStm32Can *adapter) {
     if (adapter == NULL) {
         return;
@@ -55,7 +110,7 @@ void uds_stm32_can_rx_from_isr(UdsStm32Can *adapter, uint32_t id,
         }
         return;
     }
-    if (id != adapter->request_id) {
+    if ((id != adapter->request_id) && (id != adapter->response_id)) {
         return;
     }
 
