@@ -22,7 +22,7 @@ static uint32_t s_previous_fault;
 static void
 watchdog_backup_access_enable(void) {
     __HAL_RCC_PWR_CLK_ENABLE();
-    SET_BIT(RCC->APB1ENR, RCC_APB1ENR_RTCAPBEN);
+    SET_BIT(RCC->APB1ENR, RCC_APB1ENR_RTCEN);
     SET_BIT(PWR->CR1, PWR_CR1_DBP);
 }
 #endif

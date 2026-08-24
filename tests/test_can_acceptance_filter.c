@@ -58,7 +58,9 @@ test_capacity_is_enforced(void) {
     assert(CANopenAcceptanceFilter_Add(ids, TEST_CAPACITY, &count, 0x002U));
     assert(CANopenAcceptanceFilter_Add(ids, TEST_CAPACITY, &count, 0x003U));
     assert(!CANopenAcceptanceFilter_Add(ids, TEST_CAPACITY, &count, 0x004U));
-    assert(!CANopenAcceptanceFilter_Add(ids, TEST_CAPACITY, &count, 0x000U));
+    /* A duplicate is "already present", which succeeds regardless of capacity
+     * because de-duplication precedes the bounds check. */
+    assert(CANopenAcceptanceFilter_Add(ids, TEST_CAPACITY, &count, 0x000U));
     assert(count == TEST_CAPACITY);
     for (uint32_t i = 0U; i < TEST_CAPACITY; ++i) {
         assert(ids[i] == i);
