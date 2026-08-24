@@ -74,6 +74,8 @@ add_executable(${PROJECT_NAME}
     middleware/canopen/core/can_acceptance_filter.c
     middleware/canopen/core/canopen_core.c
     middleware/canopen/core/cia302_nmt_master.c
+    middleware/diagnostics/isotp/isotp.c
+    middleware/diagnostics/uds/uds.c
     ${CANOPEN_REFERENCE_OD_SOURCE}
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c
     ${CANOPEN_NODE_DIR}/CANopen.c
@@ -106,6 +108,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     Core/Inc
     App/Inc
     middleware/canopen/core
+    middleware/diagnostics/isotp
+    middleware/diagnostics/uds
     Generated
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32
     ${CANOPEN_NODE_DIR}
