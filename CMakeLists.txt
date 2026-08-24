@@ -129,9 +129,12 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
     # The pinned vendor sources are built as part of this executable. Keep
     # their warnings visible, but do not let known dependency-only unused
     # parameter/variable diagnostics defeat fail-on-warning for project code.
+    # Generated OD sources belong to the same dependency class: they include
+    # CANopenNode headers directly and are regenerated, never hand-edited.
     set_source_files_properties(
         ${CANOPEN_NODE_SOURCES}
         ${HAL_SOURCES}
+        "${CANOPEN_REFERENCE_OD_SOURCE}"
         "${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c"
         PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion;-Wno-error=sign-conversion;-Wno-error=format;-Wno-error=unused-parameter;-Wno-error=unused-variable;-Wno-error=undef")
     target_compile_options(${PROJECT_NAME} PRIVATE

@@ -7,6 +7,8 @@
 
 #include "canopen_reference_config.h"
 
+#include "canopen_reference_co.h"
+
 #if (CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY != 0U)
 
 #include "canopen_reference_od.h"

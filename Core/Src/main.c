@@ -1,7 +1,19 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "main.h"
 
+/* CO_app_STM32.h transitively includes CANopenNode headers whose deliberate
+ * narrowing idioms must not fail -Werror=conversion; keep this first-parse
+ * inside the same suppression region used across the project. See
+ * canopen_reference_co.h. */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
 #include "CO_app_STM32.h"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
 #include "canopen_reference_board.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_timing.h"

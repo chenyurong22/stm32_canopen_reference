@@ -3,6 +3,7 @@
 #define CANOPEN_MIDDLEWARE_CORE_CAN_ACCEPTANCE_FILTER_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

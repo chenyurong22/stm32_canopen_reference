@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+#include "canopen_reference_co.h"
 #include "canopen_reference_config.h"
 
 #if (CANOPEN_REFERENCE_ENABLE_CIA418 != 0U)
