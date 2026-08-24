@@ -81,6 +81,7 @@ add_executable(${PROJECT_NAME}
     middleware/diagnostics/uds/uds.c
     middleware/diagnostics/uds/uds_did.c
     middleware/diagnostics/uds/uds_security_provider.c
+    middleware/diagnostics/uds/uds_download.c
     middleware/diagnostics/uds_stm32/uds_stm32.c
     ${CANOPEN_REFERENCE_OD_SOURCE}
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c
