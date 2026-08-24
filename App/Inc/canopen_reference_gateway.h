@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 
 #ifdef __cplusplus
 extern "C" {

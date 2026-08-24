@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 #include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_hw.h"

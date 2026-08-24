@@ -157,7 +157,7 @@ jobs:
             tests/test_profiles.c App/Src/cia401_reference.c App/Src/cia402_reference.c \
             -o build/tests/test_profiles
           build/tests/test_profiles
-          make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery
+          make -C tests/host all test-stm32-facade test-gateway-default-deny test-inventus-battery test-acceptance-filter
           make -C tests/host test-sanitize test-coverage
       - name: Run SocketCAN integration tests
         if: steps.vcan.outputs.available == 'true'
@@ -227,7 +227,7 @@ jobs:
           set -euo pipefail
           python3 tests/conformance/run_core_vectors.py
           python3 tests/test_canopen_wire_contract.py
-          make -C tests/host all test-stm32-facade test-gateway-default-deny test-sanitize test-coverage
+          make -C tests/host all test-stm32-facade test-gateway-default-deny test-sanitize test-coverage test-acceptance-filter
           echo 'deterministic_fallback=passed' >> release-socketcan-status.txt
       - name: Upload SocketCAN validation status
         if: always()

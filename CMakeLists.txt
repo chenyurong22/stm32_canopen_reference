@@ -71,6 +71,7 @@ add_executable(${PROJECT_NAME}
     App/Src/cia418_reference.c
     App/Src/cia402_reference.c
     App/Src/inventus_battery_data.c
+    middleware/canopen/core/can_acceptance_filter.c
     middleware/canopen/core/canopen_core.c
     middleware/canopen/core/cia302_nmt_master.c
     ${CANOPEN_REFERENCE_OD_SOURCE}
@@ -142,10 +143,11 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
         -Wshadow
         -Wundef
         -Werror
-        # CANopenNode v4 has a deliberate narrowing mask assignment in a
-        # third-party inline header; keep the warning visible without making
-        # the pinned dependency fail the project-owned production build.
-        -Wno-error=conversion)
+        # Project-owned code enforces -Wconversion as a hard error. The known
+        # third-party narrowing idioms are contained by the project include
+        # boundary (canopen_reference_co.h) and per-file overrides below, so
+        # no global escape hatch remains for project sources.
+        -Werror=conversion)
     target_link_options(${PROJECT_NAME} PRIVATE
         -Wl,--fatal-warnings)
 endif()
@@ -190,10 +192,11 @@ if(CANOPEN_REFERENCE_PRODUCTION_PROFILE)
         -Wshadow
         -Wundef
         -Werror
-        # CANopenNode v4 has a deliberate narrowing mask assignment in a
-        # third-party inline header; keep the warning visible without making
-        # the pinned dependency fail the project-owned production build.
-        -Wno-error=conversion)
+        # Project-owned code enforces -Wconversion as a hard error. The known
+        # third-party narrowing idioms are contained by the project include
+        # boundary (canopen_reference_co.h) and per-file overrides below, so
+        # no global escape hatch remains for project sources.
+        -Werror=conversion)
 endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

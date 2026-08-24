@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The project follows sem
 
 ## [Unreleased]
 
+### Review hardening
+
+- Enforced `-Wconversion` as a hard error for project-owned sources in the production build; the known third-party narrowing idioms are contained by a single project include boundary (`canopen_reference_co.h`) instead of a global `-Wno-error=conversion` escape hatch.
+- Extracted the bxCAN acceptance-list policy into the transport-neutral `CANopenAcceptanceFilter_Add()` helper with host unit tests covering masking, de-duplication, global-ID rejection, and capacity bounds.
+- Added post-mortem fault capture: `Error_Handler()` now records a fatal-fault code in RTC backup registers, and `CANopenReferenceWatchdog_PreviousFault()` exposes it after reboot even when the optional IWDG is disabled.
+
 ### Audit remediation
 
 - Propagated STM32 HAL CAN errors into CANopenNode diagnostics and added bounded hardware-fault counters.

@@ -12,7 +12,7 @@
  */
 #include "canopen_reference_cia302.h"
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 #include "CO_HBconsumer.h"
 #include "canopen_reference_od.h"
 #include "canopen_reference_config.h"

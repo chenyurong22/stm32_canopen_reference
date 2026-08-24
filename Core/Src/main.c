@@ -111,9 +111,17 @@ MX_GPIO_Init(void) {
      * in the board-specific MSP and hardware adapter sources. */
 }
 
+/* Generic post-mortem marker for an unrecoverable stop. A board integration
+ * should pass distinct codes from its own fatal paths. */
+#define CANOPEN_REFERENCE_FAULT_UNHANDLED 0xEA110000UL
+
 void
 Error_Handler(void) {
     CANopenReferenceBoard_ForceSafe();
+    /* Persist the fault across a warm reset so service tooling can recover
+     * the cause via CANopenReferenceWatchdog_PreviousFault() after reboot,
+     * instead of leaving a silent spin as the only observable behavior. */
+    CANopenReferenceWatchdog_RecordFatalFault(CANOPEN_REFERENCE_FAULT_UNHANDLED);
     __disable_irq();
     for (;;) {
         /* A production design must bring outputs to their independent safe state

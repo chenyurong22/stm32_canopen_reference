@@ -41,6 +41,7 @@ HIL_RUNNER = (ROOT / "tests" / "hardware" / "run_cia401_hil_campaign.py").read_t
 HIL_DOC = (ROOT / "docs" / "cia401_hil_validation.md").read_text(encoding="utf-8")
 LIFECYCLE = (ROOT / "App" / "Inc" / "canopen_reference_lifecycle.h").read_text(encoding="utf-8")
 FILTER_SOURCE = APP_RUNTIME
+FILTER_HELPER_SOURCE = (ROOT / "middleware" / "canopen" / "core" / "can_acceptance_filter.c").read_text(encoding="utf-8")
 CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 MANIFEST_SCRIPT = (ROOT / "scripts" / "write_build_manifest.sh").read_text(encoding="utf-8")
 HAL_CONF = (ROOT / "Core" / "Inc" / "stm32f7xx_hal_conf.h").read_text(encoding="utf-8")
@@ -214,8 +215,10 @@ class FirmwareConfigurationTests(unittest.TestCase):
     def test_filter_overflow_and_runtime_lifecycle_are_explicit(self) -> None:
         """Active COB-ID overflow fails closed and runtime phases are observable."""
         self.assertIn("CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS", PROFILE)
-        self.assertIn("if (*count >= CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS)", FILTER_SOURCE)
+        self.assertIn("if (*count >= capacity)", FILTER_HELPER_SOURCE)
         self.assertIn("return false;", FILTER_SOURCE)
+        self.assertIn("CANopenAcceptanceFilter_Add(ids, CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS, count, id)",
+                      FILTER_SOURCE)
         for state in ("CANOPEN_REFERENCE_RUNTIME_INIT", "CANOPEN_REFERENCE_RUNTIME_RUNNING",
                       "CANOPEN_REFERENCE_RUNTIME_RESET_REQUESTED",
                       "CANOPEN_REFERENCE_RUNTIME_REINITIALIZING",

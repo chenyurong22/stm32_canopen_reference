@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "canopen_core.h"
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 #include "canopen_reference_hw.h"
 #include "cia401_reference.h"
 #include "cia402_reference.h"

@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 
 #ifndef CANOPEN_REFERENCE_STORAGE_SLOT_SIZE
 #define CANOPEN_REFERENCE_STORAGE_SLOT_SIZE (256U * 1024U)

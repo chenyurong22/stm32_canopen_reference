@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 
 /* CO_t is declared by CANopen.h. */
 

@@ -23,6 +23,19 @@ uint32_t CANopenReferenceWatchdog_MainlineTicks(void);
 /** Return reset flags captured before HAL initialization. */
 uint32_t CANopenReferenceWatchdog_ResetFlags(void);
 
+/** Persist a fatal-fault code in RTC backup registers before halting.
+ *
+ * The code survives a warm reset so service tooling can recover the cause of
+ * an unrecoverable Error_Handler stop even when the independent watchdog is
+ * disabled. Safe to call from any context before interrupts are disabled. */
+void CANopenReferenceWatchdog_RecordFatalFault(uint32_t code);
+
+/** Return the fatal-fault code recorded by the previous run, or 0.
+ *
+ * The stored code is consumed once during initialization; subsequent calls
+ * return the same value until the next power-on or recorded fault. */
+uint32_t CANopenReferenceWatchdog_PreviousFault(void);
+
 #ifdef __cplusplus
 }
 #endif

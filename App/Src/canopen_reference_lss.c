@@ -3,7 +3,7 @@
  */
 #include "canopen_reference_lss.h"
 
-#include "CANopen.h"
+#include "canopen_reference_co.h"
 
 __attribute__((weak)) bool
 CANopenReferenceLss_BoardStore(uint8_t node_id, uint16_t bitrate_kbps) {

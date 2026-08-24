@@ -13,11 +13,30 @@ static uint32_t s_last_mainline_tick;
 static uint32_t s_mainline_ticks;
 static uint32_t s_start_tick;
 static uint32_t s_reset_flags;
+#if defined(STM32F767xx)
+#define WATCHDOG_FAULT_MAGIC 0xCA11FA11UL
+static uint32_t s_previous_fault;
+#endif
+
+#if defined(STM32F767xx)
+static void
+watchdog_backup_access_enable(void) {
+    __HAL_RCC_PWR_CLK_ENABLE();
+    SET_BIT(RCC->APB1ENR, RCC_APB1ENR_RTCAPBEN);
+    SET_BIT(PWR->CR1, PWR_CR1_DBP);
+}
+#endif
 
 void
 CANopenReferenceWatchdog_Init(void) {
 #if defined(STM32F767xx)
     s_reset_flags = RCC->CSR;
+    watchdog_backup_access_enable();
+    if (RTC->BKP0R == WATCHDOG_FAULT_MAGIC) {
+        s_previous_fault = RTC->BKP1R;
+        RTC->BKP0R = 0U;
+        RTC->BKP1R = 0U;
+    }
     __HAL_RCC_CLEAR_RESET_FLAGS();
 #else
     s_reset_flags = 0U;
@@ -91,4 +110,24 @@ CANopenReferenceWatchdog_MainlineTicks(void) {
 uint32_t
 CANopenReferenceWatchdog_ResetFlags(void) {
     return s_reset_flags;
+}
+
+void
+CANopenReferenceWatchdog_RecordFatalFault(uint32_t code) {
+#if defined(STM32F767xx)
+    watchdog_backup_access_enable();
+    RTC->BKP0R = WATCHDOG_FAULT_MAGIC;
+    RTC->BKP1R = code;
+#else
+    (void)code;
+#endif
+}
+
+uint32_t
+CANopenReferenceWatchdog_PreviousFault(void) {
+#if defined(STM32F767xx)
+    return s_previous_fault;
+#else
+    return 0U;
+#endif
 }

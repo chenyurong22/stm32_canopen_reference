@@ -4,11 +4,23 @@
  * Project-owned runtime wrapper derived from the CANopenNode STM32 integration
  * model. Compile this file instead of CANopenNode_STM32/CO_app_STM32.c.
  */
+/* CO_app_STM32.h transitively includes CANopen.h, so the entire third-party
+ * include block must sit inside one suppression region; see
+ * canopen_reference_co.h for the boundary rationale. */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
 #include "CO_app_STM32.h"
 
 #include <stdbool.h>
 
 #include "CANopen.h"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+#include "can_acceptance_filter.h"
 #include "canopen_reference_od.h"
 #include "canopen_reference_config.h"
 #include "canopen_reference_can_recovery.h"
@@ -54,20 +66,7 @@ CANopenReference_RuntimeState(void) {
 
 static bool
 CANopenReference_FilterAdd(uint16_t *ids, uint32_t *count, uint16_t id) {
-    id &= 0x07FFU;
-    if (id == 0x7FFU) {
-        return false;
-    }
-    for (uint32_t i = 0U; i < *count; ++i) {
-        if (ids[i] == id) {
-            return true;
-        }
-    }
-    if (*count >= CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS) {
-        return false;
-    }
-    ids[(*count)++] = id;
-    return true;
+    return CANopenAcceptanceFilter_Add(ids, CANOPEN_REFERENCE_CAN_FILTER_MAX_IDS, count, id);
 }
 
 bool

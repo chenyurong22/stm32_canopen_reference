@@ -127,7 +127,7 @@ python3 tests/test_firmware_configuration.py
 python3 tests/test_canopen_wire_contract.py
 PYTHONPATH=.:tests python3 tests/run_uds_isotp_contract.py
 PYTHONPATH=.:tests python3 tests/run_nmea2000_gateway_contract.py
-make -C tests/host all test-stm32-facade test-gateway-default-deny
+make -C tests/host all test-stm32-facade test-gateway-default-deny test-acceptance-filter
 make -C tests/host test-sanitize test-coverage-report
 python3 tests/conformance/run_core_vectors.py
 ```
