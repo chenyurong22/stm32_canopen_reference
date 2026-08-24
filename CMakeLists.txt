@@ -13,6 +13,9 @@ option(CANOPEN_REFERENCE_ENABLE_CIA418 "Build the opt-in CiA 418 live Object Dic
 option(CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY "Build the isolated Inventus battery test-only Object Dictionary personality" OFF)
 option(CANOPEN_REFERENCE_ENABLE_IWDG "Enable dual-rate IWDG supervision" OFF)
 option(CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION "Enable DWT timing instrumentation" OFF)
+option(CANOPEN_REFERENCE_ENABLE_UDS "Enable the opt-in UDS/ISO-TP diagnostic profile" OFF)
+set(CANOPEN_REFERENCE_UDS_RX_CAN_ID "0x7E0" CACHE STRING "UDS diagnostic request CAN ID")
+set(CANOPEN_REFERENCE_UDS_TX_CAN_ID "0x7E8" CACHE STRING "UDS diagnostic response CAN ID")
 option(CANOPEN_REFERENCE_PRODUCTION_PROFILE "Enable production optimization and compiler hardening" OFF)
 
 if(NOT STM32_CUBE_F7_DIR)
@@ -76,6 +79,7 @@ add_executable(${PROJECT_NAME}
     middleware/canopen/core/cia302_nmt_master.c
     middleware/diagnostics/isotp/isotp.c
     middleware/diagnostics/uds/uds.c
+    middleware/diagnostics/uds_stm32/uds_stm32.c
     ${CANOPEN_REFERENCE_OD_SOURCE}
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32/CO_driver_STM32.c
     ${CANOPEN_NODE_DIR}/CANopen.c
@@ -96,6 +100,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_INVENTUS_BATTERY}>:CANOPEN_REFERENCE_ENABLE_CIA402=0>
     CANOPEN_REFERENCE_ENABLE_IWDG=$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>
     CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION=$<BOOL:${CANOPEN_REFERENCE_ENABLE_TIMING_INSTRUMENTATION}>
+    CANOPEN_REFERENCE_ENABLE_UDS=$<BOOL:${CANOPEN_REFERENCE_ENABLE_UDS}>
+    UDS_RX_CAN_ID=${CANOPEN_REFERENCE_UDS_RX_CAN_ID}
+    UDS_TX_CAN_ID=${CANOPEN_REFERENCE_UDS_TX_CAN_ID}
     $<$<BOOL:${CANOPEN_REFERENCE_ENABLE_IWDG}>:HAL_IWDG_MODULE_ENABLED>
     # Newlib exposes the 64-bit printf macros used by CANopenNode's optional
     # ASCII SDO datatype path only when this target-library guard is defined.
@@ -110,6 +117,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     middleware/canopen/core
     middleware/diagnostics/isotp
     middleware/diagnostics/uds
+    middleware/diagnostics/uds_stm32
     Generated
     ${CANOPEN_STM32_DIR}/CANopenNode_STM32
     ${CANOPEN_NODE_DIR}

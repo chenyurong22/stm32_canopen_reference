@@ -31,6 +31,9 @@
 #include "canopen_reference_lifecycle.h"
 #include "canopen_reference_storage.h"
 #include "canopen_reference_timing.h"
+#if (CANOPEN_REFERENCE_ENABLE_UDS != 0U)
+#include "uds_stm32.h"
+#endif
 #include "cia401_reference.h"
 #include "cia402_reference.h"
 #include "cia418_reference.h"
@@ -120,6 +123,12 @@ CANopenReference_ConfigureCanFilter(uint8_t node_id) {
         || !CANopenReference_FilterAdd(ids, &count, 0x7E5U)) { /* LSS slave -> master */
         return false;
     }
+#if (CANOPEN_REFERENCE_ENABLE_UDS != 0U)
+    if (!CANopenReference_FilterAdd(ids, &count, (uint16_t)UDS_RX_CAN_ID)
+        || !CANopenReference_FilterAdd(ids, &count, (uint16_t)UDS_TX_CAN_ID)) {
+        return false;
+    }
+#endif
 
     for (uint32_t bank = 0U; bank < ((count + 3U) / 4U); ++bank) {
         CAN_FilterTypeDef filter = {0};
