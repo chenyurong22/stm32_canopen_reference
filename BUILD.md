@@ -66,9 +66,9 @@ arm-none-eabi-size build/f767/stm32f767_canopen_reference
 
 The output directory contains the ELF image and post-build HEX, BIN, and MAP artifacts. Retain the MAP file with release evidence.
 
-### Opt-in UDS profile
+### UDS profile
 
-Enable UDS only in a deliberate diagnostic build. The profile adds bounded classic-CAN ISO-TP and UDS processing, exact FIFO1 filters, static queues, and mainline service dispatch. It is disabled by default and does not provide a production bootloader or production SecurityAccess provider.
+UDS is enabled by default in the current reference build. The profile adds bounded classic-CAN ISO-TP and UDS processing, exact FIFO1 filters, static queues, and mainline service dispatch. To disable it deliberately, configure `-DCANOPEN_REFERENCE_ENABLE_UDS=OFF`. It does not provide a production bootloader or production SecurityAccess provider.
 
 ```sh
 cmake -S . -B build/f767-uds \
@@ -81,7 +81,7 @@ cmake --build build/f767-uds --parallel
 arm-none-eabi-size build/f767-uds/stm32f767_canopen_reference
 ```
 
-Review [`docs/uds/configuration.md`](docs/uds/configuration.md), [`docs/uds/can_ids.md`](docs/uds/can_ids.md), and [`docs/uds/timing.md`](docs/uds/timing.md) before enabling it on a board. The default UDS identifiers are `0x7E0` and `0x7E8`; check for collisions with the complete CANopen network plan.
+Review [`docs/uds/configuration.md`](docs/uds/configuration.md), [`docs/uds/can_ids.md`](docs/uds/can_ids.md), and [`docs/uds/timing.md`](docs/uds/timing.md) before using the enabled profile on a board. The default UDS identifiers are `0x7E0` and `0x7E8`; check for collisions with the complete CANopen network plan.
 
 ## Build personalities
 
